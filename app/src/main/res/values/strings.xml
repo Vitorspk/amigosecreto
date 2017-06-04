@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Amigo Secreto</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="titulo_lista_desejos">Amigo Secreto</string>
+    <string name="titulo_inserir_desejo">Inserir Desejo</string>
+    <string name="titulo_detalhes_desejo">Detalhes do Desejo</string>
+    <string name="title_activity_alterar_desejo">Alterar Desejo</string>
+    <string name="title_activity_detalhe_desejo">Detalhes do Desejo</string>
+    <string name="label_produto">Nome do produto:</string>
+    <string name="label_categoria">Categoria:</string>
+    <string name="label_preco_minimo">Preço Mínimo:</string>
+    <string name="label_preco_maximo">Preço Máximo:</string>
+    <string name="label_lojas">Lojas onde achar:</string>
+    <string name="hint_produto">Nome do produto</string>
+    <string name="hint_categoria">Categoria</string>
+    <string name="hint_preco_minimo">Preço Mínimo</string>
+    <string name="hint_preco_maximo">Preço Máximo</string>
+    <string name="hint_lojas">Lojas onde achar</string>
+    <string name="menu_editar">Editar</string>
+    <string name="menu_salvar">Salvar</string>
+    <string name="menu_excluir">Excluir</string>
+    <string name="menu_novo">Novo</string>
+    <string name="menu_compartilhar">Compartilhar</string>
+
+</resources>

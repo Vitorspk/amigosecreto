@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="activity.amigosecreto.InserirDesejoActivity"
+    tools:ignore="MergeRootFrame"
+    android:background="@android:drawable/editbox_background_normal">
+
+    <EditText
+        android:id="@+id/et_produto_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/hint_produto" >
+
+        <requestFocus />
+    </EditText>
+
+    <EditText
+        android:id="@+id/et_categoria_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/hint_categoria" />
+
+    <EditText
+        android:id="@+id/et_preco_minimo_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/hint_preco_minimo"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/et_preco_maximo_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/hint_preco_maximo"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/et_lojas_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/label_lojas" />
+
+</LinearLayout>
+

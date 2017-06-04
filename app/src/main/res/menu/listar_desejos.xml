@@ -1,0 +1,20 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="activity.amigosecreto.ListarDesejos">
+
+    <item android:id="@+id/menu_compartilhar"
+        android:orderInCategory="100"
+        app:showAsAction="always"
+        android:title="@string/menu_compartilhar"
+        android:actionProviderClass="android.widget.ShareActionProvider"/>
+
+    <item
+        android:id="@+id/menu_novo"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:title="@string/menu_novo"
+        android:icon="@android:drawable/ic_menu_add"/>
+
+</menu>
+
