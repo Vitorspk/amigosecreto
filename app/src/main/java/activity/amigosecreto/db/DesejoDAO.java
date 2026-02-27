@@ -29,7 +29,7 @@ public class DesejoDAO {
 
     public final void alterar(Desejo old_desejo, Desejo new_desejo){
         ContentValues values = new ContentValues();
-        values.put(helper.COLUMN_ID, old_desejo.getId());
+        // Don't put COLUMN_ID - it's the WHERE clause, not an update target
         values.put(helper.COLUMN_PRODUTO, new_desejo.getProduto());
         values.put(helper.COLUMN_CATEGORIA, new_desejo.getCategoria());
         values.put(helper.COLUMN_PRECO_MINIMO, new_desejo.getPrecoMinimo());
@@ -41,14 +41,15 @@ public class DesejoDAO {
 
     public final void inserir(Desejo desejo){
         ContentValues values = new ContentValues();
-        values.put(helper.COLUMN_ID, desejo.getId());
+        // Don't put COLUMN_ID - let AUTOINCREMENT handle it
         values.put(helper.COLUMN_PRODUTO, desejo.getProduto());
         values.put(helper.COLUMN_CATEGORIA, desejo.getCategoria());
         values.put(helper.COLUMN_PRECO_MINIMO, desejo.getPrecoMinimo());
         values.put(helper.COLUMN_PRECO_MAXIMO, desejo.getPrecoMaximo());
         values.put(helper.COLUMN_LOJAS, desejo.getLojas());
         values.put(helper.COLUMN_DESEJO_PARTICIPANTE_ID, desejo.getParticipanteId());
-        database.insert(helper.TABLE_DESEJO, null, values);
+        long id = database.insert(helper.TABLE_DESEJO, null, values);
+        desejo.setId((int) id);
     }
 
     public final void remover(Desejo desejo){

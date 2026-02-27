@@ -32,8 +32,28 @@ public class GrupoDAO {
     }
 
     public void remover(int id) {
-        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = " + id, null);
-        database.delete(MySQLiteOpenHelper.TABLE_GRUPO, MySQLiteOpenHelper.COLUMN_GRUPO_ID + " = " + id, null);
+        // First, get all participant IDs to clean up their exclusion records
+        Cursor cursor = database.query(MySQLiteOpenHelper.TABLE_PARTICIPANTE,
+                new String[]{MySQLiteOpenHelper.COLUMN_ID},
+                MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?",
+                new String[]{String.valueOf(id)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                int participantId = cursor.getInt(0);
+                String participantIdStr = String.valueOf(participantId);
+                // Remove all exclusion records involving this participant
+                database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO,
+                        MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?",
+                        new String[]{participantIdStr, participantIdStr});
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+
+        // Then remove participants and the group
+        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?", new String[]{String.valueOf(id)});
+        database.delete(MySQLiteOpenHelper.TABLE_GRUPO, MySQLiteOpenHelper.COLUMN_GRUPO_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
     public List<Grupo> listar() {
