@@ -75,10 +75,18 @@
             android:exported="false">
         </activity>
 
-        <activity android:name=".ListarDesejos" />
-        <activity android:name=".InserirDesejoActivity" />
-        <activity android:name=".AlterarDesejoActivity" />
-        <activity android:name=".DetalheDesejoActivity" />
+        <activity
+            android:name=".ListarDesejos"
+            android:exported="false" />
+        <activity
+            android:name=".InserirDesejoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AlterarDesejoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DetalheDesejoActivity"
+            android:exported="false" />
 
         <!-- FileProvider for secure file sharing -->
         <provider

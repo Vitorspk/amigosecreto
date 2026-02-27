@@ -162,7 +162,7 @@ keytool -genkey -v -keystore amigosecreto.keystore -alias amigosecreto -keyalg R
 ## 🎯 Status Atual
 
 **Versão**: 2.0 (versionCode 8)
-**Data de preparação**: 26/02/2026
+**Data de preparação**: 26/02/2024
 **Pronto para produção**: ✅ (após criar keystore e testar)
 
 ---

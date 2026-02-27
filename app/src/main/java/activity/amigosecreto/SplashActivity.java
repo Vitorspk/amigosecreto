@@ -25,8 +25,8 @@ public class SplashActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                // Mudado para a nova Activity de Sorteio
-                Intent i = new Intent(SplashActivity.this, ParticipantesActivity.class);
+                // Iniciar tela de grupos
+                Intent i = new Intent(SplashActivity.this, GruposActivity.class);
                 startActivity(i);
                 finish();
             }
