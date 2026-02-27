@@ -47,6 +47,10 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // ID do participante cujo SMS foi aberto; marcado como enviado no onResume ao retornar.
     private int pendingSmsParticipanteId = -1;
+    // Estado da sequencia de SMS; retomado no onResume para evitar dialog durante pausa da activity.
+    private List<Participante> pendingSmsList = null;
+    private Map<Integer, String> pendingSmsNomesAmigos = null;
+    private int pendingSmsNextIndex = -1;
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -67,6 +71,10 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (grupoAtual == null) {
             finish();
             return;
+        }
+
+        if (savedInstanceState != null) {
+            pendingSmsParticipanteId = savedInstanceState.getInt("pendingSmsId", -1);
         }
 
         if (getSupportActionBar() != null) {
@@ -227,6 +235,22 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista();
+        // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa)
+        if (pendingSmsList != null && pendingSmsNextIndex >= 0) {
+            List<Participante> lista = pendingSmsList;
+            Map<Integer, String> nomes = pendingSmsNomesAmigos;
+            int nextIndex = pendingSmsNextIndex;
+            pendingSmsList = null;
+            pendingSmsNomesAmigos = null;
+            pendingSmsNextIndex = -1;
+            enviarSmsSequencial(lista, nomes, nextIndex);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull android.os.Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("pendingSmsId", pendingSmsParticipanteId);
     }
 
     @Override
@@ -356,15 +380,22 @@ public class ParticipantesActivity extends AppCompatActivity {
                         Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
                         intent.putExtra("sms_body", mensagem);
                         try {
-                            // Registra o id antes de sair; onResume marca como enviado ao retornar
+                            // Registra o id antes de sair; onResume marca como enviado ao retornar.
+                            // Proximo dialog e agendado para onResume para evitar BadTokenException.
                             pendingSmsParticipanteId = p.getId();
+                            pendingSmsList = lista;
+                            pendingSmsNomesAmigos = nomesAmigos;
+                            pendingSmsNextIndex = index + 1;
                             startActivity(intent);
                         } catch (android.content.ActivityNotFoundException e) {
                             pendingSmsParticipanteId = -1;
+                            pendingSmsList = null;
+                            pendingSmsNomesAmigos = null;
+                            pendingSmsNextIndex = -1;
                             Toast.makeText(ParticipantesActivity.this,
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
+                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
                         }
-                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
                     }
                 })
                 .setNegativeButton("Pular", new DialogInterface.OnClickListener() {
