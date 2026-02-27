@@ -45,6 +45,9 @@ public class ParticipantesActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private static final int REQUEST_CONTACT_PICKER = 200;
 
+    // ID do participante cujo SMS foi aberto; marcado como enviado no onResume ao retornar.
+    private int pendingSmsParticipanteId = -1;
+
     private ListView lvParticipantes;
     private TextView tvCount;
     private ExtendedFloatingActionButton fabAdd;
@@ -215,6 +218,13 @@ public class ParticipantesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Marca como enviado ao retornar do app de SMS (usuario teve a chance de confirmar o envio)
+        if (pendingSmsParticipanteId != -1) {
+            dao.open();
+            dao.marcarComoEnviado(pendingSmsParticipanteId);
+            dao.close();
+            pendingSmsParticipanteId = -1;
+        }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista();
     }
@@ -341,16 +351,16 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton("Abrir SMS", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Uri smsUri = Uri.parse("smsto:" + Uri.encode(p.getTelefone()));
+                        // Nao usar Uri.encode: converte '+' de numeros internacionais em '%2B'
+                        Uri smsUri = Uri.parse("smsto:" + p.getTelefone());
                         Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
                         intent.putExtra("sms_body", mensagem);
                         try {
+                            // Registra o id antes de sair; onResume marca como enviado ao retornar
+                            pendingSmsParticipanteId = p.getId();
                             startActivity(intent);
-                            dao.open();
-                            dao.marcarComoEnviado(p.getId());
-                            dao.close();
-                            atualizarLista();
                         } catch (android.content.ActivityNotFoundException e) {
+                            pendingSmsParticipanteId = -1;
                             Toast.makeText(ParticipantesActivity.this,
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
                         }
@@ -368,6 +378,7 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {
+        if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
         sb.append("Olá, *").append(nomeParticipante).append("*!\n");
