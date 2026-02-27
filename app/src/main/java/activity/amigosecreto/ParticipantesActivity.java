@@ -304,13 +304,15 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
-    // O usuario confirma e envia manualmente — compativel com Play Store sem restricoes.
+    // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
     private void enviarSmsViaIntent() {
         dao.open();
         List<Participante> comTelefone = new ArrayList<>();
+        Map<Integer, String> nomesAmigos = new HashMap<>();
         for (Participante p : listaParticipantes) {
             if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
                 comTelefone.add(p);
+                nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
             }
         }
         dao.close();
@@ -320,18 +322,49 @@ public class ParticipantesActivity extends AppCompatActivity {
             return;
         }
 
-        for (Participante p : comTelefone) {
-            dao.open();
-            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-            dao.close();
-            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
-            Uri smsUri = Uri.parse("smsto:" + Uri.encode(p.getTelefone()));
-            Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
-            intent.putExtra("sms_body", mensagem);
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-            }
+        enviarSmsSequencial(comTelefone, nomesAmigos, 0);
+    }
+
+    // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
+    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> nomesAmigos, final int index) {
+        if (index >= lista.size()) {
+            Toast.makeText(this, "SMS preparados para " + lista.size() + " participante(s).", Toast.LENGTH_LONG).show();
+            return;
         }
+
+        final Participante p = lista.get(index);
+        final String mensagem = gerarMensagemSecreta(p.getNome(), nomesAmigos.get(p.getId()));
+
+        new AlertDialog.Builder(this)
+                .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
+                .setMessage("Abrir app de SMS para " + p.getTelefone() + "?")
+                .setPositiveButton("Abrir SMS", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Uri smsUri = Uri.parse("smsto:" + Uri.encode(p.getTelefone()));
+                        Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
+                        intent.putExtra("sms_body", mensagem);
+                        try {
+                            startActivity(intent);
+                            dao.open();
+                            dao.marcarComoEnviado(p.getId());
+                            dao.close();
+                            atualizarLista();
+                        } catch (android.content.ActivityNotFoundException e) {
+                            Toast.makeText(ParticipantesActivity.this,
+                                    "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
+                        }
+                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                    }
+                })
+                .setNegativeButton("Pular", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {
