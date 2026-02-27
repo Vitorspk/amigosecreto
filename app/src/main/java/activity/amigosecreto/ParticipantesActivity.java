@@ -47,6 +47,8 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // ID do participante cujo SMS foi aberto; marcado como enviado no onResume ao retornar.
     private int pendingSmsParticipanteId = -1;
+    // True apenas quando startActivity foi chamado nesta sessao (nao quando restaurado de rotacao).
+    private boolean smsLaunched = false;
     // Estado da sequencia de SMS; retomado no onResume para evitar dialog durante pausa da activity.
     private List<Participante> pendingSmsList = null;
     private Map<Integer, String> pendingSmsNomesAmigos = null;
@@ -89,7 +91,8 @@ public class ParticipantesActivity extends AppCompatActivity {
                     p.setTelefone(telefones[i]);
                     p.setNome(nomes[i]);
                     pendingSmsList.add(p);
-                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i]);
+                    // Restore null for empty-string sentinel (saved when nomeAmigo was null)
+                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i].isEmpty() ? null : nomesAmigos[i]);
                 }
             }
         }
@@ -243,12 +246,15 @@ public class ParticipantesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Marca como enviado ao retornar do app de SMS (usuario teve a chance de confirmar o envio)
-        if (pendingSmsParticipanteId != -1) {
+        // Marca como enviado apenas se o SMS foi efetivamente aberto nesta sessao.
+        // smsLaunched evita marcacao incorreta apos rotacao (pendingSmsParticipanteId e
+        // restaurado do bundle mas o app de SMS nunca foi aberto).
+        if (smsLaunched && pendingSmsParticipanteId != -1) {
             dao.open();
             dao.marcarComoEnviado(pendingSmsParticipanteId);
             dao.close();
             pendingSmsParticipanteId = -1;
+            smsLaunched = false;
         }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista();
@@ -279,7 +285,8 @@ public class ParticipantesActivity extends AppCompatActivity {
                 ids[i] = p.getId();
                 telefones[i] = p.getTelefone();
                 nomes[i] = p.getNome();
-                nomesAmigos[i] = pendingSmsNomesAmigos.get(p.getId());
+                String nomeAmigo = pendingSmsNomesAmigos.get(p.getId());
+                nomesAmigos[i] = nomeAmigo != null ? nomeAmigo : "";
             }
             outState.putIntArray("pendingSmsIds", ids);
             outState.putStringArray("pendingSmsTelefones", telefones);
@@ -421,6 +428,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                             pendingSmsList = lista;
                             pendingSmsNomesAmigos = nomesAmigos;
                             pendingSmsNextIndex = index + 1;
+                            smsLaunched = true;
                             startActivity(intent);
                         } catch (android.content.ActivityNotFoundException e) {
                             pendingSmsParticipanteId = -1;
@@ -445,6 +453,16 @@ public class ParticipantesActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                    }
+                })
+                .setNeutralButton("Cancelar tudo", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        pendingSmsParticipanteId = -1;
+                        pendingSmsList = null;
+                        pendingSmsNomesAmigos = null;
+                        pendingSmsNextIndex = -1;
+                        smsLaunched = false;
                     }
                 })
                 .setCancelable(false)
