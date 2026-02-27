@@ -31,7 +31,9 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import activity.amigosecreto.db.Grupo;
@@ -110,8 +112,23 @@ public class ParticipantesActivity extends AppCompatActivity {
         listaParticipantes.clear();
         listaParticipantes.addAll(dao.listarPorGrupo(grupoAtual.getId()));
         dao.close();
+
+        // Pré-carregar counts de desejos para evitar criar DAO a cada item do adapter
+        Map<Integer, Integer> desejosCountMap = new HashMap<>();
+        DesejoDAO desejoDAO = new DesejoDAO(this);
+        try {
+            desejoDAO.open();
+            for (Participante p : listaParticipantes) {
+                int count = desejoDAO.contarDesejosPorParticipante(p.getId());
+                desejosCountMap.put(p.getId(), count);
+            }
+        } finally {
+            desejoDAO.close();
+        }
+
+        adapter.setDesejosCountMap(desejosCountMap);
         adapter.notifyDataSetChanged();
-        
+
         if (listaParticipantes.isEmpty()) {
             tvCount.setText("Nenhum participante ainda");
         } else {
@@ -382,10 +399,15 @@ public class ParticipantesActivity extends AppCompatActivity {
     private class ParticipantesAdapter extends BaseAdapter {
         private Context ctx;
         private List<Participante> itens;
+        private Map<Integer, Integer> desejosCountMap = new HashMap<>();
 
         public ParticipantesAdapter(Context ctx, List<Participante> itens) {
             this.ctx = ctx;
             this.itens = itens;
+        }
+
+        public void setDesejosCountMap(Map<Integer, Integer> desejosCountMap) {
+            this.desejosCountMap = desejosCountMap;
         }
 
         @Override
@@ -416,11 +438,9 @@ public class ParticipantesActivity extends AppCompatActivity {
             tvAvatar.setText(p.getNome().substring(0, 1).toUpperCase());
             tvNome.setText(p.getNome());
 
-            // Contar desejos do participante
-            DesejoDAO desejoDAO = new DesejoDAO(ctx);
-            desejoDAO.open();
-            int countDesejos = desejoDAO.contarDesejosPorParticipante(p.getId());
-            desejoDAO.close();
+            // Obter count de desejos do map pré-carregado
+            Integer countDesejos = desejosCountMap.get(p.getId());
+            if (countDesejos == null) countDesejos = 0;
 
             if (countDesejos > 0) {
                 tvDesejosCount.setText(countDesejos + (countDesejos == 1 ? " desejo" : " desejos"));

@@ -36,7 +36,7 @@ public class DesejoDAO {
         values.put(helper.COLUMN_PRECO_MAXIMO, new_desejo.getPrecoMaximo());
         values.put(helper.COLUMN_LOJAS, new_desejo.getLojas());
         values.put(helper.COLUMN_DESEJO_PARTICIPANTE_ID, new_desejo.getParticipanteId());
-        database.update(helper.TABLE_DESEJO, values, helper.COLUMN_ID+" = "+old_desejo.getId(), null);
+        database.update(helper.TABLE_DESEJO, values, helper.COLUMN_ID + " = ?", new String[]{String.valueOf(old_desejo.getId())});
     }
 
     public final void inserir(Desejo desejo){
@@ -52,7 +52,7 @@ public class DesejoDAO {
     }
 
     public final void remover(Desejo desejo){
-        database.delete(helper.TABLE_DESEJO, helper.COLUMN_ID+" = "+desejo.getId(), null);
+        database.delete(helper.TABLE_DESEJO, helper.COLUMN_ID + " = ?", new String[]{String.valueOf(desejo.getId())});
     }
 
     public final List<Desejo> listar(){

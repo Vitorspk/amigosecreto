@@ -1,6 +1,6 @@
 # Política de Privacidade - Amigo Secreto
 
-**Última atualização:** 26 de fevereiro de 2026
+**Última atualização:** 26 de fevereiro de 2024
 
 ## 1. Introdução
 

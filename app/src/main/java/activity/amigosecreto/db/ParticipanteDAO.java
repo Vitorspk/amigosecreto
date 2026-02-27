@@ -36,29 +36,31 @@ public class ParticipanteDAO {
     }
 
     public void remover(int id) {
-        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_ID + " = " + id, null);
-        database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = " + id + " OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = " + id, null);
+        String idStr = String.valueOf(id);
+        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{idStr});
+        database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?", new String[]{idStr, idStr});
     }
 
     public void deletarTodosDoGrupo(int grupoId) {
         // Obter todos os IDs dos participantes do grupo para remover as exclusões também
-        Cursor cursor = database.query(MySQLiteOpenHelper.TABLE_PARTICIPANTE, new String[]{MySQLiteOpenHelper.COLUMN_ID}, 
+        Cursor cursor = database.query(MySQLiteOpenHelper.TABLE_PARTICIPANTE, new String[]{MySQLiteOpenHelper.COLUMN_ID},
                 MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?", new String[]{String.valueOf(grupoId)}, null, null, null);
         if (cursor.moveToFirst()) {
             do {
                 int id = cursor.getInt(0);
-                database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = " + id + " OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = " + id, null);
+                String idStr = String.valueOf(id);
+                database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?", new String[]{idStr, idStr});
             } while (cursor.moveToNext());
         }
         cursor.close();
-        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = " + grupoId, null);
+        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?", new String[]{String.valueOf(grupoId)});
     }
 
     public void limparSorteioDoGrupo(int grupoId) {
         ContentValues values = new ContentValues();
         values.putNull(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID);
         values.put(MySQLiteOpenHelper.COLUMN_ENVIADO, 0);
-        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = " + grupoId, null);
+        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?", new String[]{String.valueOf(grupoId)});
     }
 
     public void adicionarExclusao(int idParticipante, int idExcluido) {
@@ -81,8 +83,8 @@ public class ParticipanteDAO {
                 ContentValues values = new ContentValues();
                 values.put(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID, sorteados.get(i).getId());
                 values.put(MySQLiteOpenHelper.COLUMN_ENVIADO, 0);
-                database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, 
-                        MySQLiteOpenHelper.COLUMN_ID + " = " + participantes.get(i).getId(), null);
+                database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values,
+                        MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(participantes.get(i).getId())});
             }
             database.setTransactionSuccessful();
             return true;
@@ -96,7 +98,7 @@ public class ParticipanteDAO {
     public void marcarComoEnviado(int id) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteOpenHelper.COLUMN_ENVIADO, 1);
-        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, MySQLiteOpenHelper.COLUMN_ID + " = " + id, null);
+        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
     public List<Participante> listarPorGrupo(int grupoId) {

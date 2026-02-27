@@ -163,22 +163,33 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
         }
 
         @Override
-        public View getView(int position, View view, ViewGroup parent) {
-            if (view == null) {
-                view = LayoutInflater.from(ctx).inflate(R.layout.item_desejo, parent, false);
-            }
-            
-            Desejo desejo = produtos.get(position);
-            
-            TextView tvProduto = (TextView) view.findViewById(R.id.tv_item_produto);
-            TextView tvCategoria = (TextView) view.findViewById(R.id.tv_item_categoria);
-            TextView tvPreco = (TextView) view.findViewById(R.id.tv_item_preco);
-            
-            if (tvProduto != null) tvProduto.setText(desejo.getProduto());
-            if (tvCategoria != null) tvCategoria.setText(desejo.getCategoria());
-            if (tvPreco != null) tvPreco.setText(String.format("%s - %s", nf.format(desejo.getPrecoMinimo()), nf.format(desejo.getPrecoMaximo())));
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
 
-            return view;
+            if (convertView == null) {
+                convertView = LayoutInflater.from(ctx).inflate(R.layout.item_desejo, parent, false);
+                holder = new ViewHolder();
+                holder.tvProduto = convertView.findViewById(R.id.tv_item_produto);
+                holder.tvCategoria = convertView.findViewById(R.id.tv_item_categoria);
+                holder.tvPreco = convertView.findViewById(R.id.tv_item_preco);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            Desejo desejo = produtos.get(position);
+
+            if (holder.tvProduto != null) holder.tvProduto.setText(desejo.getProduto());
+            if (holder.tvCategoria != null) holder.tvCategoria.setText(desejo.getCategoria());
+            if (holder.tvPreco != null) holder.tvPreco.setText(String.format("%s - %s", nf.format(desejo.getPrecoMinimo()), nf.format(desejo.getPrecoMaximo())));
+
+            return convertView;
+        }
+
+        private class ViewHolder {
+            TextView tvProduto;
+            TextView tvCategoria;
+            TextView tvPreco;
         }
     }
 
