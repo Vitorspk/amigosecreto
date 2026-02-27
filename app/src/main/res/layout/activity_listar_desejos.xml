@@ -1,26 +1,58 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical"
-    tools:context="activity.amigosecreto.ListarDesejos"
-    android:background="@android:drawable/editbox_background_normal">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context="activity.amigosecreto.ListarDesejos">
 
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/gradient_accent"
+        app:elevation="8dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="🎁 Minha Lista de Desejos"
+            app:titleCentered="true"
+            app:titleTextColor="@color/white"
+            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+    </com.google.android.material.appbar.AppBarLayout>
 
     <ListView
         android:id="@+id/lv_desejos"
         android:layout_width="match_parent"
-        android:layout_height="445dp" />
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="12dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:id="@+id/button"
-        android:layout_alignParentBottom="true"
-        android:drawableLeft="@drawable/icon"
-        android:background="@android:color/transparent"
-        android:layout_below="@+id/lv_desejos" />
-</RelativeLayout>
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="🎄 Nenhum desejo ainda\n\nClique em '+' para adicionar!"
+        android:textAlignment="center"
+        android:textSize="18sp"
+        android:textColor="@color/text_secondary"
+        android:visibility="gone" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_novo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        app:srcCompat="@drawable/ic_gift"
+        app:tint="@android:color/white"
+        app:backgroundTint="@color/colorSecondary"
+        app:elevation="8dp" />
 
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

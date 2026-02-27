@@ -1,26 +1,93 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion '25.0.0'
+    namespace 'activity.amigosecreto'
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "activity.amigosecreto"
-        minSdkVersion 17
-        targetSdkVersion 22
-        versionCode 7
-        versionName "1.7"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 8
+        versionName "2.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Enable multidex support
+        multiDexEnabled true
+
+        // Optimize vector drawables
+        vectorDrawables.useSupportLibrary = true
     }
-    buildTypes {
+
+    // Signing configurations
+    signingConfigs {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Para produção, você deve usar um keystore
+            // Crie seu keystore com: keytool -genkey -v -keystore amigosecreto.keystore -alias amigosecreto -keyalg RSA -keysize 2048 -validity 10000
+            // Descomente e configure as linhas abaixo:
+            // storeFile file("caminho/para/seu/amigosecreto.keystore")
+            // storePassword "sua_senha"
+            // keyAlias "amigosecreto"
+            // keyPassword "sua_senha"
         }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            minifyEnabled false
+        }
+
+        release {
+            // signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Optimize code
+            ndk {
+                debugSymbolLevel 'FULL'
+            }
+        }
+    }
+
+    // App Bundle configuration
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Lint options
+    lint {
+        checkReleaseBuilds true
+        abortOnError false
+        disable 'MissingTranslation'
+    }
+
+    // Build features
+    buildFeatures {
+        buildConfig = true
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:22.2.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 }
-

@@ -1,30 +1,25 @@
 package activity.amigosecreto;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.Button;
 import android.widget.TextView;
-
 import java.text.NumberFormat;
-
 import activity.amigosecreto.db.Desejo;
 
-/**
- * Created by HP on 21/06/2015.
- */
-public class DetalheDesejoActivity extends Activity {
+public class DetalheDesejoActivity extends AppCompatActivity {
 
     private TextView tv_produto;
     private TextView tv_categoria;
     private TextView tv_preco_minimo;
     private TextView tv_preco_maximo;
     private TextView tv_lojas;
-    private ImageButton ib_buscape;
+    private Button btn_buscape;
 
     private Desejo desejo;
 
@@ -35,31 +30,45 @@ public class DetalheDesejoActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detalhe_desejo);
-        this.desejo = (Desejo) getIntent().getExtras().get("desejo");
+        
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+        
+        if (getIntent().getExtras() != null) {
+            this.desejo = (Desejo) getIntent().getExtras().get("desejo");
+        }
+        
         tv_produto = (TextView) findViewById(R.id.tv_produto);
         tv_categoria = (TextView) findViewById(R.id.tv_categoria);
         tv_preco_minimo = (TextView) findViewById(R.id.tv_preco_minimo);
         tv_preco_maximo = (TextView) findViewById(R.id.tv_preco_maximo);
         tv_lojas = (TextView) findViewById(R.id.tv_lojas);
-        ib_buscape = (ImageButton) findViewById(R.id.ib_buscape);
-        ib_buscape.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Uri uri = Uri.parse("http://compare.buscape.com.br/"+desejo.getProduto());
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(intent);
-            }
-        });
-        carregarCampos(desejo);
+        btn_buscape = (Button) findViewById(R.id.btn_pesquisar_buscape);
+        
+        if (btn_buscape != null && desejo != null) {
+            btn_buscape.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Uri uri = Uri.parse("http://compare.buscape.com.br/" + desejo.getProduto());
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivity(intent);
+                }
+            });
+        }
+        
+        if (desejo != null) {
+            carregarCampos(desejo);
+        }
     }
 
     private void carregarCampos(Desejo desejo) {
         NumberFormat nf = NumberFormat.getCurrencyInstance();
-        tv_produto.setText(desejo.getProduto());
-        tv_categoria.setText(desejo.getCategoria());
-        tv_preco_minimo.setText(nf.format(desejo.getPrecoMinimo()));
-        tv_preco_maximo.setText(nf.format(desejo.getPrecoMaximo()));
-        tv_lojas.setText(desejo.getLojas());
+        if (tv_produto != null) tv_produto.setText(desejo.getProduto());
+        if (tv_categoria != null) tv_categoria.setText(desejo.getCategoria());
+        if (tv_preco_minimo != null) tv_preco_minimo.setText(nf.format(desejo.getPrecoMinimo()));
+        if (tv_preco_maximo != null) tv_preco_maximo.setText(nf.format(desejo.getPrecoMaximo()));
+        if (tv_lojas != null) tv_lojas.setText(desejo.getLojas());
     }
 
     @Override
@@ -74,7 +83,10 @@ public class DetalheDesejoActivity extends Activity {
         if (id == R.id.menu_editar) {
             Intent intent = new Intent(this, AlterarDesejoActivity.class);
             intent.putExtra("desejo", desejo);
-            startActivityForResult(intent,1);
+            startActivityForResult(intent, 1);
+            return true;
+        } else if (id == android.R.id.home) {
+            finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -83,10 +95,9 @@ public class DetalheDesejoActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == 1){
+            // Se voltou da edição, o ideal seria recarregar ou fechar para a lista atualizar
             finish();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-
 }
-

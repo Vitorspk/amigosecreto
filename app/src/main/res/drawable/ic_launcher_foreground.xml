@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:translateX="27"
+        android:translateY="27">
+
+        <!-- Gift box body -->
+        <path
+            android:pathData="M8,24 L46,24 L46,50 L8,50 Z"
+            android:fillColor="#FFFFFF"/>
+
+        <!-- Gift box shadow -->
+        <path
+            android:pathData="M10,48 L44,48 L44,50 L10,50 Z"
+            android:fillColor="#000000"
+            android:fillAlpha="0.1"/>
+
+        <!-- Vertical ribbon -->
+        <path
+            android:pathData="M24,24 L30,24 L30,50 L24,50 Z"
+            android:fillColor="#FFD700"/>
+
+        <!-- Horizontal ribbon -->
+        <path
+            android:pathData="M8,30 L46,30 L46,36 L8,36 Z"
+            android:fillColor="#FFD700"/>
+
+        <!-- Bow left loop -->
+        <path
+            android:pathData="M18,16 Q14,8 8,10 Q6,12 8,14 Q12,16 16,20 Z"
+            android:fillColor="#FFC107"/>
+
+        <!-- Bow right loop -->
+        <path
+            android:pathData="M36,16 Q40,8 46,10 Q48,12 46,14 Q42,16 38,20 Z"
+            android:fillColor="#FFC107"/>
+
+        <!-- Bow center -->
+        <path
+            android:pathData="M22,18 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0"
+            android:fillColor="#FFD700"/>
+
+        <!-- Bow ribbon tails -->
+        <path
+            android:pathData="M16,20 L14,28 L18,26 Z"
+            android:fillColor="#FFB300"/>
+
+        <path
+            android:pathData="M38,20 L40,28 L36,26 Z"
+            android:fillColor="#FFB300"/>
+
+        <!-- Question mark (secret) -->
+        <path
+            android:pathData="M23,38 Q23,36 25,36 Q27,36 27,38 Q27,39 26,39.5 L26,41 L24,41 L24,39.5 Q25,39 25,38 Q25,37.5 25,37.5 Q25,37 23,37.5 Z M24,43 L26,43 L26,45 L24,45 Z"
+            android:fillColor="#D32F2F"/>
+
+    </group>
+</vector>

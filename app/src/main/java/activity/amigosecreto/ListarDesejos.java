@@ -1,10 +1,10 @@
 package activity.amigosecreto;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
+import androidx.appcompat.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,10 +12,10 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
-import android.widget.ShareActionProvider;
+import androidx.appcompat.widget.ShareActionProvider;
+import androidx.core.view.MenuItemCompat;
 import android.widget.TextView;
-import com.purplebrain.adbuddiz.sdk.AdBuddiz;
-import com.purplebrain.adbuddiz.sdk.AdBuddizLogLevel;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,63 +23,67 @@ import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
 
 
-public class ListarDesejos extends Activity implements AdapterView.OnItemClickListener{
+public class ListarDesejos extends AppCompatActivity implements AdapterView.OnItemClickListener{
 
     private ListView lv_desejos;
     private ListarDesejosAdapter adapter;
     private List<Desejo> listaDesejos;
     private List<Desejo> lista;
+    private TextView tv_empty;
+    private FloatingActionButton fabNovo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listar_desejos);
-        final Activity Activity = this;
+        
         listaDesejos = new ArrayList<Desejo>();
         adapter = new ListarDesejosAdapter(this, listaDesejos);
         lv_desejos = (ListView) findViewById(R.id.lv_desejos);
-        lv_desejos.setOnItemClickListener(this);
-        lv_desejos.setAdapter(adapter);
-        AdBuddiz.setLogLevel(AdBuddizLogLevel.Info);
-        AdBuddiz.setPublisherKey("7ba590d3-0e58-41b4-b5f3-3325b059309d");
-        AdBuddiz.cacheAds(Activity);
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /*
-                To call whenever you want to display an Ad.
-                Parameter is the current activity
-                */
-                AdBuddiz.showAd(Activity);
-            }
-        });
-}
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        AdBuddiz.onDestroy(); // to minimize memory footprint
+        tv_empty = (TextView) findViewById(R.id.tv_empty);
+        fabNovo = (FloatingActionButton) findViewById(R.id.fab_novo);
+        
+        if (lv_desejos != null) {
+            lv_desejos.setEmptyView(tv_empty);
+            lv_desejos.setOnItemClickListener(this);
+            lv_desejos.setAdapter(adapter);
+        }
+        
+        if (fabNovo != null) {
+            fabNovo.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(ListarDesejos.this, InserirDesejoActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
     }
+
     @Override
     protected void onStart(){
         super.onStart();
+        carregarLista();
+    }
+
+    private void carregarLista() {
         try {
             DesejoDAO dao = new DesejoDAO(this);
             dao.open();
             lista = dao.listar();
             listaDesejos.clear();
-            listaDesejos.addAll(lista);
+            if (lista != null) {
+                listaDesejos.addAll(lista);
+            }
             dao.close();
             adapter.notifyDataSetChanged();
         } catch (Exception e){
             e.printStackTrace();
         }
-
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.listar_desejos, menu);
         compartilharLista(menu);
         return true;
@@ -91,51 +95,53 @@ public class ListarDesejos extends Activity implements AdapterView.OnItemClickLi
         StringBuilder sb = new StringBuilder();
         NumberFormat nf = NumberFormat.getCurrencyInstance();
         String ls = System.getProperty("line.separator");
-        for(Desejo d : lista){
-            sb.append("Desejo: " + d.getProduto() + ls);
-            sb.append("Preco: de " + nf.format(d.getPrecoMinimo()) + " ate " + nf.format(d.getPrecoMaximo()) + ls);
-            String lojas = d.getLojas().replace(ls, ", ");
-            sb.append("Onde encontrar: " + lojas + ls + ls);
+        if (lista != null && !lista.isEmpty()) {
+            for(Desejo d : lista){
+                sb.append("Desejo: ").append(d.getProduto()).append(ls);
+                sb.append("Preço: de ").append(nf.format(d.getPrecoMinimo())).append(" até ").append(nf.format(d.getPrecoMaximo())).append(ls);
+                String lojas = d.getLojas().replace(ls, ", ");
+                sb.append("Onde encontrar: ").append(lojas).append(ls).append(ls);
+            }
+        } else {
+            sb.append("Minha lista de desejos está vazia!");
         }
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Minha lista de desejos" + ls);
-        intent.putExtra(Intent.EXTRA_TEXT,sb.toString());
-        ShareActionProvider mShareActionProvider = (ShareActionProvider) menu.findItem(R.id.menu_compartilhar).getActionProvider();
-        mShareActionProvider.setShareIntent(intent);
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Minha lista de desejos");
+        intent.putExtra(Intent.EXTRA_TEXT, sb.toString());
+        MenuItem item = menu.findItem(R.id.menu_compartilhar);
+        if (item != null) {
+            ShareActionProvider mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+            if (mShareActionProvider != null) {
+                mShareActionProvider.setShareIntent(intent);
+            }
+        }
     }
 
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        //noinspection SimplifiableIfStatement
-        switch (id) {
-            case R.id.menu_novo:
-                Intent intent = new Intent(this, InserirDesejoActivity.class);
-                startActivity(intent);
-                return true;
-            case android.R.id.home:
-                //Metodo finish() vai encerrar essa activity
-                NavUtils.navigateUpFromSameTask(this);
-                return true;
+        
+        if (id == R.id.menu_novo) {
+            Intent intent = new Intent(this, InserirDesejoActivity.class);
+            startActivity(intent);
+            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Desejo desejo = (Desejo) ((TextView)view).getTag();
+        Desejo desejo = listaDesejos.get(position);
         Intent intent = new Intent(this, DetalheDesejoActivity.class);
         intent.putExtra("desejo", desejo);
         startActivity(intent);
     }
+
     private class ListarDesejosAdapter extends BaseAdapter {
         private Context ctx;
         private List<Desejo> produtos;
+        private NumberFormat nf = NumberFormat.getCurrencyInstance();
 
         ListarDesejosAdapter(Context ctx, List<Desejo> produtos) {
             this.ctx = ctx;
@@ -159,11 +165,19 @@ public class ListarDesejos extends Activity implements AdapterView.OnItemClickLi
         @Override
         public View getView(int position, View view, ViewGroup parent) {
             if (view == null) {
-                view = new TextView(ctx);
+                view = LayoutInflater.from(ctx).inflate(R.layout.item_desejo, parent, false);
             }
-            ((TextView) view).setText(produtos.get(position).getProduto());
-            ((TextView) view).setTextAppearance(ctx, android.R.style.TextAppearance_Large);
-            view.setTag(produtos.get(position));
+            
+            Desejo desejo = produtos.get(position);
+            
+            TextView tvProduto = (TextView) view.findViewById(R.id.tv_item_produto);
+            TextView tvCategoria = (TextView) view.findViewById(R.id.tv_item_categoria);
+            TextView tvPreco = (TextView) view.findViewById(R.id.tv_item_preco);
+            
+            if (tvProduto != null) tvProduto.setText(desejo.getProduto());
+            if (tvCategoria != null) tvCategoria.setText(desejo.getCategoria());
+            if (tvPreco != null) tvPreco.setText(String.format("%s - %s", nf.format(desejo.getPrecoMinimo()), nf.format(desejo.getPrecoMaximo())));
+
             return view;
         }
     }
