@@ -91,6 +91,7 @@ public class MySQLiteOpenHelper extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXCLUSAO);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_DESEJO);
             onCreate(db);
+            return; // Schema is already at latest version, no further migrations needed
         }
 
         if (oldVersion < 8) {

@@ -49,7 +49,10 @@ public class DesejoDAO {
         values.put(helper.COLUMN_LOJAS, desejo.getLojas());
         values.put(helper.COLUMN_DESEJO_PARTICIPANTE_ID, desejo.getParticipanteId());
         long id = database.insert(helper.TABLE_DESEJO, null, values);
-        desejo.setId((int) id);
+        // Only set ID if insert succeeded (returns -1 on failure)
+        if (id != -1) {
+            desejo.setId((int) id);
+        }
     }
 
     public final void remover(Desejo desejo){

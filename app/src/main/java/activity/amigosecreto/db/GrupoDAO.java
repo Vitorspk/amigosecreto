@@ -39,17 +39,20 @@ public class GrupoDAO {
                 new String[]{String.valueOf(id)},
                 null, null, null);
 
-        if (cursor.moveToFirst()) {
-            do {
-                int participantId = cursor.getInt(0);
-                String participantIdStr = String.valueOf(participantId);
-                // Remove all exclusion records involving this participant
-                database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO,
-                        MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?",
-                        new String[]{participantIdStr, participantIdStr});
-            } while (cursor.moveToNext());
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    int participantId = cursor.getInt(0);
+                    String participantIdStr = String.valueOf(participantId);
+                    // Remove all exclusion records involving this participant
+                    database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO,
+                            MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? OR " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?",
+                            new String[]{participantIdStr, participantIdStr});
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
         }
-        cursor.close();
 
         // Then remove participants and the group
         database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + " = ?", new String[]{String.valueOf(id)});

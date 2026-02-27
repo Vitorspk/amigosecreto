@@ -186,7 +186,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
             return convertView;
         }
 
-        private class ViewHolder {
+        private static class ViewHolder {
             TextView tvProduto;
             TextView tvCategoria;
             TextView tvPreco;
