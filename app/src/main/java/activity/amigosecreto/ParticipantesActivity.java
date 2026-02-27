@@ -382,16 +382,19 @@ public class ParticipantesActivity extends AppCompatActivity {
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
     private void enviarSmsViaIntent() {
-        dao.open();
         List<Participante> comTelefone = new ArrayList<>();
         Map<Integer, String> nomesAmigos = new HashMap<>();
-        for (Participante p : listaParticipantes) {
-            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                comTelefone.add(p);
-                nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
+        try {
+            dao.open();
+            for (Participante p : listaParticipantes) {
+                if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                    comTelefone.add(p);
+                    nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
+                }
             }
+        } finally {
+            dao.close();
         }
-        dao.close();
 
         if (comTelefone.isEmpty()) {
             Toast.makeText(this, "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
@@ -452,7 +455,16 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setNegativeButton("Pular", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                        // Limpa id possivelmente restaurado do bundle para evitar estado inconsistente.
+                        // Handler.post adia o proximo dialog ate o atual ser descartado (evita race condition).
+                        pendingSmsParticipanteId = -1;
+                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                .post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                    }
+                                });
                     }
                 })
                 .setNeutralButton("Cancelar tudo", new DialogInterface.OnClickListener() {
