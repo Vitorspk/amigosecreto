@@ -9,7 +9,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.telephony.SmsManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +44,15 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private static final int REQUEST_CONTACT_PICKER = 200;
-    private static final int PERMISSIONS_REQUEST_SEND_SMS = 300;
+
+    // ID do participante cujo SMS foi aberto; marcado como enviado no onResume ao retornar.
+    private int pendingSmsParticipanteId = -1;
+    // True apenas quando startActivity foi chamado nesta sessao (nao quando restaurado de rotacao).
+    private boolean smsLaunched = false;
+    // Estado da sequencia de SMS; retomado no onResume para evitar dialog durante pausa da activity.
+    private List<Participante> pendingSmsList = null;
+    private Map<Integer, String> pendingSmsNomesAmigos = null;
+    private int pendingSmsNextIndex = -1;
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -66,6 +73,28 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (grupoAtual == null) {
             finish();
             return;
+        }
+
+        if (savedInstanceState != null) {
+            pendingSmsParticipanteId = savedInstanceState.getInt("pendingSmsId", -1);
+            pendingSmsNextIndex = savedInstanceState.getInt("pendingSmsNextIndex", -1);
+            int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
+            String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
+            String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
+            String[] nomesAmigos = savedInstanceState.getStringArray("pendingSmsNomesAmigos");
+            if (ids != null && telefones != null && nomes != null && nomesAmigos != null) {
+                pendingSmsList = new ArrayList<>();
+                pendingSmsNomesAmigos = new HashMap<>();
+                for (int i = 0; i < ids.length; i++) {
+                    Participante p = new Participante();
+                    p.setId(ids[i]);
+                    p.setTelefone(telefones[i]);
+                    p.setNome(nomes[i]);
+                    pendingSmsList.add(p);
+                    // Restore null for empty-string sentinel (saved when nomeAmigo was null)
+                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i].isEmpty() ? null : nomesAmigos[i]);
+                }
+            }
         }
 
         if (getSupportActionBar() != null) {
@@ -217,8 +246,53 @@ public class ParticipantesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Marca como enviado apenas se o SMS foi efetivamente aberto nesta sessao.
+        // smsLaunched evita marcacao incorreta apos rotacao (pendingSmsParticipanteId e
+        // restaurado do bundle mas o app de SMS nunca foi aberto).
+        if (smsLaunched && pendingSmsParticipanteId != -1) {
+            dao.open();
+            dao.marcarComoEnviado(pendingSmsParticipanteId);
+            dao.close();
+            pendingSmsParticipanteId = -1;
+            smsLaunched = false;
+        }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista();
+        // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa)
+        if (pendingSmsList != null && pendingSmsNextIndex >= 0) {
+            List<Participante> lista = pendingSmsList;
+            Map<Integer, String> nomes = pendingSmsNomesAmigos;
+            int nextIndex = pendingSmsNextIndex;
+            pendingSmsList = null;
+            pendingSmsNomesAmigos = null;
+            pendingSmsNextIndex = -1;
+            enviarSmsSequencial(lista, nomes, nextIndex);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull android.os.Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("pendingSmsId", pendingSmsParticipanteId);
+        outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
+        if (pendingSmsList != null && pendingSmsNomesAmigos != null) {
+            int[] ids = new int[pendingSmsList.size()];
+            String[] telefones = new String[pendingSmsList.size()];
+            String[] nomes = new String[pendingSmsList.size()];
+            String[] nomesAmigos = new String[pendingSmsList.size()];
+            for (int i = 0; i < pendingSmsList.size(); i++) {
+                Participante p = pendingSmsList.get(i);
+                ids[i] = p.getId();
+                telefones[i] = p.getTelefone();
+                nomes[i] = p.getNome();
+                String nomeAmigo = pendingSmsNomesAmigos.get(p.getId());
+                nomesAmigos[i] = nomeAmigo != null ? nomeAmigo : "";
+            }
+            outState.putIntArray("pendingSmsIds", ids);
+            outState.putStringArray("pendingSmsTelefones", telefones);
+            outState.putStringArray("pendingSmsNomes", nomes);
+            outState.putStringArray("pendingSmsNomesAmigos", nomesAmigos);
+        }
     }
 
     @Override
@@ -227,10 +301,6 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 abrirSeletorContatos();
-            }
-        } else if (requestCode == PERMISSIONS_REQUEST_SEND_SMS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enviarSmsAutomatico();
             }
         }
     }
@@ -278,7 +348,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         .setPositiveButton("Sim, enviar SMS", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                verificarPermissaoSmsEEnviar();
+                                enviarSmsViaIntent();
                             }
                         })
                         .setNegativeButton("Não", null)
@@ -309,37 +379,110 @@ public class ParticipantesActivity extends AppCompatActivity {
         return resultado;
     }
 
-    private void verificarPermissaoSmsEEnviar() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, PERMISSIONS_REQUEST_SEND_SMS);
-        } else {
-            enviarSmsAutomatico();
+    // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
+    // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
+    private void enviarSmsViaIntent() {
+        List<Participante> comTelefone = new ArrayList<>();
+        Map<Integer, String> nomesAmigos = new HashMap<>();
+        try {
+            dao.open();
+            for (Participante p : listaParticipantes) {
+                if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                    comTelefone.add(p);
+                    nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
+                }
+            }
+        } finally {
+            dao.close();
         }
+
+        if (comTelefone.isEmpty()) {
+            Toast.makeText(this, "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        enviarSmsSequencial(comTelefone, nomesAmigos, 0);
     }
 
-    private void enviarSmsAutomatico() {
-        dao.open();
-        int enviados = 0;
-        for (Participante p : listaParticipantes) {
-            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
-                
-                try {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    ArrayList<String> parts = smsManager.divideMessage(mensagem);
-                    smsManager.sendMultipartTextMessage(p.getTelefone(), null, parts, null, null);
-                    dao.marcarComoEnviado(p.getId());
-                    enviados++;
-                } catch (Exception e) { e.printStackTrace(); }
-            }
+    // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
+    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> nomesAmigos, final int index) {
+        if (index >= lista.size()) {
+            Toast.makeText(this, "SMS preparados para " + lista.size() + " participante(s).", Toast.LENGTH_LONG).show();
+            return;
         }
-        dao.close();
-        atualizarLista();
-        Toast.makeText(this, "Enviado para " + enviados + " pessoas.", Toast.LENGTH_LONG).show();
+
+        final Participante p = lista.get(index);
+        final String mensagem = gerarMensagemSecreta(p.getNome(), nomesAmigos.get(p.getId()));
+
+        new AlertDialog.Builder(this)
+                .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
+                .setMessage("Abrir app de SMS para " + p.getTelefone() + "?")
+                .setPositiveButton("Abrir SMS", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Nao usar Uri.encode: converte '+' de numeros internacionais em '%2B'
+                        Uri smsUri = Uri.parse("smsto:" + p.getTelefone());
+                        Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
+                        intent.putExtra("sms_body", mensagem);
+                        try {
+                            // Registra o id antes de sair; onResume marca como enviado ao retornar.
+                            // Proximo dialog e agendado para onResume para evitar BadTokenException.
+                            pendingSmsParticipanteId = p.getId();
+                            pendingSmsList = lista;
+                            pendingSmsNomesAmigos = nomesAmigos;
+                            pendingSmsNextIndex = index + 1;
+                            smsLaunched = true;
+                            startActivity(intent);
+                        } catch (android.content.ActivityNotFoundException e) {
+                            pendingSmsParticipanteId = -1;
+                            pendingSmsList = null;
+                            pendingSmsNomesAmigos = null;
+                            pendingSmsNextIndex = -1;
+                            Toast.makeText(ParticipantesActivity.this,
+                                    "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
+                            // Postar no Handler evita abrir novo AlertDialog enquanto o atual ainda
+                            // esta sendo descartado, prevenindo WindowManager exception.
+                            new android.os.Handler(android.os.Looper.getMainLooper())
+                                    .post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                        }
+                                    });
+                        }
+                    }
+                })
+                .setNegativeButton("Pular", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Limpa id possivelmente restaurado do bundle para evitar estado inconsistente.
+                        // Handler.post adia o proximo dialog ate o atual ser descartado (evita race condition).
+                        pendingSmsParticipanteId = -1;
+                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                .post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                    }
+                                });
+                    }
+                })
+                .setNeutralButton("Cancelar tudo", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        pendingSmsParticipanteId = -1;
+                        pendingSmsList = null;
+                        pendingSmsNomesAmigos = null;
+                        pendingSmsNextIndex = -1;
+                        smsLaunched = false;
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {
+        if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
         sb.append("Olá, *").append(nomeParticipante).append("*!\n");

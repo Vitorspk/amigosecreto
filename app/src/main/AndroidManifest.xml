@@ -8,9 +8,8 @@
     <!-- Device permissions -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-    <!-- Contacts and SMS permissions -->
+    <!-- Contacts permission - optional, used to import participants from contacts -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
 
     <!-- Queries for intents (Android 11+) -->
     <queries>
@@ -24,6 +23,12 @@
         <intent>
             <action android:name="android.intent.action.PICK" />
             <data android:mimeType="vnd.android.cursor.dir/contact" />
+        </intent>
+
+        <!-- For sending SMS via default messaging app (no SEND_SMS permission required) -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
         </intent>
     </queries>
 
