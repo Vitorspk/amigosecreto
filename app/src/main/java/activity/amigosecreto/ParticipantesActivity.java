@@ -9,7 +9,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.telephony.SmsManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +44,6 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private static final int REQUEST_CONTACT_PICKER = 200;
-    private static final int PERMISSIONS_REQUEST_SEND_SMS = 300;
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -228,10 +226,6 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 abrirSeletorContatos();
             }
-        } else if (requestCode == PERMISSIONS_REQUEST_SEND_SMS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enviarSmsAutomatico();
-            }
         }
     }
 
@@ -278,7 +272,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         .setPositiveButton("Sim, enviar SMS", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                verificarPermissaoSmsEEnviar();
+                                enviarSmsViaIntent();
                             }
                         })
                         .setNegativeButton("Não", null)
@@ -309,34 +303,35 @@ public class ParticipantesActivity extends AppCompatActivity {
         return resultado;
     }
 
-    private void verificarPermissaoSmsEEnviar() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, PERMISSIONS_REQUEST_SEND_SMS);
-        } else {
-            enviarSmsAutomatico();
-        }
-    }
-
-    private void enviarSmsAutomatico() {
+    // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
+    // O usuario confirma e envia manualmente — compativel com Play Store sem restricoes.
+    private void enviarSmsViaIntent() {
         dao.open();
-        int enviados = 0;
+        List<Participante> comTelefone = new ArrayList<>();
         for (Participante p : listaParticipantes) {
             if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
-                
-                try {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    ArrayList<String> parts = smsManager.divideMessage(mensagem);
-                    smsManager.sendMultipartTextMessage(p.getTelefone(), null, parts, null, null);
-                    dao.marcarComoEnviado(p.getId());
-                    enviados++;
-                } catch (Exception e) { e.printStackTrace(); }
+                comTelefone.add(p);
             }
         }
         dao.close();
-        atualizarLista();
-        Toast.makeText(this, "Enviado para " + enviados + " pessoas.", Toast.LENGTH_LONG).show();
+
+        if (comTelefone.isEmpty()) {
+            Toast.makeText(this, "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        for (Participante p : comTelefone) {
+            dao.open();
+            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+            dao.close();
+            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
+            Uri smsUri = Uri.parse("smsto:" + Uri.encode(p.getTelefone()));
+            Intent intent = new Intent(Intent.ACTION_SENDTO, smsUri);
+            intent.putExtra("sms_body", mensagem);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            }
+        }
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {

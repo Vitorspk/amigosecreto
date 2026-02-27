@@ -2,6 +2,13 @@ plugins {
     id 'com.android.application'
 }
 
+// Load keystore credentials from keystore.properties (never commit this file)
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'activity.amigosecreto'
     compileSdkVersion 34
@@ -22,16 +29,16 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-    // Signing configurations
+    // Signing configurations - credentials loaded from keystore.properties (not committed to git)
+    // To generate keystore: keytool -genkey -v -keystore amigosecreto.keystore -alias amigosecreto -keyalg RSA -keysize 2048 -validity 10000
     signingConfigs {
         release {
-            // Para produção, você deve usar um keystore
-            // Crie seu keystore com: keytool -genkey -v -keystore amigosecreto.keystore -alias amigosecreto -keyalg RSA -keysize 2048 -validity 10000
-            // Descomente e configure as linhas abaixo:
-            // storeFile file("caminho/para/seu/amigosecreto.keystore")
-            // storePassword "sua_senha"
-            // keyAlias "amigosecreto"
-            // keyPassword "sua_senha"
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
         }
     }
 
@@ -43,7 +50,7 @@ android {
         }
 
         release {
-            // signingConfig signingConfigs.release
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : null
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

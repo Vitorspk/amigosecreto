@@ -92,6 +92,10 @@ lint-results.xml
 *.swp
 *.bak
 
-# Signing files
+# Signing files - NEVER commit these
 signing.properties
 keystore.properties
+keystore.properties.template
+
+# Sensitive documents folder
+documents/
