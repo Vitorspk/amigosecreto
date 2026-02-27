@@ -35,6 +35,7 @@ public class DesejoDAO {
         values.put(helper.COLUMN_PRECO_MINIMO, new_desejo.getPrecoMinimo());
         values.put(helper.COLUMN_PRECO_MAXIMO, new_desejo.getPrecoMaximo());
         values.put(helper.COLUMN_LOJAS, new_desejo.getLojas());
+        values.put(helper.COLUMN_DESEJO_PARTICIPANTE_ID, new_desejo.getParticipanteId());
         database.update(helper.TABLE_DESEJO, values, helper.COLUMN_ID+" = "+old_desejo.getId(), null);
     }
 
@@ -46,6 +47,7 @@ public class DesejoDAO {
         values.put(helper.COLUMN_PRECO_MINIMO, desejo.getPrecoMinimo());
         values.put(helper.COLUMN_PRECO_MAXIMO, desejo.getPrecoMaximo());
         values.put(helper.COLUMN_LOJAS, desejo.getLojas());
+        values.put(helper.COLUMN_DESEJO_PARTICIPANTE_ID, desejo.getParticipanteId());
         database.insert(helper.TABLE_DESEJO, null, values);
     }
 
@@ -65,11 +67,42 @@ public class DesejoDAO {
             d.setPrecoMinimo(cursor.getDouble(3));
             d.setPrecoMaximo(cursor.getDouble(4));
             d.setLojas(cursor.getString(5));
+            if (cursor.getColumnCount() > 6) {
+                d.setParticipanteId(cursor.getInt(6));
+            }
             lista.add(d);
             cursor.moveToNext();
         }
         cursor.close();
         return lista;
+    }
+
+    public final List<Desejo> listarPorParticipante(int participanteId){
+        ArrayList<Desejo> lista = new ArrayList<Desejo>();
+        Cursor cursor = database.rawQuery("select * from "+helper.TABLE_DESEJO+" where "+helper.COLUMN_DESEJO_PARTICIPANTE_ID+" = ?", new String[]{String.valueOf(participanteId)});
+        cursor.moveToFirst();
+        while(!cursor.isAfterLast()){
+            Desejo d = new Desejo();
+            d.setId(cursor.getInt(0));
+            d.setProduto(cursor.getString(1));
+            d.setCategoria(cursor.getString(2));
+            d.setPrecoMinimo(cursor.getDouble(3));
+            d.setPrecoMaximo(cursor.getDouble(4));
+            d.setLojas(cursor.getString(5));
+            d.setParticipanteId(cursor.getInt(6));
+            lista.add(d);
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return lista;
+    }
+
+    public final int contarDesejosPorParticipante(int participanteId){
+        Cursor cursor = database.rawQuery("select count(*) from "+helper.TABLE_DESEJO+" where "+helper.COLUMN_DESEJO_PARTICIPANTE_ID+" = ?", new String[]{String.valueOf(participanteId)});
+        cursor.moveToFirst();
+        int count = cursor.getInt(0);
+        cursor.close();
+        return count;
     }
 
     public final int proximoId(){

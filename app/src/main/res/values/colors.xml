@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Festive "Amigo Secreto" Palette -->
+    <color name="colorPrimary">#C62828</color> <!-- Christmas Red -->
+    <color name="colorPrimaryDark">#8E0000</color>
+    <color name="colorPrimaryContainer">#FFEBEE</color>
+
+    <color name="colorSecondary">#2E7D32</color> <!-- Christmas Green -->
+    <color name="colorSecondaryContainer">#E8F5E9</color>
+
+    <color name="colorAccent">#FBC02D</color> <!-- Golden/Yellow for stars/gifts -->
+    <color name="colorError">#B00020</color>
+
+    <color name="background">#FDFDFD</color>
+    <color name="surface">#FFFFFF</color>
+
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="divider">#EEEEEE</color>
+</resources>

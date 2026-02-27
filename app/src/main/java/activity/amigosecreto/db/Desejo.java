@@ -14,6 +14,7 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
     private String lojas;
     private double precoMinimo;
     private double precoMaximo;
+    private int participanteId;
 
     public Desejo() {
         // TODO Auto-generated constructor stub
@@ -25,7 +26,7 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
     }
 
     public Desejo(Parcel parcel){
-        String[] dados = new String[6];
+        String[] dados = new String[7];
         parcel.readStringArray(dados);
         this.id = Integer.parseInt(dados[0]);
         this.produto = dados[1];
@@ -33,6 +34,7 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
         this.lojas = dados[3];
         this.precoMinimo = Double.parseDouble(dados[4]);
         this.precoMaximo = Double.parseDouble(dados[5]);
+        this.participanteId = Integer.parseInt(dados[6]);
     }
 
     public int getId() {
@@ -88,6 +90,14 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
         return 0;
     }
 
+    public int getParticipanteId() {
+        return participanteId;
+    }
+
+    public void setParticipanteId(int participanteId) {
+        this.participanteId = participanteId;
+    }
+
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeStringArray(new String[]{
@@ -96,7 +106,8 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
                 categoria,
                 lojas,
                 ""+precoMinimo,
-                ""+precoMaximo
+                ""+precoMaximo,
+                ""+participanteId
         });
     }
 
