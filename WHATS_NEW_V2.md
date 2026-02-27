@@ -191,7 +191,7 @@ Esta versão traz melhorias significativas de segurança, performance e está to
 - ProGuard/R8
 
 **Versão**: 2.0
-**Build Date**: Fevereiro 2026
+**Build Date**: Fevereiro 2024
 **Status**: ✅ Pronto para Produção
 
 ---
