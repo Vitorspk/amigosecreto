@@ -75,6 +75,23 @@ public class ParticipantesActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             pendingSmsParticipanteId = savedInstanceState.getInt("pendingSmsId", -1);
+            pendingSmsNextIndex = savedInstanceState.getInt("pendingSmsNextIndex", -1);
+            int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
+            String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
+            String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
+            String[] nomesAmigos = savedInstanceState.getStringArray("pendingSmsNomesAmigos");
+            if (ids != null && telefones != null && nomes != null && nomesAmigos != null) {
+                pendingSmsList = new ArrayList<>();
+                pendingSmsNomesAmigos = new HashMap<>();
+                for (int i = 0; i < ids.length; i++) {
+                    Participante p = new Participante();
+                    p.setId(ids[i]);
+                    p.setTelefone(telefones[i]);
+                    p.setNome(nomes[i]);
+                    pendingSmsList.add(p);
+                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i]);
+                }
+            }
         }
 
         if (getSupportActionBar() != null) {
@@ -251,6 +268,24 @@ public class ParticipantesActivity extends AppCompatActivity {
     protected void onSaveInstanceState(@NonNull android.os.Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("pendingSmsId", pendingSmsParticipanteId);
+        outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
+        if (pendingSmsList != null && pendingSmsNomesAmigos != null) {
+            int[] ids = new int[pendingSmsList.size()];
+            String[] telefones = new String[pendingSmsList.size()];
+            String[] nomes = new String[pendingSmsList.size()];
+            String[] nomesAmigos = new String[pendingSmsList.size()];
+            for (int i = 0; i < pendingSmsList.size(); i++) {
+                Participante p = pendingSmsList.get(i);
+                ids[i] = p.getId();
+                telefones[i] = p.getTelefone();
+                nomes[i] = p.getNome();
+                nomesAmigos[i] = pendingSmsNomesAmigos.get(p.getId());
+            }
+            outState.putIntArray("pendingSmsIds", ids);
+            outState.putStringArray("pendingSmsTelefones", telefones);
+            outState.putStringArray("pendingSmsNomes", nomes);
+            outState.putStringArray("pendingSmsNomesAmigos", nomesAmigos);
+        }
     }
 
     @Override
@@ -394,7 +429,15 @@ public class ParticipantesActivity extends AppCompatActivity {
                             pendingSmsNextIndex = -1;
                             Toast.makeText(ParticipantesActivity.this,
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
-                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                            // Postar no Handler evita abrir novo AlertDialog enquanto o atual ainda
+                            // esta sendo descartado, prevenindo WindowManager exception.
+                            new android.os.Handler(android.os.Looper.getMainLooper())
+                                    .post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                        }
+                                    });
                         }
                     }
                 })
