@@ -82,10 +82,7 @@ public class MySQLiteOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 8) {
-            // Adicionar coluna participante_id na tabela desejo
-            db.execSQL("ALTER TABLE " + TABLE_DESEJO + " ADD COLUMN " + COLUMN_DESEJO_PARTICIPANTE_ID + " INTEGER");
-        }
+        // Migrations must be ordered oldest first to prevent data loss
 
         // Se precisar recriar tudo (para versões muito antigas)
         if (oldVersion < 7) {
@@ -94,6 +91,12 @@ public class MySQLiteOpenHelper extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXCLUSAO);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_DESEJO);
             onCreate(db);
+            return; // Schema is already at latest version, no further migrations needed
+        }
+
+        if (oldVersion < 8) {
+            // Adicionar coluna participante_id na tabela desejo
+            db.execSQL("ALTER TABLE " + TABLE_DESEJO + " ADD COLUMN " + COLUMN_DESEJO_PARTICIPANTE_ID + " INTEGER");
         }
     }
 }
