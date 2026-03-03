@@ -167,14 +167,15 @@ public class ParticipanteDAO {
 
         if (cursor.moveToFirst()) {
             p = new Participante();
-            p.setId(cursor.getInt(0));
-            p.setNome(cursor.getString(1));
-            p.setEmail(cursor.getString(2));
-            p.setTelefone(cursor.getString(3));
-            if (!cursor.isNull(4)) {
-                p.setAmigoSorteadoId(cursor.getInt(4));
+            p.setId(cursor.getInt(cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)));
+            p.setNome(cursor.getString(cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_NOME)));
+            p.setEmail(cursor.getString(cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_EMAIL)));
+            p.setTelefone(cursor.getString(cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_TELEFONE)));
+            int amigoIdx = cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID);
+            if (!cursor.isNull(amigoIdx)) {
+                p.setAmigoSorteadoId(cursor.getInt(amigoIdx));
             }
-            p.setEnviado(cursor.getInt(5) == 1);
+            p.setEnviado(cursor.getInt(cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ENVIADO)) == 1);
         }
         cursor.close();
         return p;

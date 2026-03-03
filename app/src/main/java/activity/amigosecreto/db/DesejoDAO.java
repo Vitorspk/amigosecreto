@@ -127,14 +127,15 @@ public class DesejoDAO {
         Cursor cursor = database.rawQuery("select * from "+helper.TABLE_DESEJO+" where "+helper.COLUMN_ID+" = ?", new String[]{String.valueOf(id)});
         if (cursor.moveToFirst()) {
             desejo = new Desejo();
-            desejo.setId(cursor.getInt(0));
-            desejo.setProduto(cursor.getString(1));
-            desejo.setCategoria(cursor.getString(2));
-            desejo.setPrecoMinimo(cursor.getDouble(3));
-            desejo.setPrecoMaximo(cursor.getDouble(4));
-            desejo.setLojas(cursor.getString(5));
-            if (cursor.getColumnCount() > 6) {
-                desejo.setParticipanteId(cursor.getInt(6));
+            desejo.setId(cursor.getInt(cursor.getColumnIndexOrThrow(helper.COLUMN_ID)));
+            desejo.setProduto(cursor.getString(cursor.getColumnIndexOrThrow(helper.COLUMN_PRODUTO)));
+            desejo.setCategoria(cursor.getString(cursor.getColumnIndexOrThrow(helper.COLUMN_CATEGORIA)));
+            desejo.setPrecoMinimo(cursor.getDouble(cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MINIMO)));
+            desejo.setPrecoMaximo(cursor.getDouble(cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MAXIMO)));
+            desejo.setLojas(cursor.getString(cursor.getColumnIndexOrThrow(helper.COLUMN_LOJAS)));
+            int participanteIdx = cursor.getColumnIndex(helper.COLUMN_DESEJO_PARTICIPANTE_ID);
+            if (participanteIdx >= 0) {
+                desejo.setParticipanteId(cursor.getInt(participanteIdx));
             }
         }
         cursor.close();

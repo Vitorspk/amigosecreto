@@ -83,7 +83,7 @@ public class ParticipantesRecyclerAdapter extends RecyclerView.Adapter<Participa
 
         void bind(Participante participante) {
             tvNome.setText(participante.getNome());
-            tvNumero.setText(String.valueOf(getAdapterPosition() + 1));
+            tvNumero.setText(String.valueOf(getBindingAdapterPosition() + 1));
 
             // Avatar with first letter
             String inicial = participante.getNome().substring(0, 1).toUpperCase();

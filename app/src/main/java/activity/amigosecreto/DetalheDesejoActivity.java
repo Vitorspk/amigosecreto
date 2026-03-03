@@ -51,7 +51,12 @@ public class DetalheDesejoActivity extends AppCompatActivity {
 
         if (btn_buscape != null && desejo != null) {
             btn_buscape.setOnClickListener(v -> {
-                Uri uri = Uri.parse("http://compare.buscape.com.br/" + desejo.getProduto());
+                Uri uri = new Uri.Builder()
+                    .scheme("https")
+                    .authority("www.buscape.com.br")
+                    .appendPath("search")
+                    .appendQueryParameter("q", desejo.getProduto())
+                    .build();
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
             });

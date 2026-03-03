@@ -278,10 +278,25 @@ public class GruposActivity extends AppCompatActivity {
     private class GruposAdapter extends BaseAdapter {
         private Context ctx;
         private List<Grupo> itens;
+        private java.util.Map<Integer, Integer> contagemParticipantes = new java.util.HashMap<>();
 
         public GruposAdapter(Context ctx, List<Grupo> itens) {
             this.ctx = ctx;
             this.itens = itens;
+            preCarregarContagens();
+        }
+
+        private void preCarregarContagens() {
+            contagemParticipantes.clear();
+            try {
+                participanteDao.open();
+                for (Grupo g : itens) {
+                    contagemParticipantes.put(g.getId(), participanteDao.listarPorGrupo(g.getId()).size());
+                }
+                participanteDao.close();
+            } catch (Exception e) {
+                // fallback: contagens ficam 0
+            }
         }
 
         @Override
@@ -306,10 +321,9 @@ public class GruposActivity extends AppCompatActivity {
             // Set nome
             tvNome.setText(g.getNome());
 
-            // Set participantes count - buscar do banco
-            participanteDao.open();
-            int numParticipantes = participanteDao.listarPorGrupo(g.getId()).size();
-            participanteDao.close();
+            // Set participantes count - usar contagem pré-carregada
+            int numParticipantes = contagemParticipantes.containsKey(g.getId())
+                ? contagemParticipantes.get(g.getId()) : 0;
             tvParticipantes.setText(numParticipantes + (numParticipantes == 1 ? " Participante" : " Participantes"));
 
             // Set emoji baseado na posição

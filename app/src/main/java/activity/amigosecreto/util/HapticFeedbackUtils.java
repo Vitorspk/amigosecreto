@@ -19,7 +19,7 @@ public class HapticFeedbackUtils {
         if (view != null) {
             view.performHapticFeedback(
                 HapticFeedbackConstants.VIRTUAL_KEY,
-                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                0 /* respect user accessibility settings */
             );
         }
     }
@@ -32,12 +32,12 @@ public class HapticFeedbackUtils {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 view.performHapticFeedback(
                     HapticFeedbackConstants.CONFIRM,
-                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    0 /* respect user accessibility settings */
                 );
             } else {
                 view.performHapticFeedback(
                     HapticFeedbackConstants.LONG_PRESS,
-                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    0 /* respect user accessibility settings */
                 );
             }
         }
