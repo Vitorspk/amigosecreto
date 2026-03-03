@@ -14,11 +14,16 @@ android {
     compileSdkVersion 35
 
     defaultConfig {
-        applicationId "activity.amigosecreto"
+        applicationId "com.amigosecreto.sorteio"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 8
-        versionName "2.0"
+        // CI passes version info via -P flags; fallback to defaults for local dev
+        versionCode project.hasProperty('ciVersionCode')
+            ? project.property('ciVersionCode').toInteger()
+            : 9
+        versionName project.hasProperty('ciVersionName')
+            ? project.property('ciVersionName')
+            : "2.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -34,23 +39,30 @@ android {
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {
+                // Local development: read from keystore.properties file
                 storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
+            } else if (System.getenv('CI_KEYSTORE_PATH')) {
+                // CI environment: read from environment variables (GitHub Actions)
+                storeFile file(System.getenv('CI_KEYSTORE_PATH'))
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
             }
         }
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix ".debug"
             debuggable true
             minifyEnabled false
         }
 
         release {
-            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : null
+            def canSign = keystorePropertiesFile.exists() || System.getenv('CI_KEYSTORE_PATH')
+            signingConfig canSign ? signingConfigs.release : null
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -90,11 +102,18 @@ android {
     // Build features
     buildFeatures {
         buildConfig = true
+        viewBinding = true
     }
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // RecyclerView
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+
+    // Splash Screen API (Android 12+)
+    implementation 'androidx.core:core-splashscreen:1.0.1'
 }
