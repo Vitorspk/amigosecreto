@@ -9,7 +9,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/gradient_accent"
+        android:background="@color/purple_primary"
         app:elevation="8dp">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
                 tools:text="Emma"
-                android:textColor="@color/colorAccent"
+                android:textColor="@color/purple_primary"
                 android:textSize="32sp"
                 android:textStyle="bold"
                 android:gravity="center" />

@@ -26,7 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +56,7 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private ListView lvParticipantes;
     private TextView tvCount;
-    private ExtendedFloatingActionButton fabAdd;
+    private MaterialButton fabAdd;
     private View btnSortear;
     private View btnLimpar;
     private ParticipanteDAO dao;
@@ -502,21 +502,51 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
         if (outros.isEmpty()) return;
 
-        String[] nomes = new String[outros.size()];
+        // Inflar o layout customizado
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_regras, null);
+        TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
+        TextView tvSubtitle = dialogView.findViewById(R.id.tv_dialog_subtitle);
+        android.widget.LinearLayout layoutLista = dialogView.findViewById(R.id.layout_lista_participantes);
+
+        tvTitle.setText("Restrições para " + p.getNome());
+        tvSubtitle.setText("Selecione quem NÃO pode ser sorteado");
+
+        // Criar checkboxes para cada participante
         final boolean[] selecionados = new boolean[outros.size()];
         for (int i = 0; i < outros.size(); i++) {
-            nomes[i] = outros.get(i).getNome();
-            selecionados[i] = p.getIdsExcluidos().contains(outros.get(i).getId());
+            final Participante outro = outros.get(i);
+            selecionados[i] = p.getIdsExcluidos().contains(outro.getId());
+
+            View itemView = getLayoutInflater().inflate(R.layout.item_regra_checkbox, layoutLista, false);
+            TextView tvAvatar = itemView.findViewById(R.id.tv_avatar_regra);
+            TextView tvNome = itemView.findViewById(R.id.tv_nome_regra);
+            com.google.android.material.checkbox.MaterialCheckBox checkbox = itemView.findViewById(R.id.checkbox_regra);
+
+            tvAvatar.setText(outro.getNome().substring(0, 1).toUpperCase());
+            tvNome.setText(outro.getNome());
+            checkbox.setChecked(selecionados[i]);
+
+            final int index = i;
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    checkbox.setChecked(!checkbox.isChecked());
+                    selecionados[index] = checkbox.isChecked();
+                }
+            });
+
+            checkbox.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(android.widget.CompoundButton buttonView, boolean isChecked) {
+                    selecionados[index] = isChecked;
+                }
+            });
+
+            layoutLista.addView(itemView);
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Quem " + p.getNome() + " NÃO pode tirar?")
-                .setMultiChoiceItems(nomes, selecionados, new DialogInterface.OnMultiChoiceClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                        selecionados[which] = isChecked;
-                    }
-                })
+                .setView(dialogView)
                 .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

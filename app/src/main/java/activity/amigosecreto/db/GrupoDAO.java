@@ -89,4 +89,18 @@ public class GrupoDAO {
         }
         return lista;
     }
+
+    public void limparTudo() {
+        database.beginTransaction();
+        try {
+            // Remove todos os dados de todas as tabelas
+            database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, null);
+            database.delete(MySQLiteOpenHelper.TABLE_DESEJO, null, null);
+            database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, null);
+            database.delete(MySQLiteOpenHelper.TABLE_GRUPO, null, null);
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
+        }
+    }
 }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_sobre"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="Sobre o App" />
+
+    <item
+        android:id="@+id/action_compartilhar"
+        android:icon="@android:drawable/ic_menu_share"
+        android:title="Compartilhar App" />
+
+    <item
+        android:id="@+id/action_avaliar"
+        android:icon="@android:drawable/btn_star_big_on"
+        android:title="Avaliar na Play Store" />
+
+    <item
+        android:id="@+id/action_limpar_dados"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:title="Limpar Todos os Dados" />
+
+</menu>

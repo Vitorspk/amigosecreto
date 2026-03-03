@@ -1,0 +1,103 @@
+name: CI Build & Internal Deploy
+
+on:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - 'v*'
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy to Internal Track
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0  # Full history for commit count
+
+      - name: Compute CI version
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # Use total git commit count to ensure unique, monotonically increasing
+          # versionCode shared with release workflow (avoids counter collision).
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          VERSION_CODE=$((100 + COMMIT_COUNT))
+          VERSION_NAME="2.0-dev.${SHORT_SHA}"
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "::notice::Internal build: versionName=$VERSION_NAME versionCode=$VERSION_CODE (commits=$COMMIT_COUNT)"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is not configured"
+            exit 1
+          fi
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > $RUNNER_TEMP/amigosecreto.keystore
+          echo "CI_KEYSTORE_PATH=$RUNNER_TEMP/amigosecreto.keystore" >> $GITHUB_ENV
+
+      - name: Run unit tests
+        run: ./gradlew :app:testReleaseUnitTest
+        env:
+          CI_KEYSTORE_PATH: ${{ env.CI_KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Run lint checks
+        run: ./gradlew :app:lintRelease
+        env:
+          CI_KEYSTORE_PATH: ${{ env.CI_KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build signed release AAB
+        run: |
+          ./gradlew :app:bundleRelease \
+            -PciVersionCode=${{ env.VERSION_CODE }} \
+            -PciVersionName=${{ env.VERSION_NAME }}
+        env:
+          CI_KEYSTORE_PATH: ${{ env.CI_KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload AAB as build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: internal-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Publish to Google Play (internal track)
+        uses: r0adkll/upload-google-play@0250910c30c1c098744c510e32e1659c6af78eb6 # v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.amigosecreto.sorteio
+          releaseFile: app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f $RUNNER_TEMP/amigosecreto.keystore

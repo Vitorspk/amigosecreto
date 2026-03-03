@@ -4,51 +4,52 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@drawable/bg_gradient_purple">
 
+    <!-- Purple AppBar -->
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/background"
-        app:elevation="0dp">
+        android:background="@color/purple_primary"
+        app:elevation="4dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_grupos"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Amigo Secreto"
-            app:titleCentered="true"
-            app:titleTextColor="@color/colorPrimary"
-            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+            app:menu="@menu/menu_grupos">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="16dp">
-
-            <TextView
+            <!-- Custom Title with Icon -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Meus Sorteios"
-                android:textColor="@color/text_primary"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:letterSpacing="-0.02" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_gravity="start">
 
-            <TextView
-                android:id="@+id/tv_grupos_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Combine seu Amigo Secreto!"
-                android:textColor="@color/colorSecondary"
-                android:textSize="16sp" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎁"
+                    android:textSize="28sp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Amigo Secreto"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </com.google.android.material.appbar.MaterialToolbar>
+
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -59,34 +60,93 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp">
+            android:padding="20dp">
 
+            <!-- Welcome Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💎"
+                        android:textSize="16sp"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Olá, Bem-vindo!"
+                        android:textColor="@color/purple_dark"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Organize seus grupos de amigo secreto"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <!-- Main Action Buttons -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_criar_grupo"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/btn_gradient_purple"
+                android:text="   Criar Novo Grupo"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:gravity="start|center_vertical"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                app:icon="@android:drawable/ic_input_add"
+                app:iconTint="@color/white"
+                app:iconSize="28dp"
+                app:iconGravity="start"
+                app:cornerRadius="28dp"
+                app:elevation="6dp" />
+
+            <!-- Grupos Section -->
+            <TextView
+                android:id="@+id/tv_grupos_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Meus Grupos"
+                android:textColor="@color/purple_dark"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Lista de Grupos -->
             <ListView
                 android:id="@+id/lv_grupos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:divider="@android:color/transparent"
-                android:dividerHeight="16dp"
-                android:clipToPadding="false"
-                android:paddingTop="8dp"
-                android:paddingBottom="100dp"
+                android:dividerHeight="12dp"
                 android:nestedScrollingEnabled="true"
-                tools:listitem="@layout/item_grupo" />
+                tools:listitem="@layout/item_grupo_modern" />
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fab_add_grupo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:text="Novo Sorteio"
-        android:textColor="@color/white"
-        app:backgroundTint="@color/colorSecondary"
-        app:icon="@drawable/ic_gift"
-        app:iconTint="@color/white"
-        app:elevation="6dp" />
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

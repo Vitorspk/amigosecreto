@@ -18,7 +18,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_gift"
-            app:tint="@color/colorAccent"
+            app:tint="@color/purple_primary"
             android:layout_marginEnd="16dp"
             android:contentDescription="Presente" />
 
@@ -51,7 +51,7 @@
                 android:textSize="16sp"
                 android:layout_marginTop="6dp"
                 android:textStyle="bold"
-                android:textColor="@color/colorSecondary" />
+                android:textColor="@color/accent_green" />
 
         </LinearLayout>
 
