@@ -9,7 +9,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/gradient_accent"
+        android:background="@color/purple_primary"
         app:elevation="8dp">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -52,7 +52,7 @@
         android:layout_margin="24dp"
         app:srcCompat="@drawable/ic_gift"
         app:tint="@android:color/white"
-        app:backgroundTint="@color/colorSecondary"
+        app:backgroundTint="@color/purple_primary"
         app:elevation="8dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

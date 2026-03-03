@@ -136,8 +136,9 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
                         desejo.setCategoria(etCategoria.getText().toString().trim());
                     }
 
-                    String precoMinStr = (etPrecoMin != null && etPrecoMin.getText() != null) ? etPrecoMin.getText().toString().trim() : "";
-                    String precoMaxStr = (etPrecoMax != null && etPrecoMax.getText() != null) ? etPrecoMax.getText().toString().trim() : "";
+                    // Tratar preços - substituir vírgula por ponto para parseDouble
+                    String precoMinStr = (etPrecoMin != null && etPrecoMin.getText() != null) ? etPrecoMin.getText().toString().trim().replace(",", ".") : "";
+                    String precoMaxStr = (etPrecoMax != null && etPrecoMax.getText() != null) ? etPrecoMax.getText().toString().trim().replace(",", ".") : "";
                     desejo.setPrecoMinimo(precoMinStr.isEmpty() ? 0 : Double.parseDouble(precoMinStr));
                     desejo.setPrecoMaximo(precoMaxStr.isEmpty() ? 0 : Double.parseDouble(precoMaxStr));
 
@@ -151,6 +152,9 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
                     Toast.makeText(ParticipanteDesejosActivity.this, "Desejo adicionado!", Toast.LENGTH_SHORT).show();
                     carregarDesejos();
                     dialog.dismiss();
+                } catch (NumberFormatException e) {
+                    Toast.makeText(ParticipanteDesejosActivity.this, "Erro: preço inválido", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
                 } catch (Exception e) {
                     Toast.makeText(ParticipanteDesejosActivity.this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     e.printStackTrace();
@@ -224,29 +228,53 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
     }
 
     private void mostrarOpcoesDesejo(Desejo desejo) {
-        new AlertDialog.Builder(this)
-                .setTitle(desejo.getProduto())
-                .setItems(new String[]{"Editar", "Remover"}, (dialog, which) -> {
-                    if (which == 0) {
-                        // Editar
-                        Intent intent = new Intent(this, AlterarDesejoActivity.class);
-                        intent.putExtra("desejo", desejo);
-                        startActivityForResult(intent, REQUEST_EDIT_DESEJO);
-                    } else {
-                        // Remover
-                        new AlertDialog.Builder(this)
-                                .setTitle("Remover desejo")
-                                .setMessage("Tem certeza que deseja remover este desejo?")
-                                .setPositiveButton("Sim", (d, w) -> {
-                                    desejoDAO.remover(desejo);
-                                    Toast.makeText(this, "Desejo removido", Toast.LENGTH_SHORT).show();
-                                    carregarDesejos();
-                                })
-                                .setNegativeButton("Não", null)
-                                .show();
-                    }
-                })
-                .show();
+        // Inflar o layout customizado
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_opcoes_desejo, null);
+
+        TextView tvProdutoNome = dialogView.findViewById(R.id.tv_produto_nome);
+        com.google.android.material.card.MaterialCardView cardEditar = dialogView.findViewById(R.id.card_editar);
+        com.google.android.material.card.MaterialCardView cardRemover = dialogView.findViewById(R.id.card_remover);
+        com.google.android.material.button.MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_cancelar);
+
+        tvProdutoNome.setText(desejo.getProduto());
+
+        // Criar o dialog
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        // Tornar o fundo transparente para mostrar os cantos arredondados
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        // Listener do card Editar
+        cardEditar.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent intent = new Intent(this, AlterarDesejoActivity.class);
+            intent.putExtra("desejo", desejo);
+            startActivityForResult(intent, REQUEST_EDIT_DESEJO);
+        });
+
+        // Listener do card Remover
+        cardRemover.setOnClickListener(v -> {
+            dialog.dismiss();
+            new AlertDialog.Builder(this)
+                    .setTitle("⚠️ Remover Desejo")
+                    .setMessage("Tem certeza que deseja remover \"" + desejo.getProduto() + "\"?\n\nEsta ação não pode ser desfeita.")
+                    .setPositiveButton("Sim, remover", (d, w) -> {
+                        desejoDAO.remover(desejo);
+                        Toast.makeText(this, "Desejo removido", Toast.LENGTH_SHORT).show();
+                        carregarDesejos();
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
+        // Listener do botão Cancelar
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     @Override

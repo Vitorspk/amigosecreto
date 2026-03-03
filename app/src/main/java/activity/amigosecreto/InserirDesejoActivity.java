@@ -7,44 +7,44 @@ import androidx.core.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
 
 public class InserirDesejoActivity extends AppCompatActivity {
     private Desejo desejo;
-    private EditText et_produto;
-    private EditText et_categoria;
-    private EditText et_preco_minimo;
-    private EditText et_preco_maximo;
-    private EditText et_lojas;
+    private TextInputEditText et_produto;
+    private TextInputEditText et_categoria;
+    private TextInputEditText et_preco_minimo;
+    private TextInputEditText et_preco_maximo;
+    private TextInputEditText et_lojas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inserir_desejo);
-        
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
-        
-        et_produto = (EditText) findViewById(R.id.et_produto_ins);
-        et_categoria = (EditText) findViewById(R.id.et_categoria_ins);
-        et_preco_minimo = (EditText) findViewById(R.id.et_preco_minimo_ins);
-        et_preco_maximo = (EditText) findViewById(R.id.et_preco_maximo_ins);
-        et_lojas = (EditText) findViewById(R.id.et_lojas_ins);
-        
-        View btnSalvar = findViewById(R.id.btn_salvar_ins);
+
+        // Configurar MaterialToolbar
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+
+        et_produto = findViewById(R.id.et_produto_ins);
+        et_categoria = findViewById(R.id.et_categoria_ins);
+        et_preco_minimo = findViewById(R.id.et_preco_minimo_ins);
+        et_preco_maximo = findViewById(R.id.et_preco_maximo_ins);
+        et_lojas = findViewById(R.id.et_lojas_ins);
+
+        MaterialButton btnSalvar = findViewById(R.id.btn_salvar_ins);
         if (btnSalvar != null) {
-            btnSalvar.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (validar()) {
-                        inserir();
-                        finish();
-                    }
+            btnSalvar.setOnClickListener(v -> {
+                if (validar()) {
+                    inserir();
+                    finish();
                 }
             });
         }
@@ -88,20 +88,24 @@ public class InserirDesejoActivity extends AppCompatActivity {
             desejo.setId(dao.proximoId());
             desejo.setProduto(et_produto.getText().toString().trim());
             desejo.setCategoria(et_categoria.getText().toString().trim());
-            
-            String pMin = et_preco_minimo.getText().toString().trim();
+
+            // Tratar preços - substituir vírgula por ponto para parseDouble
+            String pMin = et_preco_minimo.getText().toString().trim().replace(",", ".");
             desejo.setPrecoMinimo(pMin.isEmpty() ? 0 : Double.parseDouble(pMin));
-            
-            String pMax = et_preco_maximo.getText().toString().trim();
+
+            String pMax = et_preco_maximo.getText().toString().trim().replace(",", ".");
             desejo.setPrecoMaximo(pMax.isEmpty() ? 0 : Double.parseDouble(pMax));
-            
+
             desejo.setLojas(et_lojas.getText().toString().trim());
             dao.inserir(desejo);
             dao.close();
             Toast.makeText(this, "Desejo salvo com sucesso!", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Erro: preço inválido", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
-            Toast.makeText(this, "Erro ao salvar desejo", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Erro ao salvar desejo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
         }
     }
 }

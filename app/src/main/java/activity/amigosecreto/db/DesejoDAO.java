@@ -121,4 +121,23 @@ public class DesejoDAO {
             return 1;
         }
     }
+
+    public final Desejo buscarPorId(int id){
+        Desejo desejo = null;
+        Cursor cursor = database.rawQuery("select * from "+helper.TABLE_DESEJO+" where "+helper.COLUMN_ID+" = ?", new String[]{String.valueOf(id)});
+        if (cursor.moveToFirst()) {
+            desejo = new Desejo();
+            desejo.setId(cursor.getInt(0));
+            desejo.setProduto(cursor.getString(1));
+            desejo.setCategoria(cursor.getString(2));
+            desejo.setPrecoMinimo(cursor.getDouble(3));
+            desejo.setPrecoMaximo(cursor.getDouble(4));
+            desejo.setLojas(cursor.getString(5));
+            if (cursor.getColumnCount() > 6) {
+                desejo.setParticipanteId(cursor.getInt(6));
+            }
+        }
+        cursor.close();
+        return desejo;
+    }
 }

@@ -7,9 +7,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import java.text.NumberFormat;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+
 import activity.amigosecreto.db.Desejo;
 
 public class DetalheDesejoActivity extends AppCompatActivity {
@@ -19,7 +22,7 @@ public class DetalheDesejoActivity extends AppCompatActivity {
     private TextView tv_preco_minimo;
     private TextView tv_preco_maximo;
     private TextView tv_lojas;
-    private Button btn_buscape;
+    private MaterialButton btn_buscape;
 
     private Desejo desejo;
 
@@ -30,33 +33,30 @@ public class DetalheDesejoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detalhe_desejo);
-        
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
-        
+
+        // Configurar MaterialToolbar
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+
         if (getIntent().getExtras() != null) {
             this.desejo = (Desejo) getIntent().getExtras().get("desejo");
         }
-        
-        tv_produto = (TextView) findViewById(R.id.tv_produto);
-        tv_categoria = (TextView) findViewById(R.id.tv_categoria);
-        tv_preco_minimo = (TextView) findViewById(R.id.tv_preco_minimo);
-        tv_preco_maximo = (TextView) findViewById(R.id.tv_preco_maximo);
-        tv_lojas = (TextView) findViewById(R.id.tv_lojas);
-        btn_buscape = (Button) findViewById(R.id.btn_pesquisar_buscape);
-        
+
+        tv_produto = findViewById(R.id.tv_produto);
+        tv_categoria = findViewById(R.id.tv_categoria);
+        tv_preco_minimo = findViewById(R.id.tv_preco_minimo);
+        tv_preco_maximo = findViewById(R.id.tv_preco_maximo);
+        tv_lojas = findViewById(R.id.tv_lojas);
+        btn_buscape = findViewById(R.id.btn_pesquisar_buscape);
+
         if (btn_buscape != null && desejo != null) {
-            btn_buscape.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Uri uri = Uri.parse("http://compare.buscape.com.br/" + desejo.getProduto());
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    startActivity(intent);
-                }
+            btn_buscape.setOnClickListener(v -> {
+                Uri uri = Uri.parse("http://compare.buscape.com.br/" + desejo.getProduto());
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
             });
         }
-        
+
         if (desejo != null) {
             carregarCampos(desejo);
         }
@@ -94,10 +94,29 @@ public class DetalheDesejoActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == 1){
-            // Se voltou da edição, o ideal seria recarregar ou fechar para a lista atualizar
-            finish();
-        }
         super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1 && resultCode == RESULT_OK){
+            // Recarregar o desejo atualizado do banco de dados
+            recarregarDesejo();
+        }
+    }
+
+    private void recarregarDesejo() {
+        if (desejo != null) {
+            try {
+                activity.amigosecreto.db.DesejoDAO dao = new activity.amigosecreto.db.DesejoDAO(this);
+                dao.open();
+                // Buscar o desejo atualizado pelo ID
+                Desejo desejoAtualizado = dao.buscarPorId(desejo.getId());
+                dao.close();
+
+                if (desejoAtualizado != null) {
+                    desejo = desejoAtualizado;
+                    carregarCampos(desejo);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
