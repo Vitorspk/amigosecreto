@@ -1,13 +1,16 @@
-# AmigoSecreto - Documentação do Projeto
+# AmigoSecreto - Documentacao do Projeto
 
-## Visão Geral
+## Visao Geral
 
-**AmigoSecreto** é um aplicativo Android que facilita a organização e gerenciamento de amigo secreto. O app permite gerenciar participantes, realizar sorteios aleatórios, revelar resultados de forma interativa e compartilhar via WhatsApp. Inclui também uma funcionalidade de lista de desejos.
+**AmigoSecreto** e um aplicativo Android para organizar e gerenciar amigo secreto. O app permite criar grupos, adicionar participantes, realizar sorteios aleatorios com exclusoes, revelar resultados de forma interativa, compartilhar via WhatsApp/SMS e gerenciar listas de desejos por participante.
 
-**Versão Atual**: 1.7 (versionCode: 7)
-**Package**: activity.amigosecreto
-**SDK Mínimo**: 21 (Android 5.0)
-**SDK Alvo**: 34 (Android 14)
+**Versao Atual**: 2.0 (versionCode: 9, CI usa `100 + commit count`)
+**Package**: `activity.amigosecreto`
+**Application ID**: `com.amigosecreto.sorteio`
+**SDK Minimo**: 21 (Android 5.0)
+**SDK Alvo/Compile**: 35 (Android 15)
+**Java**: 17
+**Branch Principal**: `master`
 
 ---
 
@@ -15,60 +18,117 @@
 
 ```
 app/src/main/java/activity/amigosecreto/
-├── ParticipantesActivity.java          # Tela principal - gerenciar participantes
-├── RevelarAmigoActivity.java           # Revelar quem é o amigo secreto
-├── ListarDesejos.java                  # Listar desejos/presentes
-├── InserirDesejoActivity.java          # Adicionar novo desejo
-├── AlterarDesejoActivity.java          # Editar desejo existente
-├── DetalheDesejoActivity.java          # Detalhes do desejo
-├── SplashActivity.java                 # Tela de splash
-└── db/
-    ├── MySQLiteOpenHelper.java         # Gerenciamento do banco SQLite
-    ├── Participante.java               # Model de participante
-    ├── ParticipanteDAO.java            # DAO para operações de participantes
-    ├── Desejo.java                     # Model de desejo
-    └── DesejoDAO.java                  # DAO para operações de desejos
+├── GruposActivity.java                    # LAUNCHER - Tela principal, gerenciar grupos
+├── ParticipantesActivity.java             # Gerenciar participantes de um grupo
+├── RevelarAmigoActivity.java              # Revelar amigo secreto interativamente
+├── ParticipanteDesejosActivity.java       # Ver desejos de um participante
+├── VisualizarDesejosActivity.java         # Ver todos os desejos de um grupo
+├── ListarDesejos.java                     # Listar desejos gerais
+├── InserirDesejoActivity.java             # Adicionar novo desejo
+├── AlterarDesejoActivity.java             # Editar desejo existente
+├── DetalheDesejoActivity.java             # Detalhes do desejo
+│
+├── adapter/
+│   └── ParticipantesRecyclerAdapter.java  # RecyclerView adapter para participantes
+│
+├── db/
+│   ├── MySQLiteOpenHelper.java            # Schema do banco SQLite (v8)
+│   ├── Grupo.java                         # Model de grupo (Serializable)
+│   ├── GrupoDAO.java                      # CRUD de grupos
+│   ├── Participante.java                  # Model de participante (Serializable)
+│   ├── ParticipanteDAO.java               # CRUD de participantes + exclusoes + sorteio
+│   ├── Desejo.java                        # Model de desejo
+│   └── DesejoDAO.java                     # CRUD de desejos
+│
+└── util/
+    ├── AnimationUtils.java                # Helpers de animacao
+    ├── AsyncDatabaseHelper.java           # Operacoes async no banco
+    ├── HapticFeedbackUtils.java           # Feedback haptico (respeita acessibilidade)
+    ├── SnackbarHelper.java                # Helpers de Snackbar
+    └── ValidationUtils.java              # Validacao de inputs
+```
+
+### Outros Diretorios Relevantes
+
+```
+.github/workflows/
+├── release.yml                    # Deploy automatico para Play Store (tag v*)
+├── ci.yml                         # CI + deploy internal track (push master)
+├── claude-code-review.yml         # Review automatico de PRs
+└── claude.yml                     # Workflow Claude
+
+distribution/whatsnew/
+├── whatsnew-pt-BR                 # Release notes em portugues
+└── whatsnew-en-US                 # Release notes em ingles
+
+documents/
+├── PRIVACY_POLICY.md
+├── PLAY_STORE_LISTING.md
+├── PRODUCTION_CHECKLIST.md
+├── WHATS_NEW_V2.md
+└── RELEASE_INSTRUCTIONS.md
 ```
 
 ---
 
-## Funcionalidades Principais
+## CI/CD Pipeline
 
-### 1. Gerenciamento de Participantes
-- **Adicionar participantes**: Manual ou importar dos contatos
-- **Remover participantes**: Individual ou limpar todos
-- **Visualizar lista**: Com status de envio e informações de contato
-- **Validação**: Mínimo de 3 participantes para sorteio
+### Deploy para Producao (tag)
 
-### 2. Sorteio de Amigo Secreto
-- **Algoritmo**: Embaralhamento aleatório com validação
-- **Garantia**: Ninguém tira a si mesmo
-- **Persistência**: Resultados salvos no banco de dados
-- **Lógica do sorteio** em `ParticipantesActivity.java:284-300`
+```bash
+git tag v2.1
+git push origin v2.1
+```
 
-### 3. Revelação de Resultados
-- **Interface interativa**: Toque para revelar
-- **Proteção contra spoilers**: Layout escondido até o toque
-- **Design Material**: CardView com animações
-- **Implementação** em `RevelarAmigoActivity.java`
+**Workflow**: `.github/workflows/release.yml`
+- Trigger: push de tag `v*` (formato: `v2.1` ou `v2.1.0`)
+- versionCode: `100 + git rev-list --count HEAD`
+- versionName: extraido da tag (v2.1 -> 2.1)
+- Steps: checkout -> JDK 21 -> lint -> testes -> bundleRelease -> Play Store (production) -> GitHub Release
+- Todas as actions pinadas por commit SHA
 
-### 4. Compartilhamento via WhatsApp
-- **Proteção anti-spoiler**: 30 linhas em branco antes da revelação
-- **Integração direta**: API do WhatsApp quando tem telefone
-- **Fallback**: Intent genérico de compartilhamento
-- **Rastreamento**: Marca como "enviado" após compartilhar
+### CI / Deploy Interno (master)
 
-### 5. Lista de Desejos
-- **Cadastro completo**: Produto, categoria, faixa de preço, lojas
-- **Gerenciamento**: Adicionar, editar, remover desejos
-- **Compartilhamento**: Lista completa formatada
-- **Integração BuscaPé**: Busca de preços externa
+```bash
+git push origin master
+```
+
+**Workflow**: `.github/workflows/ci.yml`
+- Trigger: push no master (excluindo tags v*)
+- versionName: `2.0-dev.<short-sha>`
+- Track: **internal** (QA antes de producao)
+- `cancel-in-progress: true`
+
+### GitHub Secrets Necessarios
+
+| Secret | Descricao |
+|--------|-----------|
+| `KEYSTORE_BASE64` | Keystore em base64 |
+| `KEYSTORE_PASSWORD` | Senha do keystore |
+| `KEY_ALIAS` | Alias da chave (ex: amigosecreto) |
+| `KEY_PASSWORD` | Senha da chave |
+| `PLAY_STORE_SERVICE_ACCOUNT_JSON` | JSON da service account do Google Play |
+
+### Signing Config
+
+O `build.gradle` suporta dois modos:
+1. **Local**: le de `keystore.properties` (arquivo nao commitado)
+2. **CI**: le de environment variables (`CI_KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, etc.)
 
 ---
 
 ## Banco de Dados
 
-### Nome: `amigosecreto_new.db` (versão 5)
+### Nome: `amigosecreto_v8.db` (versao 8)
+
+#### Tabela: `grupo`
+```sql
+CREATE TABLE grupo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    data TEXT
+)
+```
 
 #### Tabela: `participante`
 ```sql
@@ -78,17 +138,20 @@ CREATE TABLE participante (
     email TEXT,
     telefone TEXT,
     amigo_sorteado_id INTEGER,
-    enviado INTEGER DEFAULT 0
+    enviado INTEGER DEFAULT 0,
+    grupo_id INTEGER,
+    FOREIGN KEY(grupo_id) REFERENCES grupo(id)
 )
 ```
 
-**Campos**:
-- `id`: Identificador único
-- `nome`: Nome do participante (obrigatório)
-- `email`: Email (opcional)
-- `telefone`: Telefone (opcional)
-- `amigo_sorteado_id`: ID do participante sorteado para este dar presente
-- `enviado`: Flag se o resultado foi compartilhado (0=não, 1=sim)
+#### Tabela: `exclusao`
+```sql
+CREATE TABLE exclusao (
+    participante_id INTEGER,
+    excluido_id INTEGER,
+    PRIMARY KEY (participante_id, excluido_id)
+)
+```
 
 #### Tabela: `desejo`
 ```sql
@@ -98,274 +161,265 @@ CREATE TABLE desejo (
     categoria TEXT,
     preco_minimo REAL,
     preco_maximo REAL,
-    lojas TEXT
+    lojas TEXT,
+    participante_id INTEGER,
+    FOREIGN KEY(participante_id) REFERENCES participante(id)
 )
 ```
 
-**Campos**:
-- `id`: Identificador único
-- `produto`: Nome do produto (obrigatório)
-- `categoria`: Categoria do produto
-- `preco_minimo`: Preço mínimo desejado
-- `preco_maximo`: Preço máximo desejado
-- `lojas`: Lojas sugeridas
+### Migracoes
+
+- **< v7**: Drop e recria tudo (versoes muito antigas)
+- **v7 -> v8**: Adiciona coluna `participante_id` na tabela `desejo`
 
 ---
 
-## Tecnologias Utilizadas
+## Funcionalidades
+
+### 1. Sistema de Grupos
+- Criar/editar/remover grupos de amigo secreto
+- Cada grupo tem seus proprios participantes e sorteio
+- Entrada principal via `GruposActivity` (LAUNCHER)
+
+### 2. Gerenciamento de Participantes
+- Adicionar manualmente ou importar dos contatos
+- Remover individual ou limpar todos do grupo
+- RecyclerView com animacoes de entrada
+- Minimo de 3 participantes para sorteio
+
+### 3. Exclusoes (Restricoes)
+- Definir quem NAO pode tirar quem
+- Tabela `exclusao` com chave composta
+- Validacao durante o sorteio
+
+### 4. Sorteio
+- Algoritmo de embaralhamento com validacao
+- Ninguem tira a si mesmo
+- Respeita exclusoes definidas
+- Resultados persistidos no banco
+- Transacao atomica via `salvarSorteio()`
+
+### 5. Revelacao Interativa
+- Toque para revelar o amigo secreto
+- Protecao contra spoilers (layout escondido)
+- Animacoes e feedback haptico
+
+### 6. Compartilhamento
+- WhatsApp com protecao anti-spoiler (30 linhas em branco)
+- SMS via intent nativo
+- Marca como "enviado" apos compartilhar
+- URL encoding seguro via `Uri.Builder`
+
+### 7. Lista de Desejos
+- CRUD completo: produto, categoria, faixa de preco, lojas
+- Vinculada a participante via `participante_id`
+- Compartilhamento formatado
+- Integracao BuscaPe (HTTPS via Uri.Builder)
+
+---
+
+## Tecnologias
 
 ### Build
-- **Gradle**: 7.x
-- **Android Gradle Plugin**: 8.7.0
-- **Java**: Compatibilidade com Java 8
+- **Android Gradle Plugin**: 9.0.1
+- **Compile SDK**: 35
+- **Java**: 17
+- **ViewBinding**: Habilitado
+- **MultiDex**: Habilitado
+- **R8/ProGuard**: Minificacao + shrink em release
 
-### Bibliotecas AndroidX
+### Dependencias
 ```gradle
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-}
+implementation 'androidx.appcompat:appcompat:1.7.0'
+implementation 'com.google.android.material:material:1.12.0'
+implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+implementation 'androidx.recyclerview:recyclerview:1.3.2'
+implementation 'androidx.core:core-splashscreen:1.0.1'
 ```
 
-### Recursos Android
-- **SQLite**: Banco de dados local via SQLiteOpenHelper
-- **Material Design 3**: Componentes modernos de UI
-- **Intent API**: Navegação e compartilhamento
-- **Contacts Provider**: Importação de contatos
+### Permissoes
+- `INTERNET` - WhatsApp e BuscaPe
+- `ACCESS_NETWORK_STATE` - Verificacao de conectividade
+- `VIBRATE` - Feedback haptico
+- `READ_CONTACTS` - Importar participantes
 
 ---
 
-## Permissões Necessárias
+## Padroes de Arquitetura
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.VIBRATE" />
-<uses-permission android:name="android.permission.READ_CONTACTS" />
-```
+### DAO Pattern
+- `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`
+- Queries parametrizadas (prevencao SQL injection)
+- `getColumnIndexOrThrow()` para robustez na leitura de cursors
+- Transacoes atomicas para sorteio
 
-- **INTERNET**: Integração com WhatsApp e BuscaPé
-- **ACCESS_NETWORK_STATE**: Verificação de conectividade
-- **VIBRATE**: Feedback háptico
-- **READ_CONTACTS**: Importar participantes dos contatos
+### Utility Layer
+- `HapticFeedbackUtils` - flags = 0 (respeita configuracoes de acessibilidade)
+- `ValidationUtils` - Validacao centralizada de inputs
+- `AsyncDatabaseHelper` - Operacoes assincronas
+- `SnackbarHelper` - Mensagens padronizadas
+- `AnimationUtils` - Animacoes reutilizaveis
 
----
+### Adapter Pattern
+- `ParticipantesRecyclerAdapter` com `getBindingAdapterPosition()`
+- Interface `OnItemClickListener` para item/remove/share
 
-## Padrões de Arquitetura
-
-### DAO Pattern (Data Access Object)
-- **ParticipanteDAO**: Operações CRUD de participantes
-- **DesejoDAO**: Operações CRUD de desejos
-- Separação clara entre lógica de negócio e acesso a dados
-
-### Model Classes
-- **Participante**: Implementa `Serializable` para passar via Intent
-- **Desejo**: Implementa `Parcelable` para eficiência
-
-### Activity-based Architecture
-- Navegação tradicional via Intents
+### Activity-based
 - Cada tela = uma Activity
-- Dados passados via Intent extras
+- Dados via Intent extras (Serializable)
+- GruposActivity como ponto de entrada
 
 ---
 
-## Fluxo do Usuário
+## Fluxo do Usuario
 
 ```
-Iniciar App
-    ↓
-[ParticipantesActivity] - Tela Principal
-    ├─ Adicionar Participantes
-    │   ├─ Manualmente (dialog)
-    │   └─ Importar dos Contatos
-    ├─ Realizar Sorteio
-    │   ├─ Validação (≥3 participantes)
-    │   ├─ Algoritmo de embaralhamento
-    │   └─ Salvar resultados
-    ├─ Tocar em Participante
-    │   └─ [RevelarAmigoActivity]
-    │       └─ Tocar para revelar amigo
-    └─ Compartilhar via WhatsApp
-        └─ Proteção anti-spoiler
-
-Menu Lateral: Lista de Desejos
-    [ListarDesejos]
-        ├─ Adicionar Novo → [InserirDesejoActivity]
-        ├─ Ver Detalhes → [DetalheDesejoActivity]
-        │   └─ Editar → [AlterarDesejoActivity]
-        └─ Compartilhar Lista
-```
-
----
-
-## Detalhes de Implementação Notáveis
-
-### Algoritmo de Sorteio
-**Localização**: `ParticipantesActivity.java:284-300`
-
-```java
-// Garante que ninguém tira a si mesmo
-boolean valido = false;
-while (!valido) {
-    Collections.shuffle(sorteados);
-    valido = true;
-    for (int i = 0; i < listaParticipantes.size(); i++) {
-        if (listaParticipantes.get(i).getId() == sorteados.get(i).getId()) {
-            valido = false;
-            break;
-        }
-    }
-}
-```
-
-### Compartilhamento WhatsApp com Anti-Spoiler
-**Localização**: `ParticipantesActivity.java:445-465`
-
-```java
-StringBuilder sb = new StringBuilder();
-sb.append("🎁 Resultado do Amigo Secreto 🎁\n\n");
-sb.append("Oi ").append(participante.getNome()).append("!\n\n");
-
-// 30 linhas em branco para proteção anti-spoiler
-for (int i = 0; i < 30; i++) {
-    sb.append(".\n");
-}
-
-sb.append("Seu amigo secreto é:\n\n");
-sb.append("🎅 ").append(nomeAmigo).append(" 🎅\n\n");
-
-// Link direto do WhatsApp se tiver telefone
-String url = "https://api.whatsapp.com/send?phone=" + telefone
-    + "&text=" + URLEncoder.encode(mensagem, "UTF-8");
-```
-
-### Importação de Contatos
-**Localização**: `ParticipantesActivity.java:341-357`
-
-```java
-// Usa o seletor nativo de contatos
-Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-startActivityForResult(intent, PICK_CONTACT);
-
-// Processa resultado com ContentResolver
-Cursor cursor = getContentResolver().query(contactUri, null, null, null, null);
-// Extrai nome e telefone do contato selecionado
+[GruposActivity] - Tela Principal (LAUNCHER)
+    ├── Criar Grupo
+    ├── Selecionar Grupo
+    │   └── [ParticipantesActivity]
+    │       ├── Adicionar Participantes
+    │       │   ├── Manualmente (dialog)
+    │       │   └── Importar dos Contatos
+    │       ├── Configurar Exclusoes
+    │       ├── Realizar Sorteio (>= 3 participantes)
+    │       ├── Tocar em Participante
+    │       │   └── [RevelarAmigoActivity]
+    │       │       └── Toque para revelar
+    │       ├── Compartilhar via WhatsApp/SMS
+    │       └── Ver Desejos
+    │           └── [VisualizarDesejosActivity]
+    │               └── [ParticipanteDesejosActivity]
+    └── Menu: Lista de Desejos
+        └── [ListarDesejos]
+            ├── [InserirDesejoActivity]
+            ├── [DetalheDesejoActivity]
+            │   └── [AlterarDesejoActivity]
+            └── Compartilhar Lista
 ```
 
 ---
 
 ## Esquema de Cores
 
-**Paleta**: Indigo & Emerald Professional
+**Paleta**: Indigo & Emerald
 
 | Nome | Hex | Uso |
 |------|-----|-----|
-| colorPrimary | #4F46E5 | Cor primária (Indigo) |
+| colorPrimary | #4F46E5 | Cor primaria (Indigo) |
 | colorPrimaryDark | #3730A3 | Variante escura |
 | colorAccent | #10B981 | Destaque/sucesso (Emerald) |
 | background | #F9FAFB | Fundo de telas |
 | text_primary | #111827 | Texto principal |
-| text_secondary | #6B7280 | Texto secundário |
-| error | #EF4444 | Ações destrutivas |
+| text_secondary | #6B7280 | Texto secundario |
+| error | #EF4444 | Acoes destrutivas |
 | success | #10B981 | Feedback positivo |
 
 ---
 
-## Comandos Úteis
+## Comandos Uteis
 
-### Build e Instalação
+### Build Local
 ```bash
-# Build debug
-./gradlew assembleDebug
+./gradlew assembleDebug          # Build debug
+./gradlew installDebug           # Instalar no dispositivo
+./gradlew bundleRelease          # Build release AAB (requer keystore.properties)
+./gradlew clean                  # Limpar build
+./gradlew :app:lintRelease       # Rodar lint
+./gradlew :app:testReleaseUnitTest  # Rodar testes
+```
 
-# Instalar no dispositivo
-./gradlew installDebug
+### Deploy via CI/CD
+```bash
+# Producao (Play Store):
+git tag v2.1 && git push origin v2.1
 
-# Build e instalar
-./gradlew installDebug
-
-# Limpar build
-./gradlew clean
+# Interno (QA):
+git push origin master
 ```
 
 ### Logs
 ```bash
-# Ver logs do app
 adb logcat | grep -i "amigosecreto"
-
-# Ver logs de crash
 adb logcat | grep -E "AndroidRuntime|FATAL"
 ```
 
 ### Banco de Dados (Debug)
 ```bash
-# Acessar banco no emulador/dispositivo root
 adb shell
-run-as activity.amigosecreto
+run-as com.amigosecreto.sorteio.debug   # Nota: sufixo .debug em builds debug
 cd databases
-sqlite3 amigosecreto_new.db
+sqlite3 amigosecreto_v8.db
 
-# Comandos SQLite úteis
-.tables                    # Listar tabelas
-.schema participante       # Ver estrutura da tabela
-SELECT * FROM participante; # Consultar dados
+.tables
+.schema participante
+SELECT * FROM grupo;
+SELECT * FROM participante WHERE grupo_id = 1;
 ```
 
 ---
 
-## Próximas Melhorias Sugeridas
+## Recursos de UI
+
+### Animacoes (res/anim/)
+- `bounce.xml`, `button_press.xml`, `card_appear.xml`
+- `fade_in.xml`, `fade_out.xml`
+- `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
+
+### Layouts (res/layout/) - 21 arquivos
+- 9 layouts de Activity
+- 5 layouts de Dialog
+- 7 layouts de Item/Helper (incluindo `empty_state.xml`, `loading_state.xml`)
+
+### Drawables - 44 recursos XML
+- Gradientes, botoes, backgrounds, icones SVG, ripples
+- Launcher icons com adaptive icon (API 26+)
+
+---
+
+## Seguranca
+
+- **HTTPS only**: `usesCleartextTraffic="false"` no Manifest
+- **Network Security Config**: `xml/network_security_config.xml`
+- **ProGuard/R8**: Ofuscacao em release, remove logs de debug
+- **Queries parametrizadas**: Prevencao de SQL injection em todos os DAOs
+- **FileProvider**: Compartilhamento seguro de arquivos
+- **Keystore nunca commitado**: Signing via `keystore.properties` (local) ou env vars (CI)
+- **Actions pinadas por SHA**: Supply-chain security nos workflows
+- **Backup rules**: `xml/backup_rules.xml` e `xml/data_extraction_rules.xml`
+
+---
+
+## Proximas Melhorias
 
 ### Arquitetura
 - [ ] Migrar para MVVM com ViewModel e LiveData
 - [ ] Implementar Repository pattern
-- [ ] Usar Coroutines para operações assíncronas
-- [ ] Adicionar Dependency Injection (Hilt/Koin)
+- [ ] Adicionar Dependency Injection (Hilt)
+- [ ] Migrar para Kotlin
 
 ### UI/UX
-- [ ] Substituir ListView por RecyclerView
-- [ ] Implementar ViewBinding/DataBinding
-- [ ] Adicionar animações de transição
-- [ ] Modo escuro (Dark Theme)
+- [ ] Modo escuro completo (Dark Theme) - suporte parcial em `values-night/`
 - [ ] Suporte a tablets (layout responsivo)
+- [ ] Transicoes entre Activities com shared elements
 
 ### Funcionalidades
 - [ ] Backup/restore de dados (Google Drive)
-- [ ] Histórico de sorteios anteriores
-- [ ] Notificações de lembrete
+- [ ] Historico de sorteios anteriores
+- [ ] Notificacoes de lembrete
 - [ ] Compartilhar via Telegram/Email
-- [ ] QR Code para compartilhamento rápido
-- [ ] Limite de preço por grupo
-- [ ] Restrições de quem não pode tirar quem
+- [ ] QR Code para compartilhamento
 
 ### Qualidade
-- [ ] Testes unitários (JUnit)
+- [ ] Testes unitarios (JUnit) - cobertura atual minima
 - [ ] Testes de UI (Espresso)
-- [ ] CI/CD com GitHub Actions
-- [ ] Análise de código (SonarQube/Lint)
-- [ ] Tratamento de erros robusto
+- [ ] Testes E2E
 - [ ] Logs estruturados (Timber)
 
-### Performance
-- [ ] Paginação na lista de participantes
-- [ ] Cache de imagens de contatos
-- [ ] Otimização de queries SQL
-- [ ] ProGuard/R8 para release
-
 ---
 
-## Contato e Contribuição
+## Repositorio
 
-**Repositório**: https://github.com/Vitorspk/amigosecreto
-**Commits Recentes**:
-- "Add comprehensive English README documentation"
-- "Claude Code Review workflow"
-- "Claude PR Assistant workflow"
-
+**URL**: https://github.com/Vitorspk/amigosecreto
 **Branch Principal**: `master`
-
----
-
-## Licença
-
-(Adicionar informações de licença conforme necessário)
+**Package Play Store**: `com.amigosecreto.sorteio`
