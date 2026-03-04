@@ -45,6 +45,7 @@ public class ParticipantesRecyclerAdapter extends RecyclerView.Adapter<Participa
         return new ViewHolder(view);
     }
 
+    @SuppressWarnings("RecyclerView")
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Participante participante = participantes.get(position);

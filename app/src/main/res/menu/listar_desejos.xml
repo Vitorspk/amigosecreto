@@ -1,20 +1,17 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="activity.amigosecreto.ListarDesejos">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:id="@+id/menu_compartilhar"
         android:orderInCategory="100"
         app:showAsAction="always"
         android:title="@string/menu_compartilhar"
-        android:actionProviderClass="android.widget.ShareActionProvider"/>
+        app:actionProviderClass="androidx.appcompat.widget.ShareActionProvider"/>
 
     <item
         android:id="@+id/menu_novo"
         android:orderInCategory="100"
-        android:showAsAction="always"
+        app:showAsAction="always"
         android:title="@string/menu_novo"
         android:icon="@android:drawable/ic_menu_add"/>
 
 </menu>
-
