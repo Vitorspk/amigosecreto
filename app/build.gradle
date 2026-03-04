@@ -117,4 +117,7 @@ dependencies {
 
     // Splash Screen API (Android 12+)
     implementation 'androidx.core:core-splashscreen:1.0.1'
+
+    // Unit testing
+    testImplementation 'junit:junit:4.13.2'
 }
