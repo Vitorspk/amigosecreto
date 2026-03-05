@@ -56,7 +56,7 @@ public class ParticipantesActivity extends AppCompatActivity {
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
 
-    private final android.os.Handler mainHandler = mainHandler;
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     private ListView lvParticipantes;
     private TextView tvCount;
