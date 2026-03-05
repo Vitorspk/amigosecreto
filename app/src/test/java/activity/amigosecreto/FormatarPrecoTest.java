@@ -48,8 +48,10 @@ public class FormatarPrecoTest {
     }
 
     @Test
-    public void ieee754_logo_abaixo_de_inteiro_exibe_sem_centavos() {
-        assertEquals("100", ParticipantesActivity.formatarPreco(99.9999999999));
+    public void ieee754_logo_abaixo_de_inteiro_exibe_centavos_arredondados() {
+        // 99.9999999999 difere de 100 em ~1e-10, acima da tolerancia de 0.005;
+        // String.format("%.2f") arredonda para "100,00", nao para inteiro "100".
+        assertEquals("100,00", ParticipantesActivity.formatarPreco(99.9999999999));
     }
 
     @Test
