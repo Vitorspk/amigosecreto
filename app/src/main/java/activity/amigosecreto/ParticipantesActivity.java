@@ -56,6 +56,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
 
+    private final android.os.Handler mainHandler = mainHandler;
+
     private ListView lvParticipantes;
     private TextView tvCount;
     private MaterialButton fabAdd;
@@ -216,6 +218,9 @@ public class ParticipantesActivity extends AppCompatActivity {
     private void exibirDialogEditar(final Participante participante) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Editar Participante");
+        if (participante.isEnviado()) {
+            builder.setMessage("⚠️ O resultado deste participante já foi compartilhado. Editar os dados não atualizará a mensagem já enviada.");
+        }
 
         View view = getLayoutInflater().inflate(R.layout.dialog_add_participante, null);
         final EditText etNome = view.findViewById(R.id.et_nome);
@@ -238,7 +243,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String nome = etNome.getText().toString().trim();
-                // TODO: validar formato do telefone (ex: +55 11 91234-5678) antes de salvar
+                // TODO: validar formato do telefone (ex: +55 11 91234-5678) e e-mail antes de salvar
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
@@ -444,6 +449,8 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
+    // TODO: mover acesso ao banco (loop de participantes + desejos) para AsyncTask ou ViewModel
+    //       para evitar risco de ANR em grupos grandes.
     private void enviarSmsViaIntent() {
         List<Participante> comTelefone = new ArrayList<>();
         Map<Integer, String> mensagensParticipantes = new HashMap<>();
@@ -486,7 +493,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         final String mensagem = mensagensMap.get(p.getId());
         if (mensagem == null || mensagem.isEmpty()) {
             // Mensagem ausente ou vazia (estado inconsistente, ex: restaurado do bundle como ""); pular.
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
+            mainHandler.post(new Runnable() {
                 @Override public void run() { enviarSmsSequencial(lista, mensagensMap, index + 1); }
             });
             return;
@@ -520,7 +527,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
                             // Postar no Handler evita abrir novo AlertDialog enquanto o atual ainda
                             // esta sendo descartado, prevenindo WindowManager exception.
-                            new android.os.Handler(android.os.Looper.getMainLooper())
+                            mainHandler
                                     .post(new Runnable() {
                                         @Override
                                         public void run() {
@@ -536,7 +543,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         // Limpa id possivelmente restaurado do bundle para evitar estado inconsistente.
                         // Handler.post adia o proximo dialog ate o atual ser descartado (evita race condition).
                         pendingSmsParticipanteId = -1;
-                        new android.os.Handler(android.os.Looper.getMainLooper())
+                        mainHandler
                                 .post(new Runnable() {
                                     @Override
                                     public void run() {
@@ -794,7 +801,9 @@ public class ParticipantesActivity extends AppCompatActivity {
                 if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
                     desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
                 }
-                // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem
+                // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
+                // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
+                //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
                 dao.marcarComoEnviado(p.getId());
             } finally {
                 dao.close();
