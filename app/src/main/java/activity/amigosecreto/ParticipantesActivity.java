@@ -819,33 +819,48 @@ public class ParticipantesActivity extends AppCompatActivity {
             return convertView;
         }
 
-        private void compartilharResultado(Participante p) {
-            String nomeAmigo = null;
-            List<Desejo> desejos = new ArrayList<>();
-            DesejoDAO desejoDAO = new DesejoDAO(ctx);
-            try {
-                dao.open();
-                desejoDAO.open();
-                nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                    desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+        private void compartilharResultado(final Participante p) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    // DAOs locais evitam conflito com o dao compartilhado da Activity.
+                    final String[] nomeAmigo = {null};
+                    final List<Desejo>[] desejos = new List[]{new ArrayList<>()};
+                    ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
+                    DesejoDAO desejoDAO = new DesejoDAO(ctx);
+                    try {
+                        daoLocal.open();
+                        desejoDAO.open();
+                        nomeAmigo[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                        if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                            desejos[0] = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                        }
+                        // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
+                        // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
+                        //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
+                        daoLocal.marcarComoEnviado(p.getId());
+                    } finally {
+                        daoLocal.close();
+                        desejoDAO.close();
+                    }
+
+                    final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo[0], desejos[0]);
+
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isFinishing() || isDestroyed()) return;
+                            atualizarLista();
+                            Intent intent = new Intent(Intent.ACTION_SEND);
+                            intent.setType("text/plain");
+                            intent.putExtra(Intent.EXTRA_TEXT, mensagem);
+                            ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+                        }
+                    });
                 }
-                // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
-                // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
-                //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
-                dao.marcarComoEnviado(p.getId());
-            } finally {
-                dao.close();
-                desejoDAO.close();
-            }
-            atualizarLista();
-
-            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos);
-
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-            ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+            });
+            executor.shutdown();
         }
     }
 }
