@@ -715,11 +715,16 @@ public class ParticipantesActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
         sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
-        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém especial.\n");
-        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n\n");
-        sb.append("— — — — — — — — — — —\n\n");
-        sb.append("🎉 *Seu Amigo Secreto é:*\n");
-        sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
+        sb.append("O sorteio foi realizado e voce foi escolhido(a) para presentear alguem especial!\n");
+        sb.append("Role para baixo para descobrir quem e o seu Amigo Secreto\n\n");
+        // Separador ASCII (GSM-7 compativel): em-dash (U+2014) forcaria UCS-2,
+        // reduzindo capacidade SMS de 160 para 70 caracteres por segmento.
+        // Linhas em branco mantem o anti-spoiler: nome nao aparece sem rolar.
+        sb.append("- - - - - - - - - - - - -\n");
+        for (int i = 0; i < 20; i++) sb.append("\n");
+        sb.append("- - - - - - - - - - - - -\n\n");
+        sb.append("Seu Amigo Secreto e:\n");
+        sb.append("*** ").append(nomeAmigo).append(" ***\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
             int num = 1;
@@ -734,12 +739,12 @@ public class ParticipantesActivity extends AppCompatActivity {
                 // ignorando o min inconsistente — comportamento intencional para nao omitir
                 // o maximo que o usuario cadastrou mesmo com dados incoerentes.
                 if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
-                    sb.append(" — R$ ").append(formatarPreco(d.getPrecoMinimo()))
+                    sb.append(" - R$ ").append(formatarPreco(d.getPrecoMinimo()))
                       .append(" a R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 } else if (d.getPrecoMinimo() > 0) {
-                    sb.append(" — a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
+                    sb.append(" - a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
                 } else if (d.getPrecoMaximo() > 0) {
-                    sb.append(" — até R$ ").append(formatarPreco(d.getPrecoMaximo()));
+                    sb.append(" - ate R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 }
                 if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
                     sb.append(" 🏪 ").append(d.getLojas());
