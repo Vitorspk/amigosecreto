@@ -35,13 +35,15 @@ public class ParticipanteDAO {
         p.setId((int) id);
     }
 
-    public void atualizar(Participante p) {
+    public boolean atualizar(Participante p) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteOpenHelper.COLUMN_NOME, p.getNome());
         values.put(MySQLiteOpenHelper.COLUMN_EMAIL, p.getEmail());
         values.put(MySQLiteOpenHelper.COLUMN_TELEFONE, p.getTelefone());
-        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values,
+        // amigo_sorteado_id e enviado sao preservados intencionalmente
+        int rows = database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values,
                 MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(p.getId())});
+        return rows > 0;
     }
 
     public void remover(int id) {

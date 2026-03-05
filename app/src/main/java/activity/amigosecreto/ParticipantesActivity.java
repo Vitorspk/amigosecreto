@@ -246,10 +246,15 @@ public class ParticipantesActivity extends AppCompatActivity {
                     participante.setTelefone(telefone);
                     participante.setEmail(email);
                     dao.open();
-                    dao.atualizar(participante);
+                    boolean ok = dao.atualizar(participante);
                     dao.close();
-                    atualizarLista();
-                    dialog.dismiss();
+                    if (ok) {
+                        atualizarLista();
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(ParticipantesActivity.this,
+                                "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     etNome.setError("Nome é obrigatório");
                 }
@@ -548,7 +553,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
             for (int i = 0; i < desejos.size(); i++) {
                 Desejo d = desejos.get(i);
-                sb.append(i + 1).append(". ").append(d.getProduto());
+                sb.append(i + 1).append(". ").append(d.getProduto() != null ? d.getProduto() : "");
                 if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
