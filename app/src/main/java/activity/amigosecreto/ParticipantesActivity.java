@@ -260,12 +260,15 @@ public class ParticipantesActivity extends AppCompatActivity {
                 participante.setNome(nome);
                 participante.setTelefone(telefone);
                 participante.setEmail(email);
+                // DAO local evita conflito com o dao compartilhado da Activity que pode
+                // estar aberto em outro fluxo (ex: enviarSmsViaIntent em background).
                 boolean ok = false;
+                ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
                 try {
-                    dao.open();
-                    ok = dao.atualizar(participante);
+                    daoLocal.open();
+                    ok = daoLocal.atualizar(participante);
                 } finally {
-                    dao.close();
+                    daoLocal.close();
                 }
                 if (ok) {
                     atualizarLista();
@@ -581,11 +584,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .show();
     }
 
-    private String formatarPreco(double valor) {
-        if (valor == Math.floor(valor)) {
-            return String.format("%.0f", valor);
+    // Visivel ao pacote para permitir testes unitarios sem reflexao.
+    static String formatarPreco(double valor) {
+        long inteiro = (long) valor;
+        if (Math.abs(valor - inteiro) < 0.005) {
+            return String.valueOf(inteiro);
         }
-        return String.format("%.2f", valor).replace('.', ',');
+        return String.format(java.util.Locale.US, "%.2f", valor).replace('.', ',');
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
