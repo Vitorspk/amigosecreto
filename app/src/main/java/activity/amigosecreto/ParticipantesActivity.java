@@ -717,11 +717,11 @@ public class ParticipantesActivity extends AppCompatActivity {
         sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
         sb.append("O sorteio foi realizado e voce foi escolhido(a) para presentear alguem especial!\n");
         sb.append("Role para baixo para descobrir quem e o seu Amigo Secreto\n\n");
-        // Separador ASCII (GSM-7 compativel): em-dash (U+2014) forcaria UCS-2,
-        // reduzindo capacidade SMS de 160 para 70 caracteres por segmento.
+        // Separador em linha unica substitui o loop original de 25 pontos quebrados.
+        // A mensagem ja usa emojis (UCS-2), entao o charset nao e uma preocupacao aqui.
         sb.append("- - - - - - - - - - - - -\n\n");
         sb.append("Seu Amigo Secreto e:\n");
-        sb.append("*** ").append(nomeAmigo).append(" ***\n\n");
+        sb.append("*").append(nomeAmigo).append("* \uD83C\uDF89\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
             int num = 1;
