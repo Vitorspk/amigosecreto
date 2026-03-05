@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,7 +61,7 @@ public class ParticipantesActivity extends AppCompatActivity {
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
 
-    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -357,7 +359,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 Participante p = pendingSmsList.get(i);
                 ids[i] = p.getId();
                 telefones[i] = p.getTelefone() != null ? p.getTelefone() : "";
-                nomes[i] = p.getNome();
+                nomes[i] = p.getNome() != null ? p.getNome() : "";
                 String msg = pendingSmsMensagens.get(p.getId());
                 mensagens[i] = msg != null ? msg : "";
             }
@@ -825,16 +827,18 @@ public class ParticipantesActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     // DAOs locais evitam conflito com o dao compartilhado da Activity.
-                    final String[] nomeAmigo = {null};
-                    final List<Desejo>[] desejos = new List[]{new ArrayList<>()};
+                    // Holder de um elemento para capturar resultado mutavel dentro do Runnable
+                    // sem unchecked cast de array generico.
+                    final String[] nomeAmigoHolder = {null};
+                    final List<Desejo> desejosHolder = new ArrayList<>();
                     ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
                     DesejoDAO desejoDAO = new DesejoDAO(ctx);
                     try {
                         daoLocal.open();
                         desejoDAO.open();
-                        nomeAmigo[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                        nomeAmigoHolder[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
                         if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                            desejos[0] = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                            desejosHolder.addAll(desejoDAO.listarPorParticipante(p.getAmigoSorteadoId()));
                         }
                         // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
                         // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
@@ -845,7 +849,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         desejoDAO.close();
                     }
 
-                    final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo[0], desejos[0]);
+                    final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigoHolder[0], desejosHolder);
 
                     mainHandler.post(new Runnable() {
                         @Override
