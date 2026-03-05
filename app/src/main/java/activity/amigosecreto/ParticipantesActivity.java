@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,11 +36,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
 
@@ -51,8 +57,11 @@ public class ParticipantesActivity extends AppCompatActivity {
     private boolean smsLaunched = false;
     // Estado da sequencia de SMS; retomado no onResume para evitar dialog durante pausa da activity.
     private List<Participante> pendingSmsList = null;
-    private Map<Integer, String> pendingSmsNomesAmigos = null;
+    // Mensagens SMS já formatadas, mapeadas por participante ID.
+    private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -81,18 +90,16 @@ public class ParticipantesActivity extends AppCompatActivity {
             int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
             String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
             String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
-            String[] nomesAmigos = savedInstanceState.getStringArray("pendingSmsNomesAmigos");
-            if (ids != null && telefones != null && nomes != null && nomesAmigos != null) {
+            // pendingSmsMensagens nao e salvo no bundle (risco de TransactionTooLarge);
+            // sera reconstruido via banco em onResume.
+            if (ids != null && telefones != null && nomes != null) {
                 pendingSmsList = new ArrayList<>();
-                pendingSmsNomesAmigos = new HashMap<>();
                 for (int i = 0; i < ids.length; i++) {
                     Participante p = new Participante();
                     p.setId(ids[i]);
                     p.setTelefone(telefones[i]);
                     p.setNome(nomes[i]);
                     pendingSmsList.add(p);
-                    // Restore null for empty-string sentinel (saved when nomeAmigo was null)
-                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i].isEmpty() ? null : nomesAmigos[i]);
                 }
             }
         }
@@ -187,29 +194,127 @@ public class ParticipantesActivity extends AppCompatActivity {
         });
 
         builder.setView(view);
-        builder.setPositiveButton("Adicionar", new DialogInterface.OnClickListener() {
+        // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
+        // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
+        builder.setPositiveButton("Adicionar", null);
+        builder.setNegativeButton("Cancelar", null);
+        AlertDialog dialog = builder.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
+                if (!ValidationUtils.validateName(etNome)) return;
+                if (!ValidationUtils.validatePhone(etTelefone)) return;
+                if (!ValidationUtils.validateEmail(etEmail)) return;
+
                 String nome = etNome.getText().toString().trim();
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
-                if (!nome.isEmpty()) {
-                    Participante p = new Participante();
-                    p.setNome(nome);
-                    p.setTelefone(telefone);
-                    p.setEmail(email);
-                    dao.open();
-                    dao.inserir(p, grupoAtual.getId());
-                    dao.close();
-                    atualizarLista();
-                } else {
-                    Toast.makeText(ParticipantesActivity.this, "Nome é obrigatório", Toast.LENGTH_SHORT).show();
+                Participante p = new Participante();
+                p.setNome(nome);
+                p.setTelefone(telefone);
+                p.setEmail(email);
+                dao.open();
+                dao.inserir(p, grupoAtual.getId());
+                dao.close();
+                atualizarLista();
+                dialog.dismiss();
+            }
+        });
+    }
+
+    private void exibirDialogEditar(final Participante participante) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Editar Participante");
+        if (participante.isEnviado()) {
+            builder.setMessage("⚠️ O resultado deste participante já foi compartilhado. Editar os dados não atualizará a mensagem já enviada.");
+        }
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_add_participante, null);
+        final EditText etNome = view.findViewById(R.id.et_nome);
+        final EditText etTelefone = view.findViewById(R.id.et_telefone);
+        final EditText etEmail = view.findViewById(R.id.et_email);
+        View btnPickContact = view.findViewById(R.id.btn_pick_contact);
+        btnPickContact.setVisibility(View.GONE);
+
+        etNome.setText(participante.getNome());
+        etTelefone.setText(participante.getTelefone());
+        etEmail.setText(participante.getEmail());
+
+        builder.setView(view);
+        // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
+        // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
+        builder.setPositiveButton("Salvar", null);
+        builder.setNegativeButton("Cancelar", null);
+        AlertDialog dialog = builder.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!ValidationUtils.validateName(etNome)) return;
+                if (!ValidationUtils.validatePhone(etTelefone)) return;
+                if (!ValidationUtils.validateEmail(etEmail)) return;
+
+                String nome = etNome.getText().toString().trim();
+                String telefone = etTelefone.getText().toString().trim();
+                String email = etEmail.getText().toString().trim();
+
+                // Captura valores editados e originais antes de entrar na thread
+                final String nomeFinal = nome;
+                final String telefoneFinal = telefone;
+                final String emailFinal = email;
+                final String nomeOriginal = participante.getNome();
+                final String telefoneOriginal = participante.getTelefone();
+                final String emailOriginal = participante.getEmail();
+
+                // Desabilita o botao para evitar duplo toque enquanto o banco salva
+                v.setEnabled(false);
+
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                try {
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean ok = false;
+                            // Aplica valores no objeto antes de tentar salvar no banco
+                            participante.setNome(nomeFinal);
+                            participante.setTelefone(telefoneFinal);
+                            participante.setEmail(emailFinal);
+                            // DAO local evita conflito com o dao compartilhado da Activity.
+                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
+                            try {
+                                daoLocal.open();
+                                ok = daoLocal.atualizar(participante);
+                            } catch (Exception e) {
+                                ok = false;
+                            } finally {
+                                daoLocal.close();
+                            }
+                            final boolean sucesso = ok;
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    v.setEnabled(true);
+                                    if (isFinishing() || isDestroyed()) return;
+                                    if (sucesso) {
+                                        atualizarLista();
+                                        dialog.dismiss();
+                                    } else {
+                                        // Restaura estado original para manter objeto em sincronia com o banco
+                                        participante.setNome(nomeOriginal);
+                                        participante.setTelefone(telefoneOriginal);
+                                        participante.setEmail(emailOriginal);
+                                        Toast.makeText(ParticipantesActivity.this,
+                                                "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } finally {
+                    executor.shutdown();
                 }
             }
         });
-        builder.setNegativeButton("Cancelar", null);
-        builder.show();
     }
 
     private void abrirSeletorContatos() {
@@ -258,15 +363,70 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista();
-        // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa)
+        // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa).
+        // Apos rotacao, pendingSmsMensagens e null (nao foi salvo no bundle); reconstroi via banco.
         if (pendingSmsList != null && pendingSmsNextIndex >= 0) {
-            List<Participante> lista = pendingSmsList;
-            Map<Integer, String> nomes = pendingSmsNomesAmigos;
-            int nextIndex = pendingSmsNextIndex;
+            final List<Participante> lista = pendingSmsList;
+            final int nextIndex = pendingSmsNextIndex;
             pendingSmsList = null;
-            pendingSmsNomesAmigos = null;
             pendingSmsNextIndex = -1;
-            enviarSmsSequencial(lista, nomes, nextIndex);
+
+            if (pendingSmsMensagens != null) {
+                // Mensagens ja disponiveis (fluxo normal sem rotacao)
+                Map<Integer, String> mensagens = pendingSmsMensagens;
+                pendingSmsMensagens = null;
+                enviarSmsSequencial(lista, mensagens, nextIndex);
+            } else {
+                // Mensagens perdidas por rotacao: reconstroi a partir do banco em background
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                try {
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            final Map<Integer, String> mensagensReconstruidas = new HashMap<>();
+                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
+                            DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
+                            try {
+                                daoLocal.open();
+                                desejoDAO.open();
+                                for (Participante p : lista) {
+                                    Integer amigoId = p.getAmigoSorteadoId();
+                                    String nomeAmigo = (amigoId != null && amigoId > 0)
+                                            ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                                    List<Desejo> desejos = new ArrayList<>();
+                                    if (amigoId != null && amigoId > 0) {
+                                        desejos = desejoDAO.listarPorParticipante(amigoId);
+                                    }
+                                    mensagensReconstruidas.put(p.getId(),
+                                            gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                                }
+                            } catch (Exception e) {
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (isFinishing() || isDestroyed()) return;
+                                        Toast.makeText(ParticipantesActivity.this,
+                                                "Erro ao retomar envio. Tente novamente.", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                                return;
+                            } finally {
+                                daoLocal.close();
+                                desejoDAO.close();
+                            }
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    enviarSmsSequencial(lista, mensagensReconstruidas, nextIndex);
+                                }
+                            });
+                        }
+                    });
+                } finally {
+                    executor.shutdown();
+                }
+            }
         }
     }
 
@@ -275,23 +435,22 @@ public class ParticipantesActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putInt("pendingSmsId", pendingSmsParticipanteId);
         outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
-        if (pendingSmsList != null && pendingSmsNomesAmigos != null) {
+        // Salva apenas IDs, telefones e nomes — omite as mensagens formatadas para evitar
+        // TransactionTooLargeException (~1 MB Binder limit) em grupos com listas de desejos longas.
+        // As mensagens sao reconstruidas a partir do banco no onResume apos rotacao.
+        if (pendingSmsList != null) {
             int[] ids = new int[pendingSmsList.size()];
             String[] telefones = new String[pendingSmsList.size()];
             String[] nomes = new String[pendingSmsList.size()];
-            String[] nomesAmigos = new String[pendingSmsList.size()];
             for (int i = 0; i < pendingSmsList.size(); i++) {
                 Participante p = pendingSmsList.get(i);
                 ids[i] = p.getId();
-                telefones[i] = p.getTelefone();
-                nomes[i] = p.getNome();
-                String nomeAmigo = pendingSmsNomesAmigos.get(p.getId());
-                nomesAmigos[i] = nomeAmigo != null ? nomeAmigo : "";
+                telefones[i] = p.getTelefone() != null ? p.getTelefone() : "";
+                nomes[i] = p.getNome() != null ? p.getNome() : "";
             }
             outState.putIntArray("pendingSmsIds", ids);
             outState.putStringArray("pendingSmsTelefones", telefones);
             outState.putStringArray("pendingSmsNomes", nomes);
-            outState.putStringArray("pendingSmsNomesAmigos", nomesAmigos);
         }
     }
 
@@ -381,38 +540,98 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
+    // O acesso ao banco e feito em thread de fundo para evitar ANR em grupos grandes.
     private void enviarSmsViaIntent() {
-        List<Participante> comTelefone = new ArrayList<>();
-        Map<Integer, String> nomesAmigos = new HashMap<>();
+        final List<Participante> snapshot = new ArrayList<>(listaParticipantes);
+        // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
+        // RejectedExecutionException (ex: executor ja foi encerrado).
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            dao.open();
-            for (Participante p : listaParticipantes) {
-                if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                    comTelefone.add(p);
-                    nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    final List<Participante> comTelefone = new ArrayList<>();
+                    final Map<Integer, String> mensagensParticipantes = new HashMap<>();
+                    // DAOs locais evitam race condition com o dao compartilhado da Activity
+                    // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
+                    // close() chama helper.close() — nao acessa database diretamente,
+                    // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
+                    ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
+                    DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
+                    try {
+                        daoLocal.open();
+                        desejoDAO.open();
+                        for (Participante p : snapshot) {
+                            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                                comTelefone.add(p);
+                                Integer amigoId = p.getAmigoSorteadoId();
+                                String nomeAmigo = (amigoId != null && amigoId > 0)
+                                        ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                                List<Desejo> desejos = new ArrayList<>();
+                                if (amigoId != null && amigoId > 0) {
+                                    desejos = desejoDAO.listarPorParticipante(amigoId);
+                                }
+                                mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                            }
+                        }
+                    } catch (final Exception e) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isFinishing() || isDestroyed()) return;
+                                Toast.makeText(ParticipantesActivity.this,
+                                        "Erro ao preparar mensagens. Tente novamente.", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        return;
+                    } finally {
+                        daoLocal.close();
+                        desejoDAO.close();
+                    }
+
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isFinishing() || isDestroyed()) return;
+                            if (comTelefone.isEmpty()) {
+                                Toast.makeText(ParticipantesActivity.this,
+                                        "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
+                        }
+                    });
                 }
-            }
+            });
         } finally {
-            dao.close();
+            executor.shutdown();
         }
-
-        if (comTelefone.isEmpty()) {
-            Toast.makeText(this, "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        enviarSmsSequencial(comTelefone, nomesAmigos, 0);
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
-    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> nomesAmigos, final int index) {
+    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> mensagensMap, final int index) {
         if (index >= lista.size()) {
-            Toast.makeText(this, "SMS preparados para " + lista.size() + " participante(s).", Toast.LENGTH_LONG).show();
+            // Conta apenas participantes com mensagem valida (exclui pulados por mensagem ausente).
+            int enviados = 0;
+            for (Participante p : lista) {
+                String m = mensagensMap.get(p.getId());
+                if (m != null && !m.isEmpty()) enviados++;
+            }
+            Toast.makeText(this, "SMS preparados para " + enviados + " participante(s).", Toast.LENGTH_LONG).show();
             return;
         }
 
         final Participante p = lista.get(index);
-        final String mensagem = gerarMensagemSecreta(p.getNome(), nomesAmigos.get(p.getId()));
+        final String mensagem = mensagensMap.get(p.getId());
+        if (mensagem == null || mensagem.isEmpty()) {
+            // Mensagem ausente ou vazia (estado inconsistente, ex: restaurado do bundle como ""); pular.
+            // Handler.post e usado por stack-safety: evita stack overflow em listas longas onde
+            // multiplos itens consecutivos sao pulados, convertendo recursao em iteracao no loop de mensagens.
+            mainHandler.post(new Runnable() {
+                @Override public void run() { enviarSmsSequencial(lista, mensagensMap, index + 1); }
+            });
+            return;
+        }
 
         new AlertDialog.Builder(this)
                 .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
@@ -429,24 +648,24 @@ public class ParticipantesActivity extends AppCompatActivity {
                             // Proximo dialog e agendado para onResume para evitar BadTokenException.
                             pendingSmsParticipanteId = p.getId();
                             pendingSmsList = lista;
-                            pendingSmsNomesAmigos = nomesAmigos;
+                            pendingSmsMensagens = mensagensMap;
                             pendingSmsNextIndex = index + 1;
                             smsLaunched = true;
                             startActivity(intent);
                         } catch (android.content.ActivityNotFoundException e) {
                             pendingSmsParticipanteId = -1;
                             pendingSmsList = null;
-                            pendingSmsNomesAmigos = null;
+                            pendingSmsMensagens = null;
                             pendingSmsNextIndex = -1;
                             Toast.makeText(ParticipantesActivity.this,
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
                             // Postar no Handler evita abrir novo AlertDialog enquanto o atual ainda
                             // esta sendo descartado, prevenindo WindowManager exception.
-                            new android.os.Handler(android.os.Looper.getMainLooper())
+                            mainHandler
                                     .post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                            enviarSmsSequencial(lista, mensagensMap, index + 1);
                                         }
                                     });
                         }
@@ -458,11 +677,11 @@ public class ParticipantesActivity extends AppCompatActivity {
                         // Limpa id possivelmente restaurado do bundle para evitar estado inconsistente.
                         // Handler.post adia o proximo dialog ate o atual ser descartado (evita race condition).
                         pendingSmsParticipanteId = -1;
-                        new android.os.Handler(android.os.Looper.getMainLooper())
+                        mainHandler
                                 .post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                        enviarSmsSequencial(lista, mensagensMap, index + 1);
                                     }
                                 });
                     }
@@ -472,7 +691,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         pendingSmsParticipanteId = -1;
                         pendingSmsList = null;
-                        pendingSmsNomesAmigos = null;
+                        pendingSmsMensagens = null;
                         pendingSmsNextIndex = -1;
                         smsLaunched = false;
                     }
@@ -481,17 +700,55 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .show();
     }
 
-    private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {
+    // Visivel ao pacote para permitir testes unitarios sem reflexao.
+    static String formatarPreco(double valor) {
+        long inteiro = (long) valor;
+        if (Math.abs(valor - inteiro) < 0.005) {
+            return String.valueOf(inteiro);
+        }
+        return String.format(java.util.Locale.US, "%.2f", valor).replace('.', ',');
+    }
+
+    private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
+        if (nomeParticipante == null) nomeParticipante = "???";
         if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
-        sb.append("Olá, *").append(nomeParticipante).append("*!\n");
-        sb.append("Seu resultado está pronto.\n");
-        sb.append("ROLE PARA BAIXO PARA VER\n");
+        sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
+        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém muito especial!\n");
+        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n");
         for (int i = 0; i < 25; i++) sb.append(".\n");
-        sb.append("\n🕵️ *Seu Amigo Secreto é:* \n");
+        sb.append("\n🎉 *Seu Amigo Secreto é:*\n");
         sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
-        sb.append("Não conte para ninguém! 🤫");
+        if (desejos != null && !desejos.isEmpty()) {
+            sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
+            int num = 1;
+            for (Desejo d : desejos) {
+                if (d.getProduto() == null || d.getProduto().trim().isEmpty()) continue;
+                sb.append(num++).append(". ").append(d.getProduto());
+                if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
+                    sb.append(" (").append(d.getCategoria()).append(")");
+                }
+                // Logica de faixa de preco: exibe apenas quando os valores sao validos.
+                // Se min > max (faixa invalida), cai no else-if e exibe apenas "ate R$ max",
+                // ignorando o min inconsistente — comportamento intencional para nao omitir
+                // o maximo que o usuario cadastrou mesmo com dados incoerentes.
+                if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
+                    sb.append(" — R$ ").append(formatarPreco(d.getPrecoMinimo()))
+                      .append(" a R$ ").append(formatarPreco(d.getPrecoMaximo()));
+                } else if (d.getPrecoMinimo() > 0) {
+                    sb.append(" — a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
+                } else if (d.getPrecoMaximo() > 0) {
+                    sb.append(" — até R$ ").append(formatarPreco(d.getPrecoMaximo()));
+                }
+                if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
+                    sb.append(" 🏪 ").append(d.getLojas());
+                }
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        sb.append("Lembre-se: o segredo é seu! Não conte para ninguém. 🤫");
         return sb.toString();
     }
 
@@ -605,6 +862,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             ImageButton btnDesejos = convertView.findViewById(R.id.btn_desejos);
             ImageButton btnRegras = convertView.findViewById(R.id.btn_regras);
             ImageButton btnShare = convertView.findViewById(R.id.btn_share);
+            ImageButton btnEditar = convertView.findViewById(R.id.btn_editar);
             ImageButton btnRemover = convertView.findViewById(R.id.btn_remover);
 
             tvNumero.setText(String.valueOf(position + 1));
@@ -650,7 +908,19 @@ public class ParticipantesActivity extends AppCompatActivity {
 
             btnShare.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View v) { compartilharResultado(p); }
+                public void onClick(View v) {
+                    // Desabilitar imediatamente para evitar multiplos taps que criariam
+                    // ExecutorServices e share sheets duplicados. Reabilitado no mainHandler.post.
+                    v.setEnabled(false);
+                    compartilharResultado(p, v);
+                }
+            });
+
+            btnEditar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    exibirDialogEditar(p);
+                }
             });
 
             btnRemover.setOnClickListener(new View.OnClickListener() {
@@ -663,38 +933,73 @@ public class ParticipantesActivity extends AppCompatActivity {
                 }
             });
 
-            // Click listener apenas na área de informações do participante
-            View.OnClickListener revelarListener = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                        Intent intent = new Intent(ParticipantesActivity.this, RevelarAmigoActivity.class);
-                        intent.putExtra("participante", p);
-                        startActivity(intent);
-                    }
-                }
-            };
-
-            tvNome.setOnClickListener(revelarListener);
-            tvEmail.setOnClickListener(revelarListener);
-            tvAvatar.setOnClickListener(revelarListener);
-
             return convertView;
         }
 
-        private void compartilharResultado(Participante p) {
-            dao.open();
-            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-            dao.marcarComoEnviado(p.getId());
-            dao.close();
-            atualizarLista();
+        private void compartilharResultado(final Participante p, final View btnShare) {
+            // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
+            // RejectedExecutionException (ex: executor ja foi encerrado).
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            try {
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // DAOs locais evitam conflito com o dao compartilhado da Activity.
+                        // close() chama helper.close() — nao acessa database diretamente,
+                        // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
+                        final String[] nomeAmigoHolder = {null};
+                        final List<Desejo> desejosHolder = new ArrayList<>();
+                        ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
+                        DesejoDAO desejoDAO = new DesejoDAO(ctx);
+                        try {
+                            daoLocal.open();
+                            desejoDAO.open();
+                            Integer amigoId = p.getAmigoSorteadoId();
+                            nomeAmigoHolder[0] = (amigoId != null && amigoId > 0)
+                                    ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                            if (amigoId != null && amigoId > 0) {
+                                desejosHolder.addAll(desejoDAO.listarPorParticipante(amigoId));
+                            }
+                            // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
+                            // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
+                            //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
+                            daoLocal.marcarComoEnviado(p.getId());
+                        } catch (final Exception e) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (btnShare != null) btnShare.setEnabled(true);
+                                    if (isFinishing() || isDestroyed()) return;
+                                    Toast.makeText(ctx,
+                                            "Erro ao carregar dados. Tente novamente.", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                            return;
+                        } finally {
+                            daoLocal.close();
+                            desejoDAO.close();
+                        }
 
-            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
+                        final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigoHolder[0], desejosHolder);
 
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-            ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Reabilita o botao independentemente do resultado
+                                if (btnShare != null) btnShare.setEnabled(true);
+                                if (isFinishing() || isDestroyed()) return;
+                                atualizarLista();
+                                Intent intent = new Intent(Intent.ACTION_SEND);
+                                intent.setType("text/plain");
+                                intent.putExtra(Intent.EXTRA_TEXT, mensagem);
+                                ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+                            }
+                        });
+                    }
+                });
+            } finally {
+                executor.shutdown();
+            }
         }
     }
 }

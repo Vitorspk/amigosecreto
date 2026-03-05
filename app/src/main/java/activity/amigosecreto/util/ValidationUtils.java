@@ -13,9 +13,9 @@ public class ValidationUtils {
         "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$"
     );
 
-    // Phone pattern (Brazilian format)
+    // Phone pattern (Brazilian format, with optional +55 country code from ContactPicker)
     private static final Pattern PHONE_PATTERN = Pattern.compile(
-        "^\\(?\\d{2}\\)?\\s?9?\\d{4}-?\\d{4}$"
+        "^(\\+55\\s?)?\\(?\\d{2}\\)?\\s?9?\\d{4}-?\\d{4}$"
     );
 
     /**
