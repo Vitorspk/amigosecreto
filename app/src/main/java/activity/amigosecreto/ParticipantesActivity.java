@@ -715,10 +715,10 @@ public class ParticipantesActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
         sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
-        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém muito especial!\n");
-        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n");
-        for (int i = 0; i < 25; i++) sb.append(".\n");
-        sb.append("\n🎉 *Seu Amigo Secreto é:*\n");
+        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém especial.\n");
+        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n\n");
+        sb.append("— — — — — — — — — — —\n\n");
+        sb.append("🎉 *Seu Amigo Secreto é:*\n");
         sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
