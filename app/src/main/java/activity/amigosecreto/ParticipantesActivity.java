@@ -719,9 +719,6 @@ public class ParticipantesActivity extends AppCompatActivity {
         sb.append("Role para baixo para descobrir quem e o seu Amigo Secreto\n\n");
         // Separador ASCII (GSM-7 compativel): em-dash (U+2014) forcaria UCS-2,
         // reduzindo capacidade SMS de 160 para 70 caracteres por segmento.
-        // Linhas em branco mantem o anti-spoiler: nome nao aparece sem rolar.
-        sb.append("- - - - - - - - - - - - -\n");
-        for (int i = 0; i < 20; i++) sb.append("\n");
         sb.append("- - - - - - - - - - - - -\n\n");
         sb.append("Seu Amigo Secreto e:\n");
         sb.append("*** ").append(nomeAmigo).append(" ***\n\n");
