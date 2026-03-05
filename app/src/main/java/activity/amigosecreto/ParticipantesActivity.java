@@ -229,9 +229,14 @@ public class ParticipantesActivity extends AppCompatActivity {
         etEmail.setText(participante.getEmail());
 
         builder.setView(view);
-        builder.setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+        // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
+        // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
+        builder.setPositiveButton("Salvar", null);
+        builder.setNegativeButton("Cancelar", null);
+        AlertDialog dialog = builder.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
                 String nome = etNome.getText().toString().trim();
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
@@ -244,13 +249,12 @@ public class ParticipantesActivity extends AppCompatActivity {
                     dao.atualizar(participante);
                     dao.close();
                     atualizarLista();
+                    dialog.dismiss();
                 } else {
-                    Toast.makeText(ParticipantesActivity.this, "Nome é obrigatório", Toast.LENGTH_SHORT).show();
+                    etNome.setError("Nome é obrigatório");
                 }
             }
         });
-        builder.setNegativeButton("Cancelar", null);
-        builder.show();
     }
 
     private void abrirSeletorContatos() {
@@ -548,9 +552,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
-                if (d.getPrecoMinimo() > 0 || d.getPrecoMaximo() > 0) {
+                if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
                     sb.append(" — R$ ").append(String.format("%.0f", d.getPrecoMinimo()))
                       .append(" a R$ ").append(String.format("%.0f", d.getPrecoMaximo()));
+                } else if (d.getPrecoMinimo() > 0) {
+                    sb.append(" — a partir de R$ ").append(String.format("%.0f", d.getPrecoMinimo()));
+                } else if (d.getPrecoMaximo() > 0) {
+                    sb.append(" — até R$ ").append(String.format("%.0f", d.getPrecoMaximo()));
                 }
                 if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
                     sb.append(" 🏪 ").append(d.getLojas());
@@ -743,7 +751,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
 
         private void compartilharResultado(Participante p) {
-            String nomeAmigo;
+            String nomeAmigo = null;
             List<Desejo> desejos = new ArrayList<>();
             DesejoDAO desejoDAO = new DesejoDAO(ctx);
             try {
