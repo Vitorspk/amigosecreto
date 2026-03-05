@@ -34,12 +34,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
 
@@ -242,39 +245,38 @@ public class ParticipantesActivity extends AppCompatActivity {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!ValidationUtils.validateName(etNome)) return;
+                if (!ValidationUtils.validatePhone(etTelefone)) return;
+                if (!ValidationUtils.validateEmail(etEmail)) return;
+
                 String nome = etNome.getText().toString().trim();
-                // TODO: validar formato do telefone (ex: +55 11 91234-5678) e e-mail antes de salvar
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
-                if (!nome.isEmpty()) {
-                    // Guarda valores originais para restaurar se o banco falhar
-                    String nomeOriginal = participante.getNome();
-                    String telefoneOriginal = participante.getTelefone();
-                    String emailOriginal = participante.getEmail();
-                    participante.setNome(nome);
-                    participante.setTelefone(telefone);
-                    participante.setEmail(email);
-                    boolean ok = false;
-                    try {
-                        dao.open();
-                        ok = dao.atualizar(participante);
-                    } finally {
-                        dao.close();
-                    }
-                    if (ok) {
-                        atualizarLista();
-                        dialog.dismiss();
-                    } else {
-                        // Restaura estado original para manter objeto em sincronia com o banco
-                        participante.setNome(nomeOriginal);
-                        participante.setTelefone(telefoneOriginal);
-                        participante.setEmail(emailOriginal);
-                        Toast.makeText(ParticipantesActivity.this,
-                                "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
-                    }
+                // Guarda valores originais para restaurar se o banco falhar
+                String nomeOriginal = participante.getNome();
+                String telefoneOriginal = participante.getTelefone();
+                String emailOriginal = participante.getEmail();
+                participante.setNome(nome);
+                participante.setTelefone(telefone);
+                participante.setEmail(email);
+                boolean ok = false;
+                try {
+                    dao.open();
+                    ok = dao.atualizar(participante);
+                } finally {
+                    dao.close();
+                }
+                if (ok) {
+                    atualizarLista();
+                    dialog.dismiss();
                 } else {
-                    etNome.setError("Nome é obrigatório");
+                    // Restaura estado original para manter objeto em sincronia com o banco
+                    participante.setNome(nomeOriginal);
+                    participante.setTelefone(telefoneOriginal);
+                    participante.setEmail(emailOriginal);
+                    Toast.makeText(ParticipantesActivity.this,
+                            "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -449,37 +451,50 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
-    // TODO: mover acesso ao banco (loop de participantes + desejos) para AsyncTask ou ViewModel
-    //       para evitar risco de ANR em grupos grandes.
+    // O acesso ao banco e feito em thread de fundo para evitar ANR em grupos grandes.
     private void enviarSmsViaIntent() {
-        List<Participante> comTelefone = new ArrayList<>();
-        Map<Integer, String> mensagensParticipantes = new HashMap<>();
-        DesejoDAO desejoDAO = new DesejoDAO(this);
-        try {
-            dao.open();
-            desejoDAO.open();
-            for (Participante p : listaParticipantes) {
-                if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                    comTelefone.add(p);
-                    String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                    List<Desejo> desejos = new ArrayList<>();
-                    if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                        desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+        final List<Participante> snapshot = new ArrayList<>(listaParticipantes);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                final List<Participante> comTelefone = new ArrayList<>();
+                final Map<Integer, String> mensagensParticipantes = new HashMap<>();
+                DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
+                try {
+                    dao.open();
+                    desejoDAO.open();
+                    for (Participante p : snapshot) {
+                        if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                            comTelefone.add(p);
+                            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                            List<Desejo> desejos = new ArrayList<>();
+                            if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                                desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                            }
+                            mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                        }
                     }
-                    mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                } finally {
+                    dao.close();
+                    desejoDAO.close();
                 }
+
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (comTelefone.isEmpty()) {
+                            Toast.makeText(ParticipantesActivity.this,
+                                    "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
+                    }
+                });
             }
-        } finally {
-            dao.close();
-            desejoDAO.close();
-        }
-
-        if (comTelefone.isEmpty()) {
-            Toast.makeText(this, "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
+        });
+        executor.shutdown();
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
