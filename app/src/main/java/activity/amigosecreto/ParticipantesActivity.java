@@ -238,6 +238,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String nome = etNome.getText().toString().trim();
+                // TODO: validar formato do telefone (ex: +55 11 91234-5678) antes de salvar
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
@@ -483,8 +484,8 @@ public class ParticipantesActivity extends AppCompatActivity {
 
         final Participante p = lista.get(index);
         final String mensagem = mensagensMap.get(p.getId());
-        if (mensagem == null) {
-            // Mensagem ausente para este participante (estado inconsistente); pular.
+        if (mensagem == null || mensagem.isEmpty()) {
+            // Mensagem ausente ou vazia (estado inconsistente, ex: restaurado do bundle como ""); pular.
             new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
                 @Override public void run() { enviarSmsSequencial(lista, mensagensMap, index + 1); }
             });
@@ -558,6 +559,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .show();
     }
 
+    private String formatarPreco(double valor) {
+        if (valor == Math.floor(valor)) {
+            return String.format("%.0f", valor);
+        }
+        return String.format("%.2f", valor).replace('.', ',');
+    }
+
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
         if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
@@ -578,12 +586,12 @@ public class ParticipantesActivity extends AppCompatActivity {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
                 if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
-                    sb.append(" — R$ ").append(String.format("%.0f", d.getPrecoMinimo()))
-                      .append(" a R$ ").append(String.format("%.0f", d.getPrecoMaximo()));
+                    sb.append(" — R$ ").append(formatarPreco(d.getPrecoMinimo()))
+                      .append(" a R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 } else if (d.getPrecoMinimo() > 0) {
-                    sb.append(" — a partir de R$ ").append(String.format("%.0f", d.getPrecoMinimo()));
+                    sb.append(" — a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
                 } else if (d.getPrecoMaximo() > 0) {
-                    sb.append(" — até R$ ").append(String.format("%.0f", d.getPrecoMaximo()));
+                    sb.append(" — até R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 }
                 if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
                     sb.append(" 🏪 ").append(d.getLojas());
