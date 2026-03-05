@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
@@ -51,7 +52,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     private boolean smsLaunched = false;
     // Estado da sequencia de SMS; retomado no onResume para evitar dialog durante pausa da activity.
     private List<Participante> pendingSmsList = null;
-    private Map<Integer, String> pendingSmsNomesAmigos = null;
+    // Mensagens SMS já formatadas, mapeadas por participante ID.
+    private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
 
     private ListView lvParticipantes;
@@ -81,18 +83,17 @@ public class ParticipantesActivity extends AppCompatActivity {
             int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
             String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
             String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
-            String[] nomesAmigos = savedInstanceState.getStringArray("pendingSmsNomesAmigos");
-            if (ids != null && telefones != null && nomes != null && nomesAmigos != null) {
+            String[] mensagens = savedInstanceState.getStringArray("pendingSmsMensagens");
+            if (ids != null && telefones != null && nomes != null && mensagens != null) {
                 pendingSmsList = new ArrayList<>();
-                pendingSmsNomesAmigos = new HashMap<>();
+                pendingSmsMensagens = new HashMap<>();
                 for (int i = 0; i < ids.length; i++) {
                     Participante p = new Participante();
                     p.setId(ids[i]);
                     p.setTelefone(telefones[i]);
                     p.setNome(nomes[i]);
                     pendingSmsList.add(p);
-                    // Restore null for empty-string sentinel (saved when nomeAmigo was null)
-                    pendingSmsNomesAmigos.put(ids[i], nomesAmigos[i].isEmpty() ? null : nomesAmigos[i]);
+                    pendingSmsMensagens.put(ids[i], mensagens[i]);
                 }
             }
         }
@@ -212,6 +213,46 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void exibirDialogEditar(final Participante participante) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Editar Participante");
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_add_participante, null);
+        final EditText etNome = view.findViewById(R.id.et_nome);
+        final EditText etTelefone = view.findViewById(R.id.et_telefone);
+        final EditText etEmail = view.findViewById(R.id.et_email);
+        View btnPickContact = view.findViewById(R.id.btn_pick_contact);
+        btnPickContact.setVisibility(View.GONE);
+
+        etNome.setText(participante.getNome());
+        etTelefone.setText(participante.getTelefone());
+        etEmail.setText(participante.getEmail());
+
+        builder.setView(view);
+        builder.setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String nome = etNome.getText().toString().trim();
+                String telefone = etTelefone.getText().toString().trim();
+                String email = etEmail.getText().toString().trim();
+
+                if (!nome.isEmpty()) {
+                    participante.setNome(nome);
+                    participante.setTelefone(telefone);
+                    participante.setEmail(email);
+                    dao.open();
+                    dao.atualizar(participante);
+                    dao.close();
+                    atualizarLista();
+                } else {
+                    Toast.makeText(ParticipantesActivity.this, "Nome é obrigatório", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        builder.setNegativeButton("Cancelar", null);
+        builder.show();
+    }
+
     private void abrirSeletorContatos() {
         Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
         startActivityForResult(intent, REQUEST_CONTACT_PICKER);
@@ -261,12 +302,12 @@ public class ParticipantesActivity extends AppCompatActivity {
         // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa)
         if (pendingSmsList != null && pendingSmsNextIndex >= 0) {
             List<Participante> lista = pendingSmsList;
-            Map<Integer, String> nomes = pendingSmsNomesAmigos;
+            Map<Integer, String> mensagens = pendingSmsMensagens;
             int nextIndex = pendingSmsNextIndex;
             pendingSmsList = null;
-            pendingSmsNomesAmigos = null;
+            pendingSmsMensagens = null;
             pendingSmsNextIndex = -1;
-            enviarSmsSequencial(lista, nomes, nextIndex);
+            enviarSmsSequencial(lista, mensagens, nextIndex);
         }
     }
 
@@ -275,23 +316,23 @@ public class ParticipantesActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putInt("pendingSmsId", pendingSmsParticipanteId);
         outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
-        if (pendingSmsList != null && pendingSmsNomesAmigos != null) {
+        if (pendingSmsList != null && pendingSmsMensagens != null) {
             int[] ids = new int[pendingSmsList.size()];
             String[] telefones = new String[pendingSmsList.size()];
             String[] nomes = new String[pendingSmsList.size()];
-            String[] nomesAmigos = new String[pendingSmsList.size()];
+            String[] mensagens = new String[pendingSmsList.size()];
             for (int i = 0; i < pendingSmsList.size(); i++) {
                 Participante p = pendingSmsList.get(i);
                 ids[i] = p.getId();
-                telefones[i] = p.getTelefone();
+                telefones[i] = p.getTelefone() != null ? p.getTelefone() : "";
                 nomes[i] = p.getNome();
-                String nomeAmigo = pendingSmsNomesAmigos.get(p.getId());
-                nomesAmigos[i] = nomeAmigo != null ? nomeAmigo : "";
+                String msg = pendingSmsMensagens.get(p.getId());
+                mensagens[i] = msg != null ? msg : "";
             }
             outState.putIntArray("pendingSmsIds", ids);
             outState.putStringArray("pendingSmsTelefones", telefones);
             outState.putStringArray("pendingSmsNomes", nomes);
-            outState.putStringArray("pendingSmsNomesAmigos", nomesAmigos);
+            outState.putStringArray("pendingSmsMensagens", mensagens);
         }
     }
 
@@ -383,17 +424,25 @@ public class ParticipantesActivity extends AppCompatActivity {
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
     private void enviarSmsViaIntent() {
         List<Participante> comTelefone = new ArrayList<>();
-        Map<Integer, String> nomesAmigos = new HashMap<>();
+        Map<Integer, String> mensagensParticipantes = new HashMap<>();
+        DesejoDAO desejoDAO = new DesejoDAO(this);
         try {
             dao.open();
+            desejoDAO.open();
             for (Participante p : listaParticipantes) {
                 if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
                     comTelefone.add(p);
-                    nomesAmigos.put(p.getId(), dao.getNomeAmigoSorteado(p.getAmigoSorteadoId()));
+                    String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                    List<Desejo> desejos = new ArrayList<>();
+                    if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                        desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                    }
+                    mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
                 }
             }
         } finally {
             dao.close();
+            desejoDAO.close();
         }
 
         if (comTelefone.isEmpty()) {
@@ -401,18 +450,18 @@ public class ParticipantesActivity extends AppCompatActivity {
             return;
         }
 
-        enviarSmsSequencial(comTelefone, nomesAmigos, 0);
+        enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
-    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> nomesAmigos, final int index) {
+    private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> mensagensMap, final int index) {
         if (index >= lista.size()) {
             Toast.makeText(this, "SMS preparados para " + lista.size() + " participante(s).", Toast.LENGTH_LONG).show();
             return;
         }
 
         final Participante p = lista.get(index);
-        final String mensagem = gerarMensagemSecreta(p.getNome(), nomesAmigos.get(p.getId()));
+        final String mensagem = mensagensMap.get(p.getId());
 
         new AlertDialog.Builder(this)
                 .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
@@ -429,14 +478,14 @@ public class ParticipantesActivity extends AppCompatActivity {
                             // Proximo dialog e agendado para onResume para evitar BadTokenException.
                             pendingSmsParticipanteId = p.getId();
                             pendingSmsList = lista;
-                            pendingSmsNomesAmigos = nomesAmigos;
+                            pendingSmsMensagens = mensagensMap;
                             pendingSmsNextIndex = index + 1;
                             smsLaunched = true;
                             startActivity(intent);
                         } catch (android.content.ActivityNotFoundException e) {
                             pendingSmsParticipanteId = -1;
                             pendingSmsList = null;
-                            pendingSmsNomesAmigos = null;
+                            pendingSmsMensagens = null;
                             pendingSmsNextIndex = -1;
                             Toast.makeText(ParticipantesActivity.this,
                                     "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
@@ -446,7 +495,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                     .post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                            enviarSmsSequencial(lista, mensagensMap, index + 1);
                                         }
                                     });
                         }
@@ -462,7 +511,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 .post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        enviarSmsSequencial(lista, nomesAmigos, index + 1);
+                                        enviarSmsSequencial(lista, mensagensMap, index + 1);
                                     }
                                 });
                     }
@@ -472,7 +521,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         pendingSmsParticipanteId = -1;
                         pendingSmsList = null;
-                        pendingSmsNomesAmigos = null;
+                        pendingSmsMensagens = null;
                         pendingSmsNextIndex = -1;
                         smsLaunched = false;
                     }
@@ -481,17 +530,36 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .show();
     }
 
-    private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo) {
+    private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
         if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
-        sb.append("Olá, *").append(nomeParticipante).append("*!\n");
-        sb.append("Seu resultado está pronto.\n");
-        sb.append("ROLE PARA BAIXO PARA VER\n");
+        sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
+        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém muito especial!\n");
+        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n");
         for (int i = 0; i < 25; i++) sb.append(".\n");
-        sb.append("\n🕵️ *Seu Amigo Secreto é:* \n");
+        sb.append("\n🎉 *Seu Amigo Secreto é:*\n");
         sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
-        sb.append("Não conte para ninguém! 🤫");
+        if (desejos != null && !desejos.isEmpty()) {
+            sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
+            for (int i = 0; i < desejos.size(); i++) {
+                Desejo d = desejos.get(i);
+                sb.append(i + 1).append(". ").append(d.getProduto());
+                if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
+                    sb.append(" (").append(d.getCategoria()).append(")");
+                }
+                if (d.getPrecoMinimo() > 0 || d.getPrecoMaximo() > 0) {
+                    sb.append(" — R$ ").append(String.format("%.0f", d.getPrecoMinimo()))
+                      .append(" a R$ ").append(String.format("%.0f", d.getPrecoMaximo()));
+                }
+                if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
+                    sb.append(" 🏪 ").append(d.getLojas());
+                }
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        sb.append("Lembre-se: o segredo é seu! Não conte para ninguém. 🤫");
         return sb.toString();
     }
 
@@ -605,6 +673,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             ImageButton btnDesejos = convertView.findViewById(R.id.btn_desejos);
             ImageButton btnRegras = convertView.findViewById(R.id.btn_regras);
             ImageButton btnShare = convertView.findViewById(R.id.btn_share);
+            ImageButton btnEditar = convertView.findViewById(R.id.btn_editar);
             ImageButton btnRemover = convertView.findViewById(R.id.btn_remover);
 
             tvNumero.setText(String.valueOf(position + 1));
@@ -653,6 +722,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 public void onClick(View v) { compartilharResultado(p); }
             });
 
+            btnEditar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    exibirDialogEditar(p);
+                }
+            });
+
             btnRemover.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -663,33 +739,28 @@ public class ParticipantesActivity extends AppCompatActivity {
                 }
             });
 
-            // Click listener apenas na área de informações do participante
-            View.OnClickListener revelarListener = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                        Intent intent = new Intent(ParticipantesActivity.this, RevelarAmigoActivity.class);
-                        intent.putExtra("participante", p);
-                        startActivity(intent);
-                    }
-                }
-            };
-
-            tvNome.setOnClickListener(revelarListener);
-            tvEmail.setOnClickListener(revelarListener);
-            tvAvatar.setOnClickListener(revelarListener);
-
             return convertView;
         }
 
         private void compartilharResultado(Participante p) {
-            dao.open();
-            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-            dao.marcarComoEnviado(p.getId());
-            dao.close();
+            String nomeAmigo;
+            List<Desejo> desejos = new ArrayList<>();
+            DesejoDAO desejoDAO = new DesejoDAO(ctx);
+            try {
+                dao.open();
+                desejoDAO.open();
+                nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                dao.marcarComoEnviado(p.getId());
+                if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                    desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                }
+            } finally {
+                dao.close();
+                desejoDAO.close();
+            }
             atualizarLista();
 
-            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo);
+            String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos);
 
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("text/plain");

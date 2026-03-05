@@ -35,6 +35,15 @@ public class ParticipanteDAO {
         p.setId((int) id);
     }
 
+    public void atualizar(Participante p) {
+        ContentValues values = new ContentValues();
+        values.put(MySQLiteOpenHelper.COLUMN_NOME, p.getNome());
+        values.put(MySQLiteOpenHelper.COLUMN_EMAIL, p.getEmail());
+        values.put(MySQLiteOpenHelper.COLUMN_TELEFONE, p.getTelefone());
+        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values,
+                MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(p.getId())});
+    }
+
     public void remover(int id) {
         String idStr = String.valueOf(id);
         database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_ID + " = ?", new String[]{idStr});
