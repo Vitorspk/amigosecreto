@@ -36,6 +36,7 @@ public class ParticipanteDAO {
     }
 
     public boolean atualizar(Participante p) {
+        if (p.getId() <= 0) return false;
         ContentValues values = new ContentValues();
         values.put(MySQLiteOpenHelper.COLUMN_NOME, p.getNome());
         values.put(MySQLiteOpenHelper.COLUMN_EMAIL, p.getEmail());

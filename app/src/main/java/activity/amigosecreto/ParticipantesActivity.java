@@ -463,14 +463,17 @@ public class ParticipantesActivity extends AppCompatActivity {
             public void run() {
                 final List<Participante> comTelefone = new ArrayList<>();
                 final Map<Integer, String> mensagensParticipantes = new HashMap<>();
+                // DAOs locais evitam race condition com o dao compartilhado da Activity
+                // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
+                ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
                 DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
                 try {
-                    dao.open();
+                    daoLocal.open();
                     desejoDAO.open();
                     for (Participante p : snapshot) {
                         if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
                             comTelefone.add(p);
-                            String nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                            String nomeAmigo = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
                             List<Desejo> desejos = new ArrayList<>();
                             if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
                                 desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
@@ -479,7 +482,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         }
                     }
                 } finally {
-                    dao.close();
+                    daoLocal.close();
                     desejoDAO.close();
                 }
 
@@ -503,7 +506,13 @@ public class ParticipantesActivity extends AppCompatActivity {
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
     private void enviarSmsSequencial(final List<Participante> lista, final Map<Integer, String> mensagensMap, final int index) {
         if (index >= lista.size()) {
-            Toast.makeText(this, "SMS preparados para " + lista.size() + " participante(s).", Toast.LENGTH_LONG).show();
+            // Conta apenas participantes com mensagem valida (exclui pulados por mensagem ausente).
+            int enviados = 0;
+            for (Participante p : lista) {
+                String m = mensagensMap.get(p.getId());
+                if (m != null && !m.isEmpty()) enviados++;
+            }
+            Toast.makeText(this, "SMS preparados para " + enviados + " participante(s).", Toast.LENGTH_LONG).show();
             return;
         }
 
