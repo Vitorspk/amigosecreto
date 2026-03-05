@@ -715,11 +715,13 @@ public class ParticipantesActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append("🎁 *Amigo Secreto* 🎁\n\n");
         sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
-        sb.append("O sorteio foi realizado e você foi escolhido(a) para presentear alguém muito especial!\n");
-        sb.append("Role para baixo para descobrir quem é o seu Amigo Secreto 👇\n");
-        for (int i = 0; i < 25; i++) sb.append(".\n");
-        sb.append("\n🎉 *Seu Amigo Secreto é:*\n");
-        sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
+        sb.append("O sorteio foi realizado e voce foi escolhido(a) para presentear alguem especial!\n");
+        sb.append("Role para baixo para descobrir quem e o seu Amigo Secreto\n\n");
+        // Separador em linha unica substitui o loop original de 25 pontos quebrados.
+        // A mensagem ja usa emojis (UCS-2), entao o charset nao e uma preocupacao aqui.
+        sb.append("- - - - - - - - - - - - -\n\n");
+        sb.append("Seu Amigo Secreto e:\n");
+        sb.append("*").append(nomeAmigo).append("* \uD83C\uDF89\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
             int num = 1;
@@ -734,12 +736,12 @@ public class ParticipantesActivity extends AppCompatActivity {
                 // ignorando o min inconsistente — comportamento intencional para nao omitir
                 // o maximo que o usuario cadastrou mesmo com dados incoerentes.
                 if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
-                    sb.append(" — R$ ").append(formatarPreco(d.getPrecoMinimo()))
+                    sb.append(" - R$ ").append(formatarPreco(d.getPrecoMinimo()))
                       .append(" a R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 } else if (d.getPrecoMinimo() > 0) {
-                    sb.append(" — a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
+                    sb.append(" - a partir de R$ ").append(formatarPreco(d.getPrecoMinimo()));
                 } else if (d.getPrecoMaximo() > 0) {
-                    sb.append(" — até R$ ").append(formatarPreco(d.getPrecoMaximo()));
+                    sb.append(" - ate R$ ").append(formatarPreco(d.getPrecoMaximo()));
                 }
                 if (d.getLojas() != null && !d.getLojas().trim().isEmpty()) {
                     sb.append(" 🏪 ").append(d.getLojas());
