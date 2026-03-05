@@ -242,16 +242,28 @@ public class ParticipantesActivity extends AppCompatActivity {
                 String email = etEmail.getText().toString().trim();
 
                 if (!nome.isEmpty()) {
+                    // Guarda valores originais para restaurar se o banco falhar
+                    String nomeOriginal = participante.getNome();
+                    String telefoneOriginal = participante.getTelefone();
+                    String emailOriginal = participante.getEmail();
                     participante.setNome(nome);
                     participante.setTelefone(telefone);
                     participante.setEmail(email);
-                    dao.open();
-                    boolean ok = dao.atualizar(participante);
-                    dao.close();
+                    boolean ok = false;
+                    try {
+                        dao.open();
+                        ok = dao.atualizar(participante);
+                    } finally {
+                        dao.close();
+                    }
                     if (ok) {
                         atualizarLista();
                         dialog.dismiss();
                     } else {
+                        // Restaura estado original para manter objeto em sincronia com o banco
+                        participante.setNome(nomeOriginal);
+                        participante.setTelefone(telefoneOriginal);
+                        participante.setEmail(emailOriginal);
                         Toast.makeText(ParticipantesActivity.this,
                                 "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
                     }
@@ -558,10 +570,10 @@ public class ParticipantesActivity extends AppCompatActivity {
         sb.append("✨ *").append(nomeAmigo).append("* ✨\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
-            for (int i = 0; i < desejos.size(); i++) {
-                Desejo d = desejos.get(i);
+            int num = 1;
+            for (Desejo d : desejos) {
                 if (d.getProduto() == null || d.getProduto().trim().isEmpty()) continue;
-                sb.append(i + 1).append(". ").append(d.getProduto());
+                sb.append(num++).append(". ").append(d.getProduto());
                 if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
