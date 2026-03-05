@@ -195,29 +195,33 @@ public class ParticipantesActivity extends AppCompatActivity {
         });
 
         builder.setView(view);
-        builder.setPositiveButton("Adicionar", new DialogInterface.OnClickListener() {
+        // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
+        // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
+        builder.setPositiveButton("Adicionar", null);
+        builder.setNegativeButton("Cancelar", null);
+        AlertDialog dialog = builder.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
+                if (!ValidationUtils.validateName(etNome)) return;
+                if (!ValidationUtils.validatePhone(etTelefone)) return;
+                if (!ValidationUtils.validateEmail(etEmail)) return;
+
                 String nome = etNome.getText().toString().trim();
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
-                if (!nome.isEmpty()) {
-                    Participante p = new Participante();
-                    p.setNome(nome);
-                    p.setTelefone(telefone);
-                    p.setEmail(email);
-                    dao.open();
-                    dao.inserir(p, grupoAtual.getId());
-                    dao.close();
-                    atualizarLista();
-                } else {
-                    Toast.makeText(ParticipantesActivity.this, "Nome é obrigatório", Toast.LENGTH_SHORT).show();
-                }
+                Participante p = new Participante();
+                p.setNome(nome);
+                p.setTelefone(telefone);
+                p.setEmail(email);
+                dao.open();
+                dao.inserir(p, grupoAtual.getId());
+                dao.close();
+                atualizarLista();
+                dialog.dismiss();
             }
         });
-        builder.setNegativeButton("Cancelar", null);
-        builder.show();
     }
 
     private void exibirDialogEditar(final Participante participante) {
@@ -480,10 +484,12 @@ public class ParticipantesActivity extends AppCompatActivity {
                         for (Participante p : snapshot) {
                             if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
                                 comTelefone.add(p);
-                                String nomeAmigo = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                                        Integer amigoId = p.getAmigoSorteadoId();
+                                String nomeAmigo = (amigoId != null && amigoId > 0)
+                                        ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
                                 List<Desejo> desejos = new ArrayList<>();
-                                if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                                    desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                                if (amigoId != null && amigoId > 0) {
+                                    desejos = desejoDAO.listarPorParticipante(amigoId);
                                 }
                                 mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
                             }
@@ -857,9 +863,11 @@ public class ParticipantesActivity extends AppCompatActivity {
                         try {
                             daoLocal.open();
                             desejoDAO.open();
-                            nomeAmigoHolder[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                            if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                                desejosHolder.addAll(desejoDAO.listarPorParticipante(p.getAmigoSorteadoId()));
+                            Integer amigoId = p.getAmigoSorteadoId();
+                            nomeAmigoHolder[0] = (amigoId != null && amigoId > 0)
+                                    ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                            if (amigoId != null && amigoId > 0) {
+                                desejosHolder.addAll(desejoDAO.listarPorParticipante(amigoId));
                             }
                             // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
                             // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
