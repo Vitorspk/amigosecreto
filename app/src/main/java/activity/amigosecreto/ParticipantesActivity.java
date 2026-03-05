@@ -459,50 +459,57 @@ public class ParticipantesActivity extends AppCompatActivity {
     // O acesso ao banco e feito em thread de fundo para evitar ANR em grupos grandes.
     private void enviarSmsViaIntent() {
         final List<Participante> snapshot = new ArrayList<>(listaParticipantes);
+        // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
+        // RejectedExecutionException (ex: executor ja foi encerrado).
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                final List<Participante> comTelefone = new ArrayList<>();
-                final Map<Integer, String> mensagensParticipantes = new HashMap<>();
-                // DAOs locais evitam race condition com o dao compartilhado da Activity
-                // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
-                ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
-                try {
-                    daoLocal.open();
-                    desejoDAO.open();
-                    for (Participante p : snapshot) {
-                        if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                            comTelefone.add(p);
-                            String nomeAmigo = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                            List<Desejo> desejos = new ArrayList<>();
-                            if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                                desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+        try {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    final List<Participante> comTelefone = new ArrayList<>();
+                    final Map<Integer, String> mensagensParticipantes = new HashMap<>();
+                    // DAOs locais evitam race condition com o dao compartilhado da Activity
+                    // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
+                    // close() chama helper.close() — nao acessa database diretamente,
+                    // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
+                    ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
+                    DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
+                    try {
+                        daoLocal.open();
+                        desejoDAO.open();
+                        for (Participante p : snapshot) {
+                            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                                comTelefone.add(p);
+                                String nomeAmigo = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                                List<Desejo> desejos = new ArrayList<>();
+                                if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                                    desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
+                                }
+                                mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
                             }
-                            mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
                         }
+                    } finally {
+                        daoLocal.close();
+                        desejoDAO.close();
                     }
-                } finally {
-                    daoLocal.close();
-                    desejoDAO.close();
-                }
 
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isFinishing() || isDestroyed()) return;
-                        if (comTelefone.isEmpty()) {
-                            Toast.makeText(ParticipantesActivity.this,
-                                    "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
-                            return;
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isFinishing() || isDestroyed()) return;
+                            if (comTelefone.isEmpty()) {
+                                Toast.makeText(ParticipantesActivity.this,
+                                        "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
                         }
-                        enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
-                    }
-                });
-            }
-        });
-        executor.shutdown();
+                    });
+                }
+            });
+        } finally {
+            executor.shutdown();
+        }
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
@@ -625,6 +632,10 @@ public class ParticipantesActivity extends AppCompatActivity {
                 if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
+                // Logica de faixa de preco: exibe apenas quando os valores sao validos.
+                // Se min > max (faixa invalida), cai no else-if e exibe apenas "ate R$ max",
+                // ignorando o min inconsistente — comportamento intencional para nao omitir
+                // o maximo que o usuario cadastrou mesmo com dados incoerentes.
                 if (d.getPrecoMinimo() > 0 && d.getPrecoMaximo() >= d.getPrecoMinimo()) {
                     sb.append(" — R$ ").append(formatarPreco(d.getPrecoMinimo()))
                       .append(" a R$ ").append(formatarPreco(d.getPrecoMaximo()));
@@ -800,7 +811,12 @@ public class ParticipantesActivity extends AppCompatActivity {
 
             btnShare.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View v) { compartilharResultado(p); }
+                public void onClick(View v) {
+                    // Desabilitar imediatamente para evitar multiplos taps que criariam
+                    // ExecutorServices e share sheets duplicados. Reabilitado no mainHandler.post.
+                    v.setEnabled(false);
+                    compartilharResultado(p, v);
+                }
             });
 
             btnEditar.setOnClickListener(new View.OnClickListener() {
@@ -823,50 +839,57 @@ public class ParticipantesActivity extends AppCompatActivity {
             return convertView;
         }
 
-        private void compartilharResultado(final Participante p) {
+        private void compartilharResultado(final Participante p, final View btnShare) {
+            // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
+            // RejectedExecutionException (ex: executor ja foi encerrado).
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    // DAOs locais evitam conflito com o dao compartilhado da Activity.
-                    // Holder de um elemento para capturar resultado mutavel dentro do Runnable
-                    // sem unchecked cast de array generico.
-                    final String[] nomeAmigoHolder = {null};
-                    final List<Desejo> desejosHolder = new ArrayList<>();
-                    ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
-                    DesejoDAO desejoDAO = new DesejoDAO(ctx);
-                    try {
-                        daoLocal.open();
-                        desejoDAO.open();
-                        nomeAmigoHolder[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                        if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                            desejosHolder.addAll(desejoDAO.listarPorParticipante(p.getAmigoSorteadoId()));
+            try {
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // DAOs locais evitam conflito com o dao compartilhado da Activity.
+                        // close() chama helper.close() — nao acessa database diretamente,
+                        // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
+                        final String[] nomeAmigoHolder = {null};
+                        final List<Desejo> desejosHolder = new ArrayList<>();
+                        ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
+                        DesejoDAO desejoDAO = new DesejoDAO(ctx);
+                        try {
+                            daoLocal.open();
+                            desejoDAO.open();
+                            nomeAmigoHolder[0] = daoLocal.getNomeAmigoSorteado(p.getAmigoSorteadoId());
+                            if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
+                                desejosHolder.addAll(desejoDAO.listarPorParticipante(p.getAmigoSorteadoId()));
+                            }
+                            // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
+                            // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
+                            //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
+                            daoLocal.marcarComoEnviado(p.getId());
+                        } finally {
+                            daoLocal.close();
+                            desejoDAO.close();
                         }
-                        // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
-                        // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
-                        //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
-                        daoLocal.marcarComoEnviado(p.getId());
-                    } finally {
-                        daoLocal.close();
-                        desejoDAO.close();
+
+                        final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigoHolder[0], desejosHolder);
+
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Reabilita o botao independentemente do resultado
+                                if (btnShare != null) btnShare.setEnabled(true);
+                                if (isFinishing() || isDestroyed()) return;
+                                atualizarLista();
+                                Intent intent = new Intent(Intent.ACTION_SEND);
+                                intent.setType("text/plain");
+                                intent.putExtra(Intent.EXTRA_TEXT, mensagem);
+                                ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+                            }
+                        });
                     }
-
-                    final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigoHolder[0], desejosHolder);
-
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isFinishing() || isDestroyed()) return;
-                            atualizarLista();
-                            Intent intent = new Intent(Intent.ACTION_SEND);
-                            intent.setType("text/plain");
-                            intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-                            ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
-                        }
-                    });
-                }
-            });
-            executor.shutdown();
+                });
+            } finally {
+                executor.shutdown();
+            }
         }
     }
 }
