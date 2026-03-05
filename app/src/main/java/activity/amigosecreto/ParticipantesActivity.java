@@ -522,6 +522,8 @@ public class ParticipantesActivity extends AppCompatActivity {
         final String mensagem = mensagensMap.get(p.getId());
         if (mensagem == null || mensagem.isEmpty()) {
             // Mensagem ausente ou vazia (estado inconsistente, ex: restaurado do bundle como ""); pular.
+            // Handler.post e usado por stack-safety: evita stack overflow em listas longas onde
+            // multiplos itens consecutivos sao pulados, convertendo recursao em iteracao no loop de mensagens.
             mainHandler.post(new Runnable() {
                 @Override public void run() { enviarSmsSequencial(lista, mensagensMap, index + 1); }
             });

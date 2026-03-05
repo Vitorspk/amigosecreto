@@ -211,6 +211,7 @@ CREATE TABLE desejo (
 - SMS via intent nativo
 - Marca como "enviado" apos compartilhar
 - URL encoding seguro via `Uri.Builder`
+- **Limitacao conhecida**: `marcarComoEnviado` e chamado antes do usuario confirmar o share sheet (a API `ACTION_SEND` nao oferece callback de confirmacao). Se o usuario abrir o chooser e cancelar, o participante ficara marcado como "enviado" sem que a mensagem tenha sido de fato enviada.
 
 ### 7. Lista de Desejos
 - CRUD completo: produto, categoria, faixa de preco, lojas
