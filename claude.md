@@ -200,8 +200,10 @@ CREATE TABLE desejo (
 - Transacao atomica via `salvarSorteio()`
 
 ### 5. Revelacao Interativa
-- Toque para revelar o amigo secreto
-- Protecao contra spoilers (layout escondido)
+- Resultado acessivel apenas via botao de compartilhamento individual por participante
+- Organizador nao consegue ver quem tirou quem diretamente na lista
+- RevelarAmigoActivity disponivel para uso futuro (ex: o proprio participante revela no celular)
+- Protecao contra spoilers (layout escondido na RevelarAmigoActivity)
 - Animacoes e feedback haptico
 
 ### 6. Compartilhamento
@@ -283,10 +285,8 @@ implementation 'androidx.core:core-splashscreen:1.0.1'
     │       │   └── Importar dos Contatos
     │       ├── Configurar Exclusoes
     │       ├── Realizar Sorteio (>= 3 participantes)
-    │       ├── Tocar em Participante
-    │       │   └── [RevelarAmigoActivity]
-    │       │       └── Toque para revelar
-    │       ├── Compartilhar via WhatsApp/SMS
+    │       ├── Editar Participante (nome, telefone, email)
+    │       ├── Compartilhar via WhatsApp/SMS (resultado individual, inclui lista de desejos)
     │       └── Ver Desejos
     │           └── [VisualizarDesejosActivity]
     │               └── [ParticipanteDesejosActivity]

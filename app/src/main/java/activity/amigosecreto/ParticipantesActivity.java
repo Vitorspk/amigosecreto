@@ -471,6 +471,13 @@ public class ParticipantesActivity extends AppCompatActivity {
 
         final Participante p = lista.get(index);
         final String mensagem = mensagensMap.get(p.getId());
+        if (mensagem == null) {
+            // Mensagem ausente para este participante (estado inconsistente); pular.
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
+                @Override public void run() { enviarSmsSequencial(lista, mensagensMap, index + 1); }
+            });
+            return;
+        }
 
         new AlertDialog.Builder(this)
                 .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
@@ -553,7 +560,8 @@ public class ParticipantesActivity extends AppCompatActivity {
             sb.append("🛍️ *Lista de desejos de ").append(nomeAmigo).append(":*\n");
             for (int i = 0; i < desejos.size(); i++) {
                 Desejo d = desejos.get(i);
-                sb.append(i + 1).append(". ").append(d.getProduto() != null ? d.getProduto() : "");
+                if (d.getProduto() == null || d.getProduto().trim().isEmpty()) continue;
+                sb.append(i + 1).append(". ").append(d.getProduto());
                 if (d.getCategoria() != null && !d.getCategoria().trim().isEmpty()) {
                     sb.append(" (").append(d.getCategoria()).append(")");
                 }
@@ -763,10 +771,11 @@ public class ParticipantesActivity extends AppCompatActivity {
                 dao.open();
                 desejoDAO.open();
                 nomeAmigo = dao.getNomeAmigoSorteado(p.getAmigoSorteadoId());
-                dao.marcarComoEnviado(p.getId());
                 if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
                     desejos = desejoDAO.listarPorParticipante(p.getAmigoSorteadoId());
                 }
+                // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem
+                dao.marcarComoEnviado(p.getId());
             } finally {
                 dao.close();
                 desejoDAO.close();
