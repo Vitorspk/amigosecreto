@@ -20,8 +20,10 @@
         <item name="colorOnSurface">@color/md_theme_onSurface</item>
 
         <!-- Window settings -->
+        <!-- statusBarColor removido: EdgeToEdge.enable() gerencia a cor da status bar
+             automaticamente de forma retrocompativel (API 21+). Definir statusBarColor
+             aqui conflita com edge-to-edge e e descontinuado no Android 15. -->
         <item name="android:windowBackground">@color/md_theme_background</item>
-        <item name="android:statusBarColor">@color/md_theme_primary</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
 
         <!-- Component styles -->

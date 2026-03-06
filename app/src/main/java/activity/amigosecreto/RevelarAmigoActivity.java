@@ -6,6 +6,9 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
@@ -22,7 +25,22 @@ public class RevelarAmigoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_revelar_amigo);
+
+        // Aplica padding de sistema no root para que o conteudo nao fique
+        // atras da status bar ou navigation bar (edge-to-edge no Android 15+).
+        View rootView = findViewById(R.id.root_revelar);
+        ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+            androidx.core.graphics.Insets systemBars =
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    systemBars.top,
+                    v.getPaddingRight(),
+                    systemBars.bottom);
+            return insets;
+        });
 
         participante = (Participante) getIntent().getSerializableExtra("participante");
         dao = new ParticipanteDAO(this);

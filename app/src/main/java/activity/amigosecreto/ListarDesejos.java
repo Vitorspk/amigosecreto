@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,6 +15,8 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import androidx.appcompat.widget.ShareActionProvider;
 import androidx.core.view.MenuItemCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.widget.TextView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.text.NumberFormat;
@@ -35,6 +38,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_listar_desejos);
         
         listaDesejos = new ArrayList<Desejo>();
@@ -49,6 +53,21 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
             lv_desejos.setAdapter(adapter);
         }
         
+        // Ajusta margem inferior do FAB para nao ficar atras da navigation bar.
+        if (fabNovo != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(fabNovo, (v, insets) -> {
+                androidx.core.graphics.Insets systemBars =
+                        insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                ViewGroup.MarginLayoutParams lp =
+                        (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+                // 24dp de margem base do FAB + inset da navigation bar
+                int fabMarginBase = (int) (24 * getResources().getDisplayMetrics().density);
+                lp.bottomMargin = systemBars.bottom + fabMarginBase;
+                v.setLayoutParams(lp);
+                return insets;
+            });
+        }
+
         if (fabNovo != null) {
             fabNovo.setOnClickListener(new View.OnClickListener() {
                 @Override

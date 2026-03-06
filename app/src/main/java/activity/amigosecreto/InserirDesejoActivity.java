@@ -3,6 +3,7 @@ package activity.amigosecreto;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
 import androidx.core.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,6 +28,7 @@ public class InserirDesejoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_inserir_desejo);
 
         // Configurar MaterialToolbar
