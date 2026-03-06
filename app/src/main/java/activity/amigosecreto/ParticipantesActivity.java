@@ -87,13 +87,14 @@ public class ParticipantesActivity extends AppCompatActivity {
         // da navigation bar em modo edge-to-edge (Android 15+).
         View bottomButtons = findViewById(R.id.layout_bottom_buttons);
         if (bottomButtons != null) {
+            final int padBottom = bottomButtons.getPaddingBottom();
             ViewCompat.setOnApplyWindowInsetsListener(bottomButtons, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 v.setPadding(
                         v.getPaddingLeft(),
                         v.getPaddingTop(),
                         v.getPaddingRight(),
-                        systemBars.bottom);
+                        padBottom + systemBars.bottom);
                 return insets;
             });
         }
