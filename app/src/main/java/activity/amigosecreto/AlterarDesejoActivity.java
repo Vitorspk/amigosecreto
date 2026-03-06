@@ -2,6 +2,7 @@ package activity.amigosecreto;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -30,6 +31,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_alterar_desejo);
 
         // Configurar MaterialToolbar

@@ -6,6 +6,10 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
@@ -22,7 +26,30 @@ public class RevelarAmigoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_revelar_amigo);
+
+        // Aplica padding de sistema no root para que o conteudo nao fique
+        // atras da status bar ou navigation bar (edge-to-edge no Android 15+).
+        // Os valores originais do XML sao capturados fora do lambda porque o listener
+        // pode ser invocado multiplas vezes (ex: rotacao) e setPadding sobrescreveria
+        // os insets acumulados em chamadas anteriores.
+        View rootView = findViewById(R.id.root_revelar);
+        if (rootView != null) {
+            final int padLeft = rootView.getPaddingLeft();
+            final int padRight = rootView.getPaddingRight();
+            final int padTop = rootView.getPaddingTop();
+            final int padBottom = rootView.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(
+                        padLeft,
+                        padTop + systemBars.top,
+                        padRight,
+                        padBottom + systemBars.bottom);
+                return insets;
+            });
+        }
 
         participante = (Participante) getIntent().getSerializableExtra("participante");
         dao = new ParticipanteDAO(this);

@@ -25,8 +25,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.EdgeToEdge;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -76,7 +80,24 @@ public class ParticipantesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_listar_participantes);
+
+        // Ajusta padding do container de botoes inferiores para nao ficar atras
+        // da navigation bar em modo edge-to-edge (Android 15+).
+        View bottomButtons = findViewById(R.id.layout_bottom_buttons);
+        if (bottomButtons != null) {
+            final int padBottom = bottomButtons.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(bottomButtons, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(
+                        v.getPaddingLeft(),
+                        v.getPaddingTop(),
+                        v.getPaddingRight(),
+                        padBottom + systemBars.bottom);
+                return insets;
+            });
+        }
 
         grupoAtual = (Grupo) getIntent().getSerializableExtra("grupo");
         if (grupoAtual == null) {
