@@ -28,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
@@ -85,16 +86,17 @@ public class ParticipantesActivity extends AppCompatActivity {
         // Ajusta padding do container de botoes inferiores para nao ficar atras
         // da navigation bar em modo edge-to-edge (Android 15+).
         View bottomButtons = findViewById(R.id.layout_bottom_buttons);
-        ViewCompat.setOnApplyWindowInsetsListener(bottomButtons, (v, insets) -> {
-            androidx.core.graphics.Insets systemBars =
-                    insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    v.getPaddingTop(),
-                    v.getPaddingRight(),
-                    systemBars.bottom);
-            return insets;
-        });
+        if (bottomButtons != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(bottomButtons, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(
+                        v.getPaddingLeft(),
+                        v.getPaddingTop(),
+                        v.getPaddingRight(),
+                        systemBars.bottom);
+                return insets;
+            });
+        }
 
         grupoAtual = (Grupo) getIntent().getSerializableExtra("grupo");
         if (grupoAtual == null) {

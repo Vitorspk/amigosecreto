@@ -15,6 +15,7 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import androidx.appcompat.widget.ShareActionProvider;
 import androidx.core.view.MenuItemCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.widget.TextView;
@@ -53,22 +54,19 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
             lv_desejos.setAdapter(adapter);
         }
         
-        // Ajusta margem inferior do FAB para nao ficar atras da navigation bar.
         if (fabNovo != null) {
+            // Ajusta margem inferior do FAB para nao ficar atras da navigation bar.
+            // requestLayout() e suficiente apos modificar lp em-place (evita re-inflate).
+            final int fabMarginBase = (int) (24 * getResources().getDisplayMetrics().density);
             ViewCompat.setOnApplyWindowInsetsListener(fabNovo, (v, insets) -> {
-                androidx.core.graphics.Insets systemBars =
-                        insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 ViewGroup.MarginLayoutParams lp =
                         (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-                // 24dp de margem base do FAB + inset da navigation bar
-                int fabMarginBase = (int) (24 * getResources().getDisplayMetrics().density);
                 lp.bottomMargin = systemBars.bottom + fabMarginBase;
-                v.setLayoutParams(lp);
+                v.requestLayout();
                 return insets;
             });
-        }
 
-        if (fabNovo != null) {
             fabNovo.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
