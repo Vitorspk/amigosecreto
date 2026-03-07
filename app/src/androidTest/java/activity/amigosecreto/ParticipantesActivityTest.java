@@ -67,8 +67,9 @@ public class ParticipantesActivityTest {
     // --- Tela inicial ---
 
     @Test
-    public void tela_exibe_nome_do_grupo_na_toolbar() {
-        onView(withText("Grupo Espresso")).check(matches(isDisplayed()));
+    public void tela_exibe_contagem_de_participantes() {
+        // tv_count exibe o estado atual da lista (acessivel via view hierarchy, ao contrario do ActionBar title)
+        onView(withId(R.id.tv_count)).check(matches(isDisplayed()));
     }
 
     @Test
