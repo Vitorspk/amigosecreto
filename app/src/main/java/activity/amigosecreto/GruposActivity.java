@@ -289,16 +289,14 @@ public class GruposActivity extends AppCompatActivity {
             this.itens = itens;
         }
 
-        public void recarregarContagens() {
+        private void recarregarContagens() {
             contagemParticipantes.clear();
             try {
                 participanteDao.open();
-                for (Grupo g : itens) {
-                    contagemParticipantes.put(g.getId(), participanteDao.listarPorGrupo(g.getId()).size());
-                }
+                contagemParticipantes.putAll(participanteDao.contarPorGrupo());
                 participanteDao.close();
             } catch (Exception e) {
-                // fallback: contagens ficam 0
+                android.util.Log.e("GruposActivity", "Erro ao carregar contagem de participantes", e);
             }
         }
 
@@ -357,18 +355,22 @@ public class GruposActivity extends AppCompatActivity {
             return convertView;
         }
 
+        private static final int MENU_EDITAR = 1;
+        private static final int MENU_EXCLUIR = 2;
+
         private void exibirMenuContextoGrupo(View anchorView, final Grupo g) {
             android.widget.PopupMenu popup = new android.widget.PopupMenu(ctx, anchorView);
-            popup.getMenu().add(0, 1, 0, "Editar nome");
-            popup.getMenu().add(0, 2, 1, "Excluir grupo");
+            popup.getMenu().add(0, MENU_EDITAR, 0, "Editar nome");
+            popup.getMenu().add(0, MENU_EXCLUIR, 1, "Excluir grupo");
 
             popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(android.view.MenuItem item) {
-                    if (item.getItemId() == 1) {
+                    int id = item.getItemId();
+                    if (id == MENU_EDITAR) {
                         exibirDialogEditarNome(g);
                         return true;
-                    } else if (item.getItemId() == 2) {
+                    } else if (id == MENU_EXCLUIR) {
                         confirmarRemoverGrupo(g);
                         return true;
                     }
@@ -409,12 +411,18 @@ public class GruposActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     String novoNome = etNome.getText().toString().trim();
                     if (!novoNome.isEmpty()) {
+                        String nomeOriginal = g.getNome();
                         g.setNome(novoNome);
                         dao.open();
-                        dao.atualizar(g);
+                        int rows = dao.atualizarNome(g);
                         dao.close();
-                        atualizarLista();
-                        dialog.dismiss();
+                        if (rows > 0) {
+                            atualizarLista();
+                            dialog.dismiss();
+                        } else {
+                            g.setNome(nomeOriginal);
+                            Toast.makeText(GruposActivity.this, "Erro ao salvar o nome do grupo", Toast.LENGTH_SHORT).show();
+                        }
                     } else {
                         Toast.makeText(GruposActivity.this, "O nome do grupo é obrigatório", Toast.LENGTH_SHORT).show();
                     }
