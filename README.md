@@ -1,143 +1,118 @@
-# Amigo Secreto - Wishlist Android App
+# Amigo Secreto - Sorteio e SMS
 
-A simple Android application for managing wishlists, perfect for Secret Santa events and gift exchanges.
+Aplicativo Android para organizar sorteios de amigo secreto com compartilhamento via WhatsApp e SMS.
 
-## Overview
+Disponivel na Google Play Store: `com.amigosecreto.sorteio`
 
-This Android app allows users to create and manage a personal wishlist with details about desired products, including price ranges and where to find them. Users can easily share their wishlist with others, making it ideal for Secret Santa exchanges and gift-giving occasions.
+## Funcionalidades
 
-## Features
+- Criar multiplos grupos para diferentes eventos
+- Adicionar participantes manualmente ou importando da agenda de contatos
+- Definir restricoes (quem nao pode tirar quem)
+- Sorteio automatico com validacao de restricoes e transacao atomica
+- Revelacao interativa do resultado com protecao anti-spoiler
+- Compartilhamento via WhatsApp (com 30 linhas em branco anti-spoiler) e SMS
+- Lista de desejos por participante: produto, categoria, faixa de preco, lojas sugeridas
+- Busca de produtos via Buscape integrada
 
-- ✨ **Wishlist Management**: Add, edit, and delete desired items
-- 💰 **Price Range Tracking**: Set minimum and maximum price expectations
-- 🏪 **Store Suggestions**: Note where items can be found
-- 📱 **Easy Sharing**: Share your complete wishlist via any messaging app
-- 🎯 **Category Organization**: Organize items by categories
-- 📋 **Detailed View**: View complete details for each wishlist item
+## Stack
 
-## Screenshots & UI
+- **Linguagem**: Java 17
+- **Min SDK**: 21 (Android 5.0) / **Target SDK**: 35 (Android 15)
+- **Banco de dados**: SQLite (schema v8, via `MySQLiteOpenHelper`)
+- **UI**: Material Design 3 com suporte a Edge-to-Edge (Android 15)
+- **Build**: Android Gradle Plugin 9.0.1, ViewBinding, R8/ProGuard em release
 
-The app features a clean, intuitive interface with:
-- Splash screen with app branding
-- Main wishlist view showing all items
-- Add/Edit forms for wishlist management
-- Detail view for individual items
-- Share functionality integrated into the action bar
+## Estrutura
 
-## Technical Details
+```
+app/src/main/java/activity/amigosecreto/
+├── GruposActivity.java              # LAUNCHER - tela principal
+├── ParticipantesActivity.java       # gerenciar participantes e sorteio
+├── RevelarAmigoActivity.java        # revelar resultado interativamente
+├── ParticipanteDesejosActivity.java # desejos de um participante
+├── VisualizarDesejosActivity.java   # todos os desejos de um grupo
+├── ListarDesejos.java               # lista de desejos geral
+├── InserirDesejoActivity.java       # adicionar desejo
+├── AlterarDesejoActivity.java       # editar desejo
+├── DetalheDesejoActivity.java       # detalhes do desejo + busca Buscape
+├── adapter/
+│   └── ParticipantesRecyclerAdapter.java
+├── db/
+│   ├── MySQLiteOpenHelper.java      # schema SQLite v8
+│   ├── Grupo.java / GrupoDAO.java
+│   ├── Participante.java / ParticipanteDAO.java
+│   └── Desejo.java / DesejoDAO.java
+└── util/
+    ├── AnimationUtils.java
+    ├── AsyncDatabaseHelper.java
+    ├── HapticFeedbackUtils.java
+    ├── SnackbarHelper.java
+    └── ValidationUtils.java
+```
 
-### Architecture
-- **Platform**: Android (API 17+)
-- **Language**: Java
-- **Database**: SQLite for local data storage
-- **UI**: Native Android Views with Material Design elements
+## CI/CD
 
-### Key Components
+| Trigger | Track | versionCode |
+|---------|-------|-------------|
+| Push no `master` | Internal (QA) | `100 + git rev-list --count HEAD` |
+| Tag `v*` | Production | `100 + git rev-list --count HEAD` |
 
-#### Activities
-- `SplashActivity.java:10-42` - App launch screen with 5-second timer
-- `ListarDesejos.java:26-171` - Main activity displaying wishlist items
-- `InserirDesejoActivity.java` - Form for adding new wishlist items
-- `AlterarDesejoActivity.java` - Form for editing existing items
-- `DetalheDesejoActivity.java` - Detailed view of individual items
+### Deploy para producao
 
-#### Data Model
-- `Desejo.java:9-176` - Core wishlist item model with fields:
-  - Product name
-  - Category
-  - Store suggestions
-  - Price range (minimum/maximum)
-  - Parcelable implementation for data passing
+```bash
+git tag v2.x && git push origin v2.x
+```
 
-#### Database
-- `DesejoDAO.java` - Data Access Object for SQLite operations
-- `MySQLiteOpenHelper.java` - Database helper for table management
+### Deploy para track interno (QA)
 
-### Build Configuration
-- **Gradle Version**: 2.3.2
-- **Compile SDK**: API 22
-- **Min SDK**: API 17
-- **Target SDK**: API 22
-- **Version**: 1.7 (Build 7)
+```bash
+git push origin master
+```
 
-## Installation
+## Setup local
 
-### Prerequisites
-- Android Studio
-- Android SDK (API 17 or higher)
-- Java Development Kit (JDK)
+### Pre-requisitos
 
-### Setup Instructions
+- Android Studio Iguana ou superior
+- JDK 17+
+- Arquivo `keystore.properties` na raiz (nao commitado, ver `keystore.properties.template`)
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd amigosecreto
-   ```
+### Build
 
-2. **Open in Android Studio**
-   - Launch Android Studio
-   - Select "Open an existing Android Studio project"
-   - Navigate to the project directory
+```bash
+./gradlew assembleDebug        # debug
+./gradlew bundleRelease        # release AAB (requer keystore.properties)
+./gradlew :app:lintRelease     # lint
+./gradlew :app:testReleaseUnitTest  # testes
+```
 
-3. **Build the project**
-   ```bash
-   ./gradlew build
-   ```
+### Instalar no dispositivo
 
-4. **Run on device/emulator**
-   - Connect an Android device or start an emulator
-   - Click the "Run" button in Android Studio
+```bash
+./gradlew installDebug
+```
 
-## Usage
+## GitHub Secrets necessarios para CI
 
-### Adding Items to Wishlist
-1. Open the app and wait for the splash screen
-2. Tap the "+" button to add a new item
-3. Fill in the product details:
-   - Product name
-   - Category
-   - Price range
-   - Store suggestions
-4. Save the item
+| Secret | Descricao |
+|--------|-----------|
+| `KEYSTORE_BASE64` | Keystore em base64 |
+| `KEYSTORE_PASSWORD` | Senha do keystore |
+| `KEY_ALIAS` | Alias da chave |
+| `KEY_PASSWORD` | Senha da chave |
+| `PLAY_STORE_SERVICE_ACCOUNT_JSON` | Service account JSON do Google Play |
 
-### Sharing Your Wishlist
-1. View your complete wishlist
-2. Tap the share icon in the action bar
-3. Choose your preferred sharing method
-4. Your formatted wishlist will be shared with price ranges and store information
+## Seguranca
 
-### Managing Items
-- Tap any item to view detailed information
-- Use the edit option to modify existing items
-- Long-press for additional management options
+- HTTPS only (`usesCleartextTraffic="false"`)
+- Queries parametrizadas em todos os DAOs (prevencao SQL injection)
+- ProGuard/R8 com ofuscacao em release
+- Keystore nunca commitado (`.gitignore` protege `*.keystore`, `keystore.properties`)
+- GitHub Actions pinadas por SHA de commit
 
-## Development Notes
+## Repositorio
 
-- The app uses SQLite for persistent local storage
-- All data remains on the device (no cloud sync)
-- Ad integration implemented via AdBuddiz SDK
-- Supports Android's native sharing functionality
-- Material Design principles for consistent UI/UX
-
-## Version History
-
-- **v1.7** - Current version with full wishlist management
-- Enhanced sharing capabilities
-- Improved UI/UX with Material Design elements
-
-## Contributing
-
-This is a personal project showcasing Android development skills. The codebase demonstrates:
-- Clean architecture with separation of concerns
-- Proper data persistence with SQLite
-- Material Design implementation
-- Android best practices for activities and fragments
-
-## License
-
-This project is for educational and portfolio purposes.
-
----
-
-*Built with ❤️ for Android*
+**GitHub**: https://github.com/Vitorspk/amigosecreto
+**Branch principal**: `master`
+**Package Play Store**: `com.amigosecreto.sorteio`

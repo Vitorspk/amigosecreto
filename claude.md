@@ -4,7 +4,7 @@
 
 **AmigoSecreto** e um aplicativo Android para organizar e gerenciar amigo secreto. O app permite criar grupos, adicionar participantes, realizar sorteios aleatorios com exclusoes, revelar resultados de forma interativa, compartilhar via WhatsApp/SMS e gerenciar listas de desejos por participante.
 
-**Versao Atual**: 2.0 (versionCode: 9, CI usa `100 + commit count`)
+**Versao Atual**: 2.0 (versionCode gerado pelo CI: `100 + git rev-list --count HEAD`; producao atual ~157+)
 **Package**: `activity.amigosecreto`
 **Application ID**: `com.amigosecreto.sorteio`
 **SDK Minimo**: 21 (Android 5.0)
@@ -64,8 +64,6 @@ distribution/whatsnew/
 documents/
 ├── PRIVACY_POLICY.md
 ├── PLAY_STORE_LISTING.md
-├── PRODUCTION_CHECKLIST.md
-├── WHATS_NEW_V2.md
 └── RELEASE_INSTRUCTIONS.md
 ```
 
@@ -76,8 +74,8 @@ documents/
 ### Deploy para Producao (tag)
 
 ```bash
-git tag v2.1
-git push origin v2.1
+git tag v2.x
+git push origin v2.x
 ```
 
 **Workflow**: `.github/workflows/release.yml`
@@ -333,7 +331,7 @@ implementation 'androidx.core:core-splashscreen:1.0.1'
 ### Deploy via CI/CD
 ```bash
 # Producao (Play Store):
-git tag v2.1 && git push origin v2.1
+git tag v2.x && git push origin v2.x
 
 # Interno (QA):
 git push origin master
@@ -372,9 +370,22 @@ SELECT * FROM participante WHERE grupo_id = 1;
 - 5 layouts de Dialog
 - 7 layouts de Item/Helper (incluindo `empty_state.xml`, `loading_state.xml`)
 
-### Drawables - 44 recursos XML
+### Drawables
 - Gradientes, botoes, backgrounds, icones SVG, ripples
 - Launcher icons com adaptive icon (API 26+)
+- **Nota**: `buscape.jpg` removido (imagem de marca externa, sem uso direto como asset)
+
+---
+
+## Edge-to-Edge (Android 15)
+
+Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView()`.
+
+- **CoordinatorLayout + AppBarLayout**: trata insets do topo automaticamente (maioria das telas)
+- **RevelarAmigoActivity**: inset listener manual no `root_revelar` (LinearLayout sem toolbar)
+- **ParticipantesActivity**: inset listener no `layout_bottom_buttons` com `padBottom` original capturado fora da lambda
+- **ListarDesejos**: inset listener no FAB ajustando `bottomMargin` via `requestLayout()`
+- `android:statusBarColor` e `android:windowLightStatusBar` removidos do tema (deprecated no Android 15, conflitam com EdgeToEdge)
 
 ---
 
@@ -412,7 +423,7 @@ SELECT * FROM participante WHERE grupo_id = 1;
 - [ ] QR Code para compartilhamento
 
 ### Qualidade
-- [ ] Testes unitarios (JUnit) - cobertura atual minima
+- [ ] Ampliar cobertura de testes unitarios (JUnit) - existe FormatarPrecoTest como base
 - [ ] Testes de UI (Espresso)
 - [ ] Testes E2E
 - [ ] Logs estruturados (Timber)
