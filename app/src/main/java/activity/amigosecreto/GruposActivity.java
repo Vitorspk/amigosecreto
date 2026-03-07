@@ -198,6 +198,8 @@ public class GruposActivity extends AppCompatActivity {
         listaGrupos.clear();
         listaGrupos.addAll(dao.listar());
         dao.close();
+        // Recarregar contagens após a lista estar populada, depois notificar
+        adapter.recarregarContagens();
         adapter.notifyDataSetChanged();
     }
 
@@ -285,10 +287,9 @@ public class GruposActivity extends AppCompatActivity {
         public GruposAdapter(Context ctx, List<Grupo> itens) {
             this.ctx = ctx;
             this.itens = itens;
-            preCarregarContagens();
         }
 
-        private void preCarregarContagens() {
+        public void recarregarContagens() {
             contagemParticipantes.clear();
             try {
                 participanteDao.open();
@@ -345,7 +346,89 @@ public class GruposActivity extends AppCompatActivity {
                 }
             });
 
+            convertView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    exibirMenuContextoGrupo(v, g);
+                    return true;
+                }
+            });
+
             return convertView;
+        }
+
+        private void exibirMenuContextoGrupo(View anchorView, final Grupo g) {
+            android.widget.PopupMenu popup = new android.widget.PopupMenu(ctx, anchorView);
+            popup.getMenu().add(0, 1, 0, "Editar nome");
+            popup.getMenu().add(0, 2, 1, "Excluir grupo");
+
+            popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(android.view.MenuItem item) {
+                    if (item.getItemId() == 1) {
+                        exibirDialogEditarNome(g);
+                        return true;
+                    } else if (item.getItemId() == 2) {
+                        confirmarRemoverGrupo(g);
+                        return true;
+                    }
+                    return false;
+                }
+            });
+
+            popup.show();
+        }
+
+        private void exibirDialogEditarNome(final Grupo g) {
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_criar_grupo, null);
+
+            final com.google.android.material.textfield.TextInputEditText etNome =
+                    dialogView.findViewById(R.id.et_nome_grupo);
+            com.google.android.material.button.MaterialButton btnCriar =
+                    dialogView.findViewById(R.id.btn_criar);
+            com.google.android.material.button.MaterialButton btnCancelar =
+                    dialogView.findViewById(R.id.btn_cancelar);
+
+            // Ocultar chips de sugestões no modo edição
+            View chipGroup = dialogView.findViewById(R.id.chip_group_sugestoes);
+            if (chipGroup != null) chipGroup.setVisibility(View.GONE);
+
+            etNome.setText(g.getNome());
+            etNome.setSelection(etNome.getText() != null ? etNome.getText().length() : 0);
+            btnCriar.setText("Salvar");
+
+            final AlertDialog dialog = new AlertDialog.Builder(ctx)
+                    .setView(dialogView)
+                    .create();
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+
+            btnCriar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String novoNome = etNome.getText().toString().trim();
+                    if (!novoNome.isEmpty()) {
+                        g.setNome(novoNome);
+                        dao.open();
+                        dao.atualizar(g);
+                        dao.close();
+                        atualizarLista();
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(GruposActivity.this, "O nome do grupo é obrigatório", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+            btnCancelar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
         }
 
         private void confirmarRemoverGrupo(final Grupo g) {
