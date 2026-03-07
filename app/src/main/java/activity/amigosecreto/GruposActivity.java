@@ -240,21 +240,21 @@ public class GruposActivity extends AppCompatActivity {
         chipFamilia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                etNome.setText("Família");
+                etNome.setText(getString(R.string.chip_sugestao_familia));
             }
         });
 
         chipTrabalho.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                etNome.setText("Trabalho");
+                etNome.setText(getString(R.string.chip_sugestao_trabalho));
             }
         });
 
         chipAmigos.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                etNome.setText("Amigos");
+                etNome.setText(getString(R.string.chip_sugestao_amigos));
             }
         });
 

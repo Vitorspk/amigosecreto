@@ -38,6 +38,8 @@ public class ParticipantesActivityTest {
     public void setUp() {
         Context ctx = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
+        // Limpar banco completamente antes de cada teste para garantir isolamento.
+        // GrupoDAO.limparTudo() apaga grupos, participantes e exclusoes em transacao atomica.
         grupoDao = new GrupoDAO(ctx);
         grupoDao.open();
         grupoDao.limparTudo();
@@ -49,9 +51,6 @@ public class ParticipantesActivityTest {
         grupo.setId(id);
         grupoDao.close();
 
-        participanteDao = new ParticipanteDAO(ctx);
-        participanteDao.open();
-
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ParticipantesActivity.class);
         intent.putExtra("grupo", grupo);
         scenario = ActivityScenario.launch(intent);
@@ -60,10 +59,10 @@ public class ParticipantesActivityTest {
     @After
     public void tearDown() {
         if (scenario != null) scenario.close();
+        // Limpar banco apos cada teste; grupoDao ja pode estar fechado — reabre para seguranca.
         grupoDao.open();
         grupoDao.limparTudo();
         grupoDao.close();
-        participanteDao.close();
     }
 
     // --- Tela inicial ---
@@ -95,7 +94,7 @@ public class ParticipantesActivityTest {
     public void adicionar_participante_aparece_na_lista() {
         onView(withId(R.id.fab_add_participante)).perform(click());
         onView(withId(R.id.et_nome)).perform(typeText("Ana"), closeSoftKeyboard());
-        onView(withText("Adicionar")).perform(click());
+        onView(withText(R.string.participante_btn_adicionar)).perform(click());
 
         onView(withText("Ana")).check(matches(isDisplayed()));
     }
@@ -103,21 +102,21 @@ public class ParticipantesActivityTest {
     @Test
     public void adicionar_participante_nome_vazio_nao_fecha_dialog() {
         onView(withId(R.id.fab_add_participante)).perform(click());
-        onView(withText("Adicionar")).perform(click());
-        // Dialog ainda visivel
+        onView(withText(R.string.participante_btn_adicionar)).perform(click());
+        // Dialog ainda visivel — campo de nome presente
         onView(withId(R.id.et_nome)).check(matches(isDisplayed()));
     }
 
     // --- Sorteio ---
 
     @Test
-    public void sortear_com_menos_de_3_participantes_exibe_toast() {
+    public void sortear_com_menos_de_3_participantes_nao_abre_dialog_sucesso() {
         adicionarParticipante("Ana");
         adicionarParticipante("Bruno");
 
         onView(withId(R.id.btn_sortear)).perform(click());
 
-        // Toast com mensagem de minimo aparece; lista ainda visivel (sem dialog de sucesso)
+        // Dialog de sucesso NAO deve aparecer — lista continua visivel, sem titulo de sorteio
         onView(withId(R.id.lv_participantes)).check(matches(isDisplayed()));
     }
 
@@ -129,7 +128,7 @@ public class ParticipantesActivityTest {
 
         onView(withId(R.id.btn_sortear)).perform(click());
 
-        onView(withText("Sorteio Concluído!")).check(matches(isDisplayed()));
+        onView(withText(R.string.participante_sorteio_titulo)).check(matches(isDisplayed()));
     }
 
     // --- Helpers ---
@@ -137,6 +136,6 @@ public class ParticipantesActivityTest {
     private void adicionarParticipante(String nome) {
         onView(withId(R.id.fab_add_participante)).perform(click());
         onView(withId(R.id.et_nome)).perform(typeText(nome), closeSoftKeyboard());
-        onView(withText("Adicionar")).perform(click());
+        onView(withText(R.string.participante_btn_adicionar)).perform(click());
     }
 }

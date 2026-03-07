@@ -217,7 +217,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton("Adicionar", null);
+        builder.setPositiveButton(getString(R.string.participante_btn_adicionar), null);
         builder.setNegativeButton("Cancelar", null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
@@ -523,7 +523,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (sucesso) {
                 atualizarLista();
                 new AlertDialog.Builder(this)
-                        .setTitle("Sorteio Concluído!")
+                        .setTitle(getString(R.string.participante_sorteio_titulo))
                         .setMessage("Deseja enviar os resultados agora por SMS?")
                         .setPositiveButton("Sim, enviar SMS", new DialogInterface.OnClickListener() {
                             @Override

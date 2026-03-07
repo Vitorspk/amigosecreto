@@ -2,14 +2,12 @@ package activity.amigosecreto;
 
 import android.content.Context;
 
-import androidx.test.espresso.matcher.ViewMatchers;
-import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,11 +25,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 @RunWith(AndroidJUnit4.class)
 public class GruposActivityTest {
 
-    @Rule
-    public ActivityScenarioRule<GruposActivity> activityRule =
-            new ActivityScenarioRule<>(GruposActivity.class);
-
     private GrupoDAO dao;
+    private ActivityScenario<GruposActivity> scenario;
 
     @Before
     public void setUp() {
@@ -40,10 +35,13 @@ public class GruposActivityTest {
         dao.open();
         dao.limparTudo();
         dao.close();
+        // Activity lancada APOS limpar o banco para evitar race condition
+        scenario = ActivityScenario.launch(GruposActivity.class);
     }
 
     @After
     public void tearDown() {
+        if (scenario != null) scenario.close();
         dao.open();
         dao.limparTudo();
         dao.close();
@@ -95,13 +93,13 @@ public class GruposActivityTest {
     public void chip_familia_preenche_nome() {
         onView(withId(R.id.btn_criar_grupo)).perform(click());
         onView(withId(R.id.chip_familia)).perform(click());
-        onView(withId(R.id.et_nome_grupo)).check(matches(withText("Família")));
+        onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_familia)));
     }
 
     @Test
     public void chip_trabalho_preenche_nome() {
         onView(withId(R.id.btn_criar_grupo)).perform(click());
         onView(withId(R.id.chip_trabalho)).perform(click());
-        onView(withId(R.id.et_nome_grupo)).check(matches(withText("Trabalho")));
+        onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_trabalho)));
     }
 }
