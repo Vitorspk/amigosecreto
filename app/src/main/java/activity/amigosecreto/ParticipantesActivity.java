@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,6 +47,7 @@ import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.util.SorteioEngine;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -512,7 +512,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         int tentativas = 0;
         while (sorteados == null && tentativas < 100) {
             tentativas++;
-            sorteados = tentarSorteioComRegras(new ArrayList<>(listaParticipantes));
+            sorteados = SorteioEngine.tentarSorteio(new ArrayList<>(listaParticipantes));
         }
 
         if (sorteados != null) {
@@ -537,26 +537,6 @@ public class ParticipantesActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Impossível realizar sorteio com as regras atuais.", Toast.LENGTH_LONG).show();
         }
-    }
-
-    private List<Participante> tentarSorteioComRegras(List<Participante> participantes) {
-        List<Participante> disponiveis = new ArrayList<>(participantes);
-        List<Participante> resultado = new ArrayList<>();
-        Random random = new Random();
-
-        for (Participante atual : participantes) {
-            List<Participante> possiveis = new ArrayList<>();
-            for (Participante p : disponiveis) {
-                if (p.getId() != atual.getId() && !atual.getIdsExcluidos().contains(p.getId())) {
-                    possiveis.add(p);
-                }
-            }
-            if (possiveis.isEmpty()) return null;
-            Participante sorteado = possiveis.get(random.nextInt(possiveis.size()));
-            resultado.add(sorteado);
-            disponiveis.remove(sorteado);
-        }
-        return resultado;
     }
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).

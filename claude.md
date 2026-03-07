@@ -45,6 +45,7 @@ app/src/main/java/activity/amigosecreto/
     ├── AsyncDatabaseHelper.java           # Operacoes async no banco
     ├── HapticFeedbackUtils.java           # Feedback haptico (respeita acessibilidade)
     ├── SnackbarHelper.java                # Helpers de Snackbar
+    ├── SorteioEngine.java                 # Motor de sorteio (extraido para testabilidade)
     └── ValidationUtils.java              # Validacao de inputs
 ```
 
@@ -236,6 +237,19 @@ implementation 'com.google.android.material:material:1.12.0'
 implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 implementation 'androidx.recyclerview:recyclerview:1.3.2'
 implementation 'androidx.core:core-splashscreen:1.0.1'
+
+// Testes unitarios
+testImplementation 'junit:junit:4.13.2'
+testImplementation 'org.mockito:mockito-core:5.11.0'
+testImplementation 'org.robolectric:robolectric:4.13'
+testImplementation 'androidx.test:core:1.6.1'
+testImplementation 'androidx.test.ext:junit:1.2.1'
+
+// Testes instrumentados
+androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+androidTestImplementation 'androidx.test:runner:1.6.2'
+androidTestImplementation 'androidx.test:rules:1.6.1'
 ```
 
 ### Permissoes
@@ -260,6 +274,7 @@ implementation 'androidx.core:core-splashscreen:1.0.1'
 - `AsyncDatabaseHelper` - Operacoes assincronas
 - `SnackbarHelper` - Mensagens padronizadas
 - `AnimationUtils` - Animacoes reutilizaveis
+- `SorteioEngine` - Motor de sorteio (extraido de ParticipantesActivity para testabilidade)
 
 ### Adapter Pattern
 - `ParticipantesRecyclerAdapter` com `getBindingAdapterPosition()`
@@ -325,7 +340,19 @@ implementation 'androidx.core:core-splashscreen:1.0.1'
 ./gradlew bundleRelease          # Build release AAB (requer keystore.properties)
 ./gradlew clean                  # Limpar build
 ./gradlew :app:lintRelease       # Rodar lint
-./gradlew :app:testReleaseUnitTest  # Rodar testes
+./gradlew :app:testDebugUnitTest # Rodar testes unitarios + Robolectric
+```
+
+### Testes
+```bash
+# Testes unitarios e de DAO (sem emulador — rapido)
+./gradlew :app:testDebugUnitTest
+
+# Testes instrumentados (requer emulador/dispositivo)
+./gradlew :app:connectedDebugAndroidTest
+
+# Tudo junto
+./gradlew :app:test :app:connectedCheck
 ```
 
 ### Deploy via CI/CD
@@ -423,10 +450,47 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 - [ ] QR Code para compartilhamento
 
 ### Qualidade
-- [ ] Ampliar cobertura de testes unitarios (JUnit) - existe FormatarPrecoTest como base
-- [ ] Testes de UI (Espresso)
-- [ ] Testes E2E
+- [x] Testes unitarios puros — ValidationUtils, SorteioEngine, models Grupo/Participante
+- [x] Testes de DAO com Robolectric — GrupoDAO, ParticipanteDAO, MySQLiteOpenHelper
+- [ ] Testes de UI com Espresso (Fase 3 do plano — requer emulador)
 - [ ] Logs estruturados (Timber)
+
+---
+
+## Testes
+
+### Estrutura
+
+```
+app/src/test/java/activity/amigosecreto/
+├── FormatarPrecoTest.java               # Formatacao de preco (legado)
+├── db/
+│   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
+│   ├── GrupoModelTest.java              # Model Grupo — Serializable
+│   ├── MySQLiteOpenHelperTest.java      # Schema do banco (Robolectric)
+│   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
+│   └── ParticipanteModelTest.java       # Model Participante — Serializable
+└── util/
+    ├── SorteioEngineTest.java           # Algoritmo de sorteio — propriedades e exclusoes
+    └── ValidationUtilsTest.java         # Validacoes de input e regex
+```
+
+### Cobertura Atual (97 testes, BUILD SUCCESSFUL)
+
+| Camada | Arquivo | Casos |
+|--------|---------|-------|
+| Util | `ValidationUtilsTest` | 14 |
+| Util | `SorteioEngineTest` | 11 |
+| Model | `GrupoModelTest` | 7 |
+| Model | `ParticipanteModelTest` | 11 |
+| DAO | `GrupoDAOTest` | 12 |
+| DAO | `ParticipanteDAOTest` | 20 |
+| DAO | `MySQLiteOpenHelperTest` | 7 |
+| Util | `FormatarPrecoTest` | 9 |
+
+### Plano Completo
+
+Ver `documents/TEST_PLAN.md` para descricao detalhada das Fases 1–3 e progresso.
 
 ---
 
