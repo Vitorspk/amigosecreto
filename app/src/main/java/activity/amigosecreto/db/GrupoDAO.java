@@ -31,6 +31,14 @@ public class GrupoDAO {
         return database.insert(MySQLiteOpenHelper.TABLE_GRUPO, null, values);
     }
 
+    public int atualizarNome(Grupo g) {
+        ContentValues values = new ContentValues();
+        values.put(MySQLiteOpenHelper.COLUMN_GRUPO_NOME, g.getNome());
+        return database.update(MySQLiteOpenHelper.TABLE_GRUPO, values,
+                MySQLiteOpenHelper.COLUMN_GRUPO_ID + " = ?",
+                new String[]{String.valueOf(g.getId())});
+    }
+
     public void remover(int id) {
         database.beginTransaction();
         try {

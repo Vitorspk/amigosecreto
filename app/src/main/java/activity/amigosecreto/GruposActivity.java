@@ -20,18 +20,28 @@ import androidx.activity.EdgeToEdge;
 
 import com.google.android.material.button.MaterialButton;
 
+import android.util.Log;
+import android.view.MenuItem;
+import android.widget.PopupMenu;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
 import activity.amigosecreto.db.ParticipanteDAO;
+import activity.amigosecreto.util.AsyncDatabaseHelper;
+import activity.amigosecreto.util.HapticFeedbackUtils;
 
 public class GruposActivity extends AppCompatActivity {
+
+    private static final String TAG = "GruposActivity";
 
     private ListView lvGrupos;
     private MaterialButton btnCriarGrupo;
@@ -106,12 +116,12 @@ public class GruposActivity extends AppCompatActivity {
     }
 
     private void exibirMenuMais() {
-        android.widget.PopupMenu popup = new android.widget.PopupMenu(this, findViewById(R.id.action_more));
+        PopupMenu popup = new PopupMenu(this, findViewById(R.id.action_more));
         popup.getMenuInflater().inflate(R.menu.menu_mais_opcoes, popup.getMenu());
 
-        popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
-            public boolean onMenuItemClick(android.view.MenuItem item) {
+            public boolean onMenuItemClick(MenuItem item) {
                 int id = item.getItemId();
 
                 if (id == R.id.action_sobre) {
@@ -198,7 +208,9 @@ public class GruposActivity extends AppCompatActivity {
         listaGrupos.clear();
         listaGrupos.addAll(dao.listar());
         dao.close();
+        // Exibe lista imediatamente; contagens chegam via callback e disparam novo notify
         adapter.notifyDataSetChanged();
+        adapter.recarregarContagensAsync();
     }
 
     private void exibirDialogAdd() {
@@ -280,25 +292,34 @@ public class GruposActivity extends AppCompatActivity {
     private class GruposAdapter extends BaseAdapter {
         private Context ctx;
         private List<Grupo> itens;
-        private java.util.Map<Integer, Integer> contagemParticipantes = new java.util.HashMap<>();
+        private Map<Integer, Integer> contagemParticipantes = new HashMap<>();
 
         public GruposAdapter(Context ctx, List<Grupo> itens) {
             this.ctx = ctx;
             this.itens = itens;
-            preCarregarContagens();
         }
 
-        private void preCarregarContagens() {
-            contagemParticipantes.clear();
-            try {
-                participanteDao.open();
-                for (Grupo g : itens) {
-                    contagemParticipantes.put(g.getId(), participanteDao.listarPorGrupo(g.getId()).size());
+        void recarregarContagensAsync() {
+            AsyncDatabaseHelper.execute(
+                () -> {
+                    participanteDao.open();
+                    Map<Integer, Integer> mapa = participanteDao.contarPorGrupo();
+                    participanteDao.close();
+                    return mapa;
+                },
+                new AsyncDatabaseHelper.ResultCallback<Map<Integer, Integer>>() {
+                    @Override
+                    public void onSuccess(Map<Integer, Integer> mapa) {
+                        contagemParticipantes.clear();
+                        contagemParticipantes.putAll(mapa);
+                        notifyDataSetChanged();
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        Log.e(TAG, "Erro ao carregar contagem de participantes", e);
+                    }
                 }
-                participanteDao.close();
-            } catch (Exception e) {
-                // fallback: contagens ficam 0
-            }
+            );
         }
 
         @Override
@@ -345,23 +366,140 @@ public class GruposActivity extends AppCompatActivity {
                 }
             });
 
+            convertView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    HapticFeedbackUtils.performMediumFeedback(v);
+                    exibirMenuContextoGrupo(v, g);
+                    return true;
+                }
+            });
+
             return convertView;
+        }
+
+        private static final int MENU_EDITAR = 1;
+        private static final int MENU_EXCLUIR = 2;
+
+        private void exibirMenuContextoGrupo(View anchorView, final Grupo g) {
+            PopupMenu popup = new PopupMenu(ctx, anchorView);
+            popup.getMenu().add(0, MENU_EDITAR, 0, ctx.getString(R.string.grupo_menu_editar_nome));
+            popup.getMenu().add(0, MENU_EXCLUIR, 1, ctx.getString(R.string.grupo_menu_excluir));
+
+            popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    int id = item.getItemId();
+                    if (id == MENU_EDITAR) {
+                        exibirDialogEditarNome(g);
+                        return true;
+                    } else if (id == MENU_EXCLUIR) {
+                        confirmarRemoverGrupo(g);
+                        return true;
+                    }
+                    return false;
+                }
+            });
+
+            popup.show();
+        }
+
+        private void exibirDialogEditarNome(final Grupo g) {
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_criar_grupo, null);
+
+            final com.google.android.material.textfield.TextInputEditText etNome =
+                    dialogView.findViewById(R.id.et_nome_grupo);
+            com.google.android.material.button.MaterialButton btnCriar =
+                    dialogView.findViewById(R.id.btn_criar);
+            com.google.android.material.button.MaterialButton btnCancelar =
+                    dialogView.findViewById(R.id.btn_cancelar);
+
+            // Ocultar chips de sugestões no modo edição
+            View chipGroup = dialogView.findViewById(R.id.chip_group_sugestoes);
+            if (chipGroup != null) chipGroup.setVisibility(View.GONE);
+
+            etNome.setText(g.getNome());
+            etNome.setSelection(etNome.getText() != null ? etNome.getText().length() : 0);
+            btnCriar.setText(getString(R.string.grupo_btn_salvar));
+
+            final AlertDialog dialog = new AlertDialog.Builder(ctx)
+                    .setView(dialogView)
+                    .create();
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+
+            btnCriar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String novoNome = etNome.getText().toString().trim();
+                    if (novoNome.isEmpty()) {
+                        Toast.makeText(GruposActivity.this, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    final String nomeOriginal = g.getNome();
+                    g.setNome(novoNome);
+                    btnCriar.setEnabled(false);
+                    AsyncDatabaseHelper.execute(
+                        () -> {
+                            dao.open();
+                            int rows = dao.atualizarNome(g);
+                            dao.close();
+                            return rows;
+                        },
+                        new AsyncDatabaseHelper.ResultCallback<Integer>() {
+                            @Override
+                            public void onSuccess(Integer rows) {
+                                if (rows > 0) {
+                                    atualizarLista();
+                                    dialog.dismiss();
+                                } else {
+                                    g.setNome(nomeOriginal);
+                                    btnCriar.setEnabled(true);
+                                    Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                            @Override
+                            public void onError(Exception e) {
+                                g.setNome(nomeOriginal);
+                                notifyDataSetChanged();
+                                btnCriar.setEnabled(true);
+                                Log.e(TAG, "Erro ao atualizar nome do grupo", e);
+                                Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    );
+                }
+            });
+
+            btnCancelar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
         }
 
         private void confirmarRemoverGrupo(final Grupo g) {
             new AlertDialog.Builder(ctx)
-                    .setTitle("Excluir Grupo")
-                    .setMessage("Deseja excluir o grupo '" + g.getNome() + "' e todos os seus participantes?")
-                    .setPositiveButton("Excluir", new DialogInterface.OnClickListener() {
+                    .setTitle(R.string.grupo_dialog_excluir_titulo)
+                    .setMessage(ctx.getString(R.string.grupo_dialog_excluir_mensagem, g.getNome()))
+                    .setPositiveButton(R.string.grupo_btn_excluir, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            dao.open();
-                            dao.remover(g.getId());
-                            dao.close();
-                            atualizarLista();
+                            AsyncDatabaseHelper.executeSimple(
+                                () -> {
+                                    dao.open();
+                                    dao.remover(g.getId());
+                                    dao.close();
+                                },
+                                () -> atualizarLista()
+                            );
                         }
                     })
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(R.string.grupo_btn_cancelar, null)
                     .show();
         }
     }

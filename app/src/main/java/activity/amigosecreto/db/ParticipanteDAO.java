@@ -170,6 +170,26 @@ public class ParticipanteDAO {
         return nome;
     }
 
+    public java.util.Map<Integer, Integer> contarPorGrupo() {
+        java.util.Map<Integer, Integer> mapa = new java.util.HashMap<>();
+        Cursor cursor = database.rawQuery(
+                "SELECT " + MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID + ", COUNT(*) AS cnt FROM "
+                + MySQLiteOpenHelper.TABLE_PARTICIPANTE
+                + " GROUP BY " + MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, null);
+        try {
+            if (cursor.moveToFirst()) {
+                int grupoIdx = cursor.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID);
+                int cntIdx   = cursor.getColumnIndexOrThrow("cnt");
+                do {
+                    mapa.put(cursor.getInt(grupoIdx), cursor.getInt(cntIdx));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return mapa;
+    }
+
     public Participante buscarPorId(int id) {
         Participante p = null;
         Cursor cursor = database.query(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null,
