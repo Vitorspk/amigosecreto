@@ -114,4 +114,28 @@ public class MySQLiteOpenHelperTest {
     public void tabela_desejo_tem_coluna_participante_id() {
         assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID));
     }
+
+    // --- onUpgrade ---
+
+    @Test
+    public void onUpgrade_v7_para_v8_adiciona_coluna_participante_id_na_desejo() {
+        // Simula banco na versao 7 (sem coluna participante_id em desejo)
+        db.execSQL("DROP TABLE IF EXISTS " + MySQLiteOpenHelper.TABLE_DESEJO);
+        db.execSQL(
+            "CREATE TABLE " + MySQLiteOpenHelper.TABLE_DESEJO + " (" +
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "produto TEXT NOT NULL, " +
+            "categoria TEXT, " +
+            "preco_minimo REAL, " +
+            "preco_maximo REAL, " +
+            "lojas TEXT" +
+            ")"
+        );
+        assertFalse(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID));
+
+        // Executa migracao v7 -> v8
+        helper.onUpgrade(db, 7, 8);
+
+        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID));
+    }
 }

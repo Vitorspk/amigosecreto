@@ -36,6 +36,7 @@ public class GrupoDAOTest {
 
     @After
     public void tearDown() {
+        dao.limparTudo();
         dao.close();
         participanteDao.close();
     }

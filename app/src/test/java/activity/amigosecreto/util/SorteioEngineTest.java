@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import activity.amigosecreto.db.Participante;
@@ -115,6 +116,17 @@ public class SorteioEngineTest {
             assertNotEquals("A tirou B em violacao da exclusao", 2, resultado.get(0).getId());
         }
         assertTrue("Nao obteve sorteios suficientes para validar exclusao", validados >= 5);
+    }
+
+    @Test
+    public void sorteio_dois_participantes_sem_exclusoes_funciona() {
+        List<Participante> participantes = criarGrupo(2);
+        // Com seed fixa, o algoritmo guloso sempre acha solucao para 2 sem exclusoes
+        List<Participante> resultado = SorteioEngine.tentarSorteio(participantes, new Random(42));
+        assertNotNull(resultado);
+        assertEquals(2, resultado.size());
+        assertNotEquals(participantes.get(0).getId(), resultado.get(0).getId());
+        assertNotEquals(participantes.get(1).getId(), resultado.get(1).getId());
     }
 
     @Test

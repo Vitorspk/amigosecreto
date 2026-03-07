@@ -295,8 +295,20 @@ public class ParticipanteDAOTest {
 
     @Test
     public void getNomeAmigoSorteado_retorna_nome_correto() {
-        Participante p = criarParticipante("Beatriz", grupoId);
-        String nome = dao.getNomeAmigoSorteado(p.getId());
+        Participante a = criarParticipante("Ana", grupoId);
+        Participante b = criarParticipante("Beatriz", grupoId);
+        Participante c = criarParticipante("Carlos", grupoId);
+
+        // Ana tira Beatriz
+        dao.salvarSorteio(Arrays.asList(a, b, c), Arrays.asList(b, c, a));
+
+        // getNomeAmigoSorteado recebe o id do amigo sorteado (nao do participante)
+        List<Participante> lista = dao.listarPorGrupo(grupoId);
+        Participante anaAtualizada = lista.stream().filter(p -> p.getId() == a.getId()).findFirst().orElse(null);
+        assertNotNull(anaAtualizada);
+        assertNotNull(anaAtualizada.getAmigoSorteadoId());
+
+        String nome = dao.getNomeAmigoSorteado(anaAtualizada.getAmigoSorteadoId());
         assertEquals("Beatriz", nome);
     }
 
