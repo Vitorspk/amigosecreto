@@ -41,10 +41,13 @@ public class GruposActivityTest {
 
     @After
     public void tearDown() {
-        if (scenario != null) scenario.close();
-        dao.open();
-        dao.limparTudo();
-        dao.close();
+        try {
+            if (scenario != null) scenario.close();
+        } finally {
+            dao.open();
+            dao.limparTudo();
+            dao.close();
+        }
     }
 
     // --- Tela inicial ---
@@ -101,5 +104,12 @@ public class GruposActivityTest {
         onView(withId(R.id.btn_criar_grupo)).perform(click());
         onView(withId(R.id.chip_trabalho)).perform(click());
         onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_trabalho)));
+    }
+
+    @Test
+    public void chip_amigos_preenche_nome() {
+        onView(withId(R.id.btn_criar_grupo)).perform(click());
+        onView(withId(R.id.chip_amigos)).perform(click());
+        onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_amigos)));
     }
 }
