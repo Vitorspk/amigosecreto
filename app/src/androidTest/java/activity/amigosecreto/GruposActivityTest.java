@@ -44,9 +44,13 @@ public class GruposActivityTest {
         try {
             if (scenario != null) scenario.close();
         } finally {
-            dao.open();
-            dao.limparTudo();
-            dao.close();
+            // Cria novo DAO para tearDown — evita reuso de DAO potencialmente em estado invalido
+            // caso setUp tenha falhado antes de concluir a inicializacao.
+            Context ctx = InstrumentationRegistry.getInstrumentation().getTargetContext();
+            GrupoDAO cleanupDao = new GrupoDAO(ctx);
+            cleanupDao.open();
+            cleanupDao.limparTudo();
+            cleanupDao.close();
         }
     }
 
