@@ -15,12 +15,12 @@ import org.junit.runner.RunWith;
 
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
-import activity.amigosecreto.db.ParticipanteDAO;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.typeText;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -30,7 +30,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 public class ParticipantesActivityTest {
 
     private GrupoDAO grupoDao;
-    private ParticipanteDAO participanteDao;
     private Grupo grupo;
     private ActivityScenario<ParticipantesActivity> scenario;
 
@@ -116,8 +115,8 @@ public class ParticipantesActivityTest {
 
         onView(withId(R.id.btn_sortear)).perform(click());
 
-        // Dialog de sucesso NAO deve aparecer — lista continua visivel, sem titulo de sorteio
-        onView(withId(R.id.lv_participantes)).check(matches(isDisplayed()));
+        // Dialog de sucesso NAO deve aparecer — titulo do sorteio nao existe na hierarquia de views
+        onView(withText(R.string.participante_sorteio_titulo)).check(doesNotExist());
     }
 
     @Test

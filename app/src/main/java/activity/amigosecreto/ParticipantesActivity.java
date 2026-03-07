@@ -218,7 +218,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
         builder.setPositiveButton(getString(R.string.participante_btn_adicionar), null);
-        builder.setNegativeButton("Cancelar", null);
+        builder.setNegativeButton(getString(R.string.grupo_btn_cancelar), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -265,8 +265,8 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton("Salvar", null);
-        builder.setNegativeButton("Cancelar", null);
+        builder.setPositiveButton(getString(R.string.grupo_btn_salvar), null);
+        builder.setNegativeButton(getString(R.string.grupo_btn_cancelar), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override

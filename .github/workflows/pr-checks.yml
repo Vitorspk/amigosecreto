@@ -16,7 +16,7 @@ jobs:
   # -----------------------------------------------------------------------
   unit-tests:
     name: Unit Tests & Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: write
@@ -76,7 +76,7 @@ jobs:
   # -----------------------------------------------------------------------
   instrumented-tests:
     name: Instrumented Tests (Espresso)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: unit-tests
     permissions:
       contents: read
@@ -137,7 +137,7 @@ jobs:
   # -----------------------------------------------------------------------
   build-check:
     name: Build Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [unit-tests, instrumented-tests]
     permissions:
       contents: read
