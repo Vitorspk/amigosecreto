@@ -30,6 +30,8 @@ import java.util.Random;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
 import activity.amigosecreto.db.ParticipanteDAO;
+import activity.amigosecreto.util.AsyncDatabaseHelper;
+import activity.amigosecreto.util.HapticFeedbackUtils;
 
 public class GruposActivity extends AppCompatActivity {
 
@@ -198,9 +200,9 @@ public class GruposActivity extends AppCompatActivity {
         listaGrupos.clear();
         listaGrupos.addAll(dao.listar());
         dao.close();
-        // Recarregar contagens após a lista estar populada, depois notificar
-        adapter.recarregarContagens();
+        // Exibe lista imediatamente; contagens chegam via callback e disparam novo notify
         adapter.notifyDataSetChanged();
+        adapter.recarregarContagensAsync();
     }
 
     private void exibirDialogAdd() {
@@ -289,15 +291,27 @@ public class GruposActivity extends AppCompatActivity {
             this.itens = itens;
         }
 
-        void recarregarContagens() {
-            contagemParticipantes.clear();
-            try {
-                participanteDao.open();
-                contagemParticipantes.putAll(participanteDao.contarPorGrupo());
-                participanteDao.close();
-            } catch (Exception e) {
-                android.util.Log.e("GruposActivity", "Erro ao carregar contagem de participantes", e);
-            }
+        void recarregarContagensAsync() {
+            AsyncDatabaseHelper.execute(
+                () -> {
+                    participanteDao.open();
+                    java.util.Map<Integer, Integer> mapa = participanteDao.contarPorGrupo();
+                    participanteDao.close();
+                    return mapa;
+                },
+                new AsyncDatabaseHelper.ResultCallback<java.util.Map<Integer, Integer>>() {
+                    @Override
+                    public void onSuccess(java.util.Map<Integer, Integer> mapa) {
+                        contagemParticipantes.clear();
+                        contagemParticipantes.putAll(mapa);
+                        notifyDataSetChanged();
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        android.util.Log.e("GruposActivity", "Erro ao carregar contagem de participantes", e);
+                    }
+                }
+            );
         }
 
         @Override
@@ -347,6 +361,7 @@ public class GruposActivity extends AppCompatActivity {
             convertView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
+                    HapticFeedbackUtils.performMediumFeedback(v);
                     exibirMenuContextoGrupo(v, g);
                     return true;
                 }
@@ -410,22 +425,41 @@ public class GruposActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     String novoNome = etNome.getText().toString().trim();
-                    if (!novoNome.isEmpty()) {
-                        String nomeOriginal = g.getNome();
-                        g.setNome(novoNome);
-                        dao.open();
-                        int rows = dao.atualizarNome(g);
-                        dao.close();
-                        if (rows > 0) {
-                            atualizarLista();
-                            dialog.dismiss();
-                        } else {
-                            g.setNome(nomeOriginal);
-                            Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
+                    if (novoNome.isEmpty()) {
                         Toast.makeText(GruposActivity.this, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show();
+                        return;
                     }
+                    final String nomeOriginal = g.getNome();
+                    g.setNome(novoNome);
+                    btnCriar.setEnabled(false);
+                    AsyncDatabaseHelper.execute(
+                        () -> {
+                            dao.open();
+                            int rows = dao.atualizarNome(g);
+                            dao.close();
+                            return rows;
+                        },
+                        new AsyncDatabaseHelper.ResultCallback<Integer>() {
+                            @Override
+                            public void onSuccess(Integer rows) {
+                                if (rows > 0) {
+                                    atualizarLista();
+                                    dialog.dismiss();
+                                } else {
+                                    g.setNome(nomeOriginal);
+                                    btnCriar.setEnabled(true);
+                                    Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                            @Override
+                            public void onError(Exception e) {
+                                g.setNome(nomeOriginal);
+                                btnCriar.setEnabled(true);
+                                android.util.Log.e("GruposActivity", "Erro ao atualizar nome do grupo", e);
+                                Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    );
                 }
             });
 
@@ -441,18 +475,22 @@ public class GruposActivity extends AppCompatActivity {
 
         private void confirmarRemoverGrupo(final Grupo g) {
             new AlertDialog.Builder(ctx)
-                    .setTitle("Excluir Grupo")
-                    .setMessage("Deseja excluir o grupo '" + g.getNome() + "' e todos os seus participantes?")
-                    .setPositiveButton("Excluir", new DialogInterface.OnClickListener() {
+                    .setTitle(R.string.grupo_dialog_excluir_titulo)
+                    .setMessage(ctx.getString(R.string.grupo_dialog_excluir_mensagem, g.getNome()))
+                    .setPositiveButton(R.string.grupo_btn_excluir, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            dao.open();
-                            dao.remover(g.getId());
-                            dao.close();
-                            atualizarLista();
+                            AsyncDatabaseHelper.executeSimple(
+                                () -> {
+                                    dao.open();
+                                    dao.remover(g.getId());
+                                    dao.close();
+                                },
+                                () -> atualizarLista()
+                            );
                         }
                     })
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(R.string.grupo_btn_cancelar, null)
                     .show();
         }
     }

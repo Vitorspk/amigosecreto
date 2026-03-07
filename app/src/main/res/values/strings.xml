@@ -29,5 +29,9 @@
     <string name="grupo_btn_salvar">Salvar</string>
     <string name="grupo_erro_nome_obrigatorio">O nome do grupo é obrigatório</string>
     <string name="grupo_erro_salvar">Erro ao salvar o nome do grupo</string>
+    <string name="grupo_dialog_excluir_titulo">Excluir Grupo</string>
+    <string name="grupo_dialog_excluir_mensagem">Deseja excluir o grupo \'%1$s\' e todos os seus participantes?</string>
+    <string name="grupo_btn_excluir">Excluir</string>
+    <string name="grupo_btn_cancelar">Cancelar</string>
 
 </resources>
