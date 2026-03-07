@@ -20,11 +20,17 @@ import androidx.activity.EdgeToEdge;
 
 import com.google.android.material.button.MaterialButton;
 
+import android.util.Log;
+import android.view.MenuItem;
+import android.widget.PopupMenu;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import activity.amigosecreto.db.Grupo;
@@ -34,6 +40,8 @@ import activity.amigosecreto.util.AsyncDatabaseHelper;
 import activity.amigosecreto.util.HapticFeedbackUtils;
 
 public class GruposActivity extends AppCompatActivity {
+
+    private static final String TAG = "GruposActivity";
 
     private ListView lvGrupos;
     private MaterialButton btnCriarGrupo;
@@ -108,12 +116,12 @@ public class GruposActivity extends AppCompatActivity {
     }
 
     private void exibirMenuMais() {
-        android.widget.PopupMenu popup = new android.widget.PopupMenu(this, findViewById(R.id.action_more));
+        PopupMenu popup = new PopupMenu(this, findViewById(R.id.action_more));
         popup.getMenuInflater().inflate(R.menu.menu_mais_opcoes, popup.getMenu());
 
-        popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
-            public boolean onMenuItemClick(android.view.MenuItem item) {
+            public boolean onMenuItemClick(MenuItem item) {
                 int id = item.getItemId();
 
                 if (id == R.id.action_sobre) {
@@ -284,7 +292,7 @@ public class GruposActivity extends AppCompatActivity {
     private class GruposAdapter extends BaseAdapter {
         private Context ctx;
         private List<Grupo> itens;
-        private java.util.Map<Integer, Integer> contagemParticipantes = new java.util.HashMap<>();
+        private Map<Integer, Integer> contagemParticipantes = new HashMap<>();
 
         public GruposAdapter(Context ctx, List<Grupo> itens) {
             this.ctx = ctx;
@@ -295,20 +303,20 @@ public class GruposActivity extends AppCompatActivity {
             AsyncDatabaseHelper.execute(
                 () -> {
                     participanteDao.open();
-                    java.util.Map<Integer, Integer> mapa = participanteDao.contarPorGrupo();
+                    Map<Integer, Integer> mapa = participanteDao.contarPorGrupo();
                     participanteDao.close();
                     return mapa;
                 },
-                new AsyncDatabaseHelper.ResultCallback<java.util.Map<Integer, Integer>>() {
+                new AsyncDatabaseHelper.ResultCallback<Map<Integer, Integer>>() {
                     @Override
-                    public void onSuccess(java.util.Map<Integer, Integer> mapa) {
+                    public void onSuccess(Map<Integer, Integer> mapa) {
                         contagemParticipantes.clear();
                         contagemParticipantes.putAll(mapa);
                         notifyDataSetChanged();
                     }
                     @Override
                     public void onError(Exception e) {
-                        android.util.Log.e("GruposActivity", "Erro ao carregar contagem de participantes", e);
+                        Log.e(TAG, "Erro ao carregar contagem de participantes", e);
                     }
                 }
             );
@@ -374,13 +382,13 @@ public class GruposActivity extends AppCompatActivity {
         private static final int MENU_EXCLUIR = 2;
 
         private void exibirMenuContextoGrupo(View anchorView, final Grupo g) {
-            android.widget.PopupMenu popup = new android.widget.PopupMenu(ctx, anchorView);
+            PopupMenu popup = new PopupMenu(ctx, anchorView);
             popup.getMenu().add(0, MENU_EDITAR, 0, ctx.getString(R.string.grupo_menu_editar_nome));
             popup.getMenu().add(0, MENU_EXCLUIR, 1, ctx.getString(R.string.grupo_menu_excluir));
 
-            popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+            popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                 @Override
-                public boolean onMenuItemClick(android.view.MenuItem item) {
+                public boolean onMenuItemClick(MenuItem item) {
                     int id = item.getItemId();
                     if (id == MENU_EDITAR) {
                         exibirDialogEditarNome(g);
@@ -454,8 +462,9 @@ public class GruposActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception e) {
                                 g.setNome(nomeOriginal);
+                                notifyDataSetChanged();
                                 btnCriar.setEnabled(true);
-                                android.util.Log.e("GruposActivity", "Erro ao atualizar nome do grupo", e);
+                                Log.e(TAG, "Erro ao atualizar nome do grupo", e);
                                 Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
                             }
                         }
