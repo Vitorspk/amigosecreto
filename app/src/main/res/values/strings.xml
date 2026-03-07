@@ -37,6 +37,13 @@
     <!-- Participantes -->
     <string name="participante_btn_adicionar">Adicionar</string>
     <string name="participante_sorteio_titulo">Sorteio Concluído!</string>
+    <string name="participante_sorteio_msg_sms">Deseja enviar os resultados agora por SMS?</string>
+    <string name="participante_sorteio_btn_sms">Sim, enviar SMS</string>
+    <string name="participante_sorteio_minimo">Adicione pelo menos 3 participantes</string>
+    <string name="participante_sorteio_impossivel">Impossível realizar sorteio com as regras atuais.</string>
+    <string name="participante_limpar_titulo">Limpar Tudo</string>
+    <string name="participante_limpar_msg">Deseja remover todos os participantes deste grupo?</string>
+    <string name="participante_limpar_btn_sim">Sim, limpar</string>
 
     <!-- Chips de sugestao de nome de grupo -->
     <string name="chip_sugestao_familia">Família</string>

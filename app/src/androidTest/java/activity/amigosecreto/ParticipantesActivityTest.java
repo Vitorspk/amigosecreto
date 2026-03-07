@@ -58,10 +58,13 @@ public class ParticipantesActivityTest {
     @After
     public void tearDown() {
         if (scenario != null) scenario.close();
-        // Limpar banco apos cada teste; grupoDao ja pode estar fechado — reabre para seguranca.
-        grupoDao.open();
-        grupoDao.limparTudo();
-        grupoDao.close();
+        // Cria novo DAO para tearDown — evita reuso de DAO potencialmente em estado invalido
+        // caso setUp tenha falhado antes de concluir a inicializacao.
+        Context ctx = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        GrupoDAO cleanupDao = new GrupoDAO(ctx);
+        cleanupDao.open();
+        cleanupDao.limparTudo();
+        cleanupDao.close();
     }
 
     // --- Tela inicial ---
