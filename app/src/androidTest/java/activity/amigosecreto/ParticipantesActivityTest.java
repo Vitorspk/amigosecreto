@@ -122,7 +122,9 @@ public class ParticipantesActivityTest {
 
         onView(withId(R.id.btn_sortear)).perform(click());
 
-        // Dialog de sucesso NAO deve aparecer — titulo do sorteio nao existe na hierarquia de views
+        // O Toast de aviso nao e verificado aqui: Toasts nao sao parte da view hierarchy do Espresso
+        // e requerem espresso-contrib ToastMatcher (flaky em CI). A ausencia do dialog de sucesso
+        // e prova suficiente de que a regra de negocio foi aplicada.
         onView(withText(R.string.participante_sorteio_titulo)).check(doesNotExist());
     }
 

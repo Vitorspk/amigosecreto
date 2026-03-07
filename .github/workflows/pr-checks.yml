@@ -17,6 +17,7 @@ jobs:
   unit-tests:
     name: Unit Tests & Lint
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       checks: write
