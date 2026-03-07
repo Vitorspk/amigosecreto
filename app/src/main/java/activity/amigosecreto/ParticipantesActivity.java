@@ -217,8 +217,8 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton("Adicionar", null);
-        builder.setNegativeButton("Cancelar", null);
+        builder.setPositiveButton(getString(R.string.participante_btn_adicionar), null);
+        builder.setNegativeButton(getString(R.string.grupo_btn_cancelar), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -265,8 +265,8 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton("Salvar", null);
-        builder.setNegativeButton("Cancelar", null);
+        builder.setPositiveButton(getString(R.string.grupo_btn_salvar), null);
+        builder.setNegativeButton(getString(R.string.grupo_btn_cancelar), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -487,9 +487,9 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private void confirmarLimparTudo() {
         new AlertDialog.Builder(this)
-                .setTitle("Limpar Tudo")
-                .setMessage("Deseja remover todos os participantes deste grupo?")
-                .setPositiveButton("Sim, limpar", new DialogInterface.OnClickListener() {
+                .setTitle(getString(R.string.participante_limpar_titulo))
+                .setMessage(getString(R.string.participante_limpar_msg))
+                .setPositiveButton(getString(R.string.participante_limpar_btn_sim), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dao.open();
@@ -504,7 +504,7 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private void realizarSorteio() {
         if (listaParticipantes.size() < 3) {
-            Toast.makeText(this, "Adicione pelo menos 3 participantes", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.participante_sorteio_minimo), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -523,9 +523,9 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (sucesso) {
                 atualizarLista();
                 new AlertDialog.Builder(this)
-                        .setTitle("Sorteio Concluído!")
-                        .setMessage("Deseja enviar os resultados agora por SMS?")
-                        .setPositiveButton("Sim, enviar SMS", new DialogInterface.OnClickListener() {
+                        .setTitle(getString(R.string.participante_sorteio_titulo))
+                        .setMessage(getString(R.string.participante_sorteio_msg_sms))
+                        .setPositiveButton(getString(R.string.participante_sorteio_btn_sms), new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 enviarSmsViaIntent();
@@ -535,7 +535,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         .show();
             }
         } else {
-            Toast.makeText(this, "Impossível realizar sorteio com as regras atuais.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.participante_sorteio_impossivel), Toast.LENGTH_LONG).show();
         }
     }
 
