@@ -23,4 +23,11 @@
     <string name="menu_novo">Novo</string>
     <string name="menu_compartilhar">Compartilhar</string>
 
+    <!-- Grupos -->
+    <string name="grupo_menu_editar_nome">Editar nome</string>
+    <string name="grupo_menu_excluir">Excluir grupo</string>
+    <string name="grupo_btn_salvar">Salvar</string>
+    <string name="grupo_erro_nome_obrigatorio">O nome do grupo é obrigatório</string>
+    <string name="grupo_erro_salvar">Erro ao salvar o nome do grupo</string>
+
 </resources>

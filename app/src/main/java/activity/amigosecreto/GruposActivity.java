@@ -289,7 +289,7 @@ public class GruposActivity extends AppCompatActivity {
             this.itens = itens;
         }
 
-        private void recarregarContagens() {
+        void recarregarContagens() {
             contagemParticipantes.clear();
             try {
                 participanteDao.open();
@@ -360,8 +360,8 @@ public class GruposActivity extends AppCompatActivity {
 
         private void exibirMenuContextoGrupo(View anchorView, final Grupo g) {
             android.widget.PopupMenu popup = new android.widget.PopupMenu(ctx, anchorView);
-            popup.getMenu().add(0, MENU_EDITAR, 0, "Editar nome");
-            popup.getMenu().add(0, MENU_EXCLUIR, 1, "Excluir grupo");
+            popup.getMenu().add(0, MENU_EDITAR, 0, ctx.getString(R.string.grupo_menu_editar_nome));
+            popup.getMenu().add(0, MENU_EXCLUIR, 1, ctx.getString(R.string.grupo_menu_excluir));
 
             popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
                 @Override
@@ -397,7 +397,7 @@ public class GruposActivity extends AppCompatActivity {
 
             etNome.setText(g.getNome());
             etNome.setSelection(etNome.getText() != null ? etNome.getText().length() : 0);
-            btnCriar.setText("Salvar");
+            btnCriar.setText(getString(R.string.grupo_btn_salvar));
 
             final AlertDialog dialog = new AlertDialog.Builder(ctx)
                     .setView(dialogView)
@@ -421,10 +421,10 @@ public class GruposActivity extends AppCompatActivity {
                             dialog.dismiss();
                         } else {
                             g.setNome(nomeOriginal);
-                            Toast.makeText(GruposActivity.this, "Erro ao salvar o nome do grupo", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(GruposActivity.this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        Toast.makeText(GruposActivity.this, "O nome do grupo é obrigatório", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(GruposActivity.this, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show();
                     }
                 }
             });
