@@ -68,10 +68,10 @@ public class AlterarDesejoActivity extends AppCompatActivity {
 
             // Formatar preços para exibição
             if (old_desejo.getPrecoMinimo() > 0) {
-                et_preco_minimo.setText(String.format("%.2f", old_desejo.getPrecoMinimo()));
+                et_preco_minimo.setText(String.format(new java.util.Locale("pt","BR"), "%.2f", old_desejo.getPrecoMinimo()));
             }
             if (old_desejo.getPrecoMaximo() > 0) {
-                et_preco_maximo.setText(String.format("%.2f", old_desejo.getPrecoMaximo()));
+                et_preco_maximo.setText(String.format(new java.util.Locale("pt","BR"), "%.2f", old_desejo.getPrecoMaximo()));
             }
 
             et_lojas.setText(old_desejo.getLojas());

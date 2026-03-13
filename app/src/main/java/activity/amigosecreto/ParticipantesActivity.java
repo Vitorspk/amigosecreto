@@ -702,12 +702,13 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     // Visivel ao pacote para permitir testes unitarios sem reflexao.
+    // Usa NumberFormat com locale pt-BR para garantir separador de milhar (.) e decimal (,).
+    // Ex: 1000.0 -> "1.000,00", 2500.5 -> "2.500,50"
     static String formatarPreco(double valor) {
-        long inteiro = (long) valor;
-        if (Math.abs(valor - inteiro) < 0.005) {
-            return String.valueOf(inteiro);
-        }
-        return String.format(java.util.Locale.US, "%.2f", valor).replace('.', ',');
+        java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("pt", "BR"));
+        nf.setMinimumFractionDigits(2);
+        nf.setMaximumFractionDigits(2);
+        return nf.format(valor);
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {

@@ -110,7 +110,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
         StringBuilder sb = new StringBuilder();
-        NumberFormat nf = NumberFormat.getCurrencyInstance();
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
         String ls = System.getProperty("line.separator");
         if (lista != null && !lista.isEmpty()) {
             for(Desejo d : lista){
@@ -158,7 +158,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
     private class ListarDesejosAdapter extends BaseAdapter {
         private Context ctx;
         private List<Desejo> produtos;
-        private NumberFormat nf = NumberFormat.getCurrencyInstance();
+        private NumberFormat nf = NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
 
         ListarDesejosAdapter(Context ctx, List<Desejo> produtos) {
             this.ctx = ctx;
