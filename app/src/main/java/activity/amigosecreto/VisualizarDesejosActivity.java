@@ -18,6 +18,8 @@ import com.google.android.material.appbar.MaterialToolbar;
 import java.util.ArrayList;
 import java.util.List;
 
+import activity.amigosecreto.util.WindowInsetsUtils;
+
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
 import activity.amigosecreto.db.Participante;
@@ -143,8 +145,8 @@ public class VisualizarDesejosActivity extends AppCompatActivity {
 
             // Formatar preço
             if (desejo.getPrecoMinimo() > 0 || desejo.getPrecoMaximo() > 0) {
-                String precoTexto = "R$ " + String.format("%.2f", desejo.getPrecoMinimo())
-                        + " - R$ " + String.format("%.2f", desejo.getPrecoMaximo());
+                String precoTexto = "R$ " + WindowInsetsUtils.numberFormatPtBr().format(desejo.getPrecoMinimo())
+                        + " - R$ " + WindowInsetsUtils.numberFormatPtBr().format(desejo.getPrecoMaximo());
                 tvPreco.setText(precoTexto);
                 tvPreco.setVisibility(View.VISIBLE);
             } else {

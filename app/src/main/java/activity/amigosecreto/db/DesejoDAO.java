@@ -110,15 +110,16 @@ public class DesejoDAO {
     }
 
     public final int proximoId(){
+        Cursor cursor = null;
         try {
-            int id = 0;
-            Cursor cursor = database.rawQuery("select max(id) from desejo", null);
+            cursor = database.rawQuery("select max(id) from desejo", null);
             cursor.moveToFirst();
-            id = cursor.getInt(0);
-            return id + 1;
+            return cursor.getInt(0) + 1;
         } catch (Exception e) {
             e.printStackTrace();
             return 1;
+        } finally {
+            if (cursor != null) cursor.close();
         }
     }
 
