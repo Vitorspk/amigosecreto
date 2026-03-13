@@ -247,7 +247,7 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private void exibirDialogEditar(final Participante participante) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.dialog_new_participant_title);
+        builder.setTitle(R.string.dialog_edit_participant_title);
         if (participante.isEnviado()) {
             builder.setMessage(R.string.dialog_edit_sent_warning);
         }
@@ -871,9 +871,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (countDesejos == null) countDesejos = 0;
 
             if (countDesejos > 0) {
-                tvDesejosCount.setText(countDesejos + (countDesejos == 1
-                        ? getString(R.string.label_wish_count_suffix)
-                        : getString(R.string.label_wishes_count_suffix)));
+                tvDesejosCount.setText(ctx.getResources().getQuantityString(R.plurals.label_wishes_count, countDesejos, countDesejos));
                 tvDesejosCount.setVisibility(View.VISIBLE);
             } else {
                 tvDesejosCount.setVisibility(View.GONE);
@@ -886,7 +884,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             } else {
                 tvEmail.setText(p.getIdsExcluidos().isEmpty()
                         ? getString(R.string.status_no_restrictions)
-                        : p.getIdsExcluidos().size() + getString(R.string.label_restrictions_suffix));
+                        : ctx.getResources().getQuantityString(R.plurals.label_restrictions_count, p.getIdsExcluidos().size(), p.getIdsExcluidos().size()));
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary));
                 btnShare.setVisibility(View.GONE);
             }
@@ -993,7 +991,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 Intent intent = new Intent(Intent.ACTION_SEND);
                                 intent.setType("text/plain");
                                 intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-                                ctx.startActivity(Intent.createChooser(intent, ((android.content.Context)ctx).getString(R.string.menu_compartilhar) + " com " + p.getNome()));
+                                ctx.startActivity(Intent.createChooser(intent, ctx.getString(R.string.share_with_person, p.getNome())));
                             }
                         });
                     }

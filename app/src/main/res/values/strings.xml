@@ -199,4 +199,29 @@
     <string name="chip_sugestao_trabalho">Trabalho</string>
     <string name="chip_sugestao_amigos">Amigos</string>
 
+    <!-- Dialog editar participante -->
+    <string name="dialog_edit_participant_title">Editar Participante</string>
+
+    <!-- Compartilhar app (corpo da mensagem) -->
+    <string name="share_app_body">🎁 Organize seu Amigo Secreto de forma fácil!\n\nBaixe o app Amigo Secreto e torne suas confraternizações mais divertidas!</string>
+
+    <!-- Compartilhar resultado com pessoa -->
+    <string name="share_with_person">Compartilhar com %1$s</string>
+
+    <!-- Plurals -->
+    <plurals name="label_participants">
+        <item quantity="one">%d Participante</item>
+        <item quantity="other">%d Participantes</item>
+    </plurals>
+
+    <plurals name="label_wishes_count">
+        <item quantity="one">%d desejo</item>
+        <item quantity="other">%d desejos</item>
+    </plurals>
+
+    <plurals name="label_restrictions_count">
+        <item quantity="one">%d restrição</item>
+        <item quantity="other">%d restrições</item>
+    </plurals>
+
 </resources>

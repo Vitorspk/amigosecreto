@@ -158,7 +158,7 @@ public class GruposActivity extends AppCompatActivity {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_app_subject));
         intent.putExtra(Intent.EXTRA_TEXT,
-            getString(R.string.share_app_subject) + "\n\n" +
+            getString(R.string.share_app_body) + "\n\n" +
             "https://play.google.com/store/apps/details?id=" + getPackageName()
         );
         startActivity(Intent.createChooser(intent, getString(R.string.action_share_app)));
@@ -336,9 +336,7 @@ public class GruposActivity extends AppCompatActivity {
             // Set participantes count - usar contagem pré-carregada
             int numParticipantes = contagemParticipantes.containsKey(g.getId())
                 ? contagemParticipantes.get(g.getId()) : 0;
-            tvParticipantes.setText(numParticipantes + (numParticipantes == 1
-                    ? getString(R.string.label_participant_singular)
-                    : getString(R.string.label_participant_plural)));
+            tvParticipantes.setText(ctx.getResources().getQuantityString(R.plurals.label_participants, numParticipantes, numParticipantes));
 
             // Set emoji baseado na posição
             String emoji = emojis[position % emojis.length];
