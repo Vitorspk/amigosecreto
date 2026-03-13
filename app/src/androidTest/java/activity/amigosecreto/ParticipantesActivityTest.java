@@ -100,7 +100,7 @@ public class ParticipantesActivityTest {
     public void adicionar_participante_aparece_na_lista() {
         onView(withId(R.id.fab_add_participante)).perform(click());
         onView(withId(R.id.et_nome)).perform(typeText("Ana"), closeSoftKeyboard());
-        onView(withText(R.string.participante_btn_adicionar)).perform(click());
+        onView(withText(R.string.button_add)).perform(click());
 
         onView(withText("Ana")).check(matches(isDisplayed()));
     }
@@ -108,7 +108,7 @@ public class ParticipantesActivityTest {
     @Test
     public void adicionar_participante_nome_vazio_nao_fecha_dialog() {
         onView(withId(R.id.fab_add_participante)).perform(click());
-        onView(withText(R.string.participante_btn_adicionar)).perform(click());
+        onView(withText(R.string.button_add)).perform(click());
         // Dialog ainda visivel — campo de nome presente
         onView(withId(R.id.et_nome)).check(matches(isDisplayed()));
     }
@@ -144,6 +144,6 @@ public class ParticipantesActivityTest {
     private void adicionarParticipante(String nome) {
         onView(withId(R.id.fab_add_participante)).perform(click());
         onView(withId(R.id.et_nome)).perform(typeText(nome), closeSoftKeyboard());
-        onView(withText(R.string.participante_btn_adicionar)).perform(click());
+        onView(withText(R.string.button_add)).perform(click());
     }
 }

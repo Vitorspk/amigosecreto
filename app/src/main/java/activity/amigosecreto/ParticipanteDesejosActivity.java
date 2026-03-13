@@ -52,7 +52,7 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
         // Receber participante via Intent
         participante = (Participante) getIntent().getSerializableExtra("participante");
         if (participante == null) {
-            Toast.makeText(this, "Erro: participante não encontrado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_participant_not_found, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -90,7 +90,7 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
 
         // Atualizar contador
-        tvPresentesCount.setText("Presentes (" + listaDesejos.size() + ")");
+        tvPresentesCount.setText(getString(R.string.label_wishes_count_format, listaDesejos.size()));
 
         // Mostrar/ocultar empty state
         if (listaDesejos.isEmpty()) {
@@ -113,9 +113,9 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
         final TextInputEditText etLojas = view.findViewById(R.id.et_lojas);
 
         builder.setView(view)
-                .setTitle("Adicionar Desejo")
-                .setPositiveButton("Salvar", null)
-                .setNegativeButton("Cancelar", null);
+                .setTitle(R.string.dialog_add_wish_title)
+                .setPositiveButton(R.string.button_save, null)
+                .setNegativeButton(R.string.button_cancel, null);
 
         final AlertDialog dialog = builder.create();
         dialog.show();
@@ -127,7 +127,7 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
                 String produto = etProduto.getText() != null ? etProduto.getText().toString().trim() : "";
 
                 if (produto.isEmpty()) {
-                    Toast.makeText(ParticipanteDesejosActivity.this, "Nome do produto é obrigatório", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ParticipanteDesejosActivity.this, R.string.error_product_name_required, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -153,14 +153,15 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
                     desejo.setParticipanteId(participante.getId());
 
                     desejoDAO.inserir(desejo);
-                    Toast.makeText(ParticipanteDesejosActivity.this, "Desejo adicionado!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ParticipanteDesejosActivity.this, R.string.toast_wish_added, Toast.LENGTH_SHORT).show();
                     carregarDesejos();
                     dialog.dismiss();
                 } catch (NumberFormatException e) {
-                    Toast.makeText(ParticipanteDesejosActivity.this, "Erro: preço inválido", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ParticipanteDesejosActivity.this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 } catch (Exception e) {
-                    Toast.makeText(ParticipanteDesejosActivity.this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    String msg = e.getMessage() != null ? e.getMessage() : getString(R.string.error_unknown);
+                    Toast.makeText(ParticipanteDesejosActivity.this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show();
                     e.printStackTrace();
                 }
             }
@@ -264,14 +265,14 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
         cardRemover.setOnClickListener(v -> {
             dialog.dismiss();
             new AlertDialog.Builder(this)
-                    .setTitle("⚠️ Remover Desejo")
-                    .setMessage("Tem certeza que deseja remover \"" + desejo.getProduto() + "\"?\n\nEsta ação não pode ser desfeita.")
-                    .setPositiveButton("Sim, remover", (d, w) -> {
+                    .setTitle(R.string.dialog_remove_wish_title)
+                    .setMessage(getString(R.string.dialog_remove_wish_message_format, desejo.getProduto()))
+                    .setPositiveButton(R.string.button_remove_yes, (d, w) -> {
                         desejoDAO.remover(desejo);
-                        Toast.makeText(this, "Desejo removido", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, R.string.toast_wish_removed, Toast.LENGTH_SHORT).show();
                         carregarDesejos();
                     })
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(R.string.button_cancel, null)
                     .show();
         });
 

@@ -115,15 +115,15 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
         String ls = System.getProperty("line.separator");
         if (lista != null && !lista.isEmpty()) {
             for(Desejo d : lista){
-                sb.append("Desejo: ").append(d.getProduto()).append(ls);
-                sb.append("Preço: de ").append(nf.format(d.getPrecoMinimo())).append(" até ").append(nf.format(d.getPrecoMaximo())).append(ls);
+                sb.append(getString(R.string.share_wish_prefix_desejo)).append(d.getProduto()).append(ls);
+                sb.append(getString(R.string.share_wish_price_range, nf.format(d.getPrecoMinimo()), nf.format(d.getPrecoMaximo()))).append(ls);
                 String lojas = d.getLojas().replace(ls, ", ");
-                sb.append("Onde encontrar: ").append(lojas).append(ls).append(ls);
+                sb.append(getString(R.string.share_wish_prefix_lojas)).append(lojas).append(ls).append(ls);
             }
         } else {
-            sb.append("Minha lista de desejos está vazia!");
+            sb.append(getString(R.string.share_wishes_empty));
         }
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Minha lista de desejos");
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_wishes_subject));
         intent.putExtra(Intent.EXTRA_TEXT, sb.toString());
         MenuItem item = menu.findItem(R.id.menu_compartilhar);
         if (item != null) {

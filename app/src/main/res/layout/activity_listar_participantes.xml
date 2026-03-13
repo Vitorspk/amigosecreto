@@ -33,7 +33,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Gerenciar Grupo"
+                android:text="@string/label_manage_group"
                 android:textColor="@color/white"
                 android:textSize="28sp"
                 android:textStyle="bold"
@@ -44,7 +44,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Nenhum participante ainda"
+                android:text="@string/label_no_participants"
                 android:textColor="#E8DEFF"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -128,7 +128,7 @@
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Limpar Lista de Participantes"
+            android:text="@string/button_clear_participants"
             android:textAllCaps="false"
             android:textColor="@color/colorError" />
 

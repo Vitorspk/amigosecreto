@@ -33,7 +33,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Novo Grupo"
+                android:text="@string/dialog_new_group_title"
                 android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -42,7 +42,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Crie um grupo para seu amigo secreto"
+                android:text="@string/dialog_desc_create_group"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
@@ -69,7 +69,7 @@
             android:id="@+id/et_nome_grupo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Nome do grupo"
+            android:hint="@string/hint_group_name"
             android:inputType="textCapWords"
             android:maxLines="1"
             android:textColor="@color/text_primary"
@@ -81,7 +81,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sugestões:"
+        android:text="@string/label_suggestions"
         android:textColor="@color/text_secondary"
         android:textSize="12sp"
         android:layout_marginBottom="8dp" />
@@ -97,7 +97,7 @@
             android:id="@+id/chip_familia"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Família"
+            android:text="@string/chip_sugestao_familia"
             android:textColor="@color/purple_primary"
             app:chipBackgroundColor="@color/purple_background"
             app:chipStrokeColor="@color/purple_primary"
@@ -107,7 +107,7 @@
             android:id="@+id/chip_trabalho"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trabalho"
+            android:text="@string/chip_sugestao_trabalho"
             android:textColor="@color/purple_primary"
             app:chipBackgroundColor="@color/purple_background"
             app:chipStrokeColor="@color/purple_primary"
@@ -117,7 +117,7 @@
             android:id="@+id/chip_amigos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Amigos"
+            android:text="@string/chip_sugestao_amigos"
             android:textColor="@color/purple_primary"
             app:chipBackgroundColor="@color/purple_background"
             app:chipStrokeColor="@color/purple_primary"
@@ -137,7 +137,7 @@
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cancelar"
+            android:text="@string/button_cancel"
             android:textColor="@color/text_secondary"
             android:textAllCaps="false"
             android:layout_marginEnd="8dp" />
@@ -146,7 +146,7 @@
             android:id="@+id/btn_criar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Criar Grupo"
+            android:text="@string/button_create_group"
             android:textColor="@color/white"
             android:textAllCaps="false"
             android:textStyle="bold"

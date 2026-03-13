@@ -57,7 +57,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Minha lista de desejos"
+                    android:text="@string/label_my_wishes_list"
                     android:textColor="@color/text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -68,7 +68,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:text="Adicione presentes para que seu Papai Noel secreto não erre com você 😘"
+                android:text="@string/description_add_wishes_hint"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp" />
@@ -86,7 +86,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Presentes (0)"
+                    android:text="@string/label_gifts_initial_count"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -95,7 +95,7 @@
                     android:id="@+id/btn_add_desejo"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:text="Adicionar"
+                    android:text="@string/button_add"
                     android:textAllCaps="false"
                     android:textStyle="bold"
                     app:icon="@drawable/ic_gift"
@@ -138,7 +138,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Nenhum desejo adicionado"
+                    android:text="@string/empty_state_no_wishes_added"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -147,7 +147,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Clique em 'Adicionar' para começar"
+                    android:text="@string/empty_state_click_add"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 

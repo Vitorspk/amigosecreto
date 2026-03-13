@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Novo Participante"
+                android:text="@string/dialog_new_participant_title"
                 android:textColor="@color/white"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -39,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Adicione um amigo ao sorteio"
+                android:text="@string/dialog_desc_add_friend"
                 android:textColor="#FFEBEE"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -71,7 +71,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚡ Modo Rápido"
+                        android:text="@string/label_quick_mode"
                         android:textColor="@color/colorSecondary"
                         android:textSize="12sp"
                         android:textStyle="bold"
@@ -81,7 +81,7 @@
                         android:id="@+id/btn_pick_contact"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
-                        android:text="Importar dos Contatos"
+                        android:text="@string/button_import_contacts"
                         android:textAllCaps="false"
                         android:textSize="16sp"
                         android:textStyle="bold"
@@ -112,7 +112,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
-                    android:text="OU PREENCHA"
+                    android:text="@string/label_or_fill"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -139,7 +139,7 @@
                     android:id="@+id/et_nome"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Nome do Participante *"
+                    android:hint="@string/hint_participant_name"
                     android:inputType="textPersonName|textCapWords"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -163,7 +163,7 @@
                     android:id="@+id/et_telefone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="DDD + Telefone (WhatsApp)"
+                    android:hint="@string/hint_phone"
                     android:inputType="phone"
                     android:maxLength="11"
                     android:textSize="16sp" />
@@ -184,7 +184,7 @@
                     android:id="@+id/et_email"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="E-mail (opcional)"
+                    android:hint="@string/hint_email"
                     android:inputType="textEmailAddress"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -192,7 +192,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="* Campo obrigatório"
+                android:text="@string/label_required_field"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:layout_marginTop="8dp" />

@@ -56,7 +56,7 @@ public class InserirDesejoActivity extends AppCompatActivity {
     
     private boolean validar() {
         if (et_produto.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Informe o nome do produto", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_product_name_required, Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -103,12 +103,13 @@ public class InserirDesejoActivity extends AppCompatActivity {
             desejo.setLojas(et_lojas.getText().toString().trim());
             dao.inserir(desejo);
             dao.close();
-            Toast.makeText(this, "Desejo salvo com sucesso!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show();
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "Erro: preço inválido", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         } catch (Exception e) {
-            Toast.makeText(this, "Erro ao salvar desejo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            String msg = e.getMessage() != null ? e.getMessage() : getString(R.string.error_unknown);
+            Toast.makeText(this, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }

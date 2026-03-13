@@ -46,7 +46,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
             old_desejo = (Desejo) extras.get("desejo");
         }
         if (old_desejo == null) {
-            Toast.makeText(this, "Erro ao carregar desejo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_load_wish, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -114,7 +114,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
 
     private boolean validar() {
         if (et_produto.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Informe o nome do produto", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_product_name_required, Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -126,7 +126,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
             dao.open();
             dao.remover(old_desejo);
             dao.close();
-            Toast.makeText(this, "Desejo excluído", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -155,12 +155,13 @@ public class AlterarDesejoActivity extends AppCompatActivity {
 
             dao.alterar(old_desejo, new_desejo);
             dao.close();
-            Toast.makeText(this, "Desejo atualizado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show();
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "Erro: preço inválido", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         } catch (Exception e) {
-            Toast.makeText(this, "Erro ao atualizar desejo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            String msg = e.getMessage() != null ? e.getMessage() : getString(R.string.error_unknown);
+            Toast.makeText(this, getString(R.string.error_update_wish_format, msg), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }
