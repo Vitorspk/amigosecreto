@@ -12,120 +12,146 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tv_numero"
-            android:layout_width="24dp"
-            android:layout_height="wrap_content"
-            android:text="1"
-            android:textSize="12sp"
-            android:textColor="@color/text_secondary"
-            android:textStyle="bold"
-            android:layout_marginEnd="4dp"/>
-
-        <TextView
-            android:id="@+id/tv_avatar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/circle_background"
-            android:gravity="center"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:text="A"/>
-
+        <!-- Linha 1: número + avatar + nome/status -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:gravity="center_vertical">
 
             <TextView
-                android:id="@+id/tv_nome"
-                android:layout_width="match_parent"
+                android:id="@+id/tv_numero"
+                android:layout_width="20dp"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:text="Nome"/>
-
-            <TextView
-                android:id="@+id/tv_email"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="@color/text_secondary"
-                android:text="Status"/>
-
-            <TextView
-                android:id="@+id/tv_desejos_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="0 desejos"
+                android:text="1"
                 android:textSize="11sp"
-                android:textColor="@color/colorAccent"
+                android:textColor="@color/text_secondary"
                 android:textStyle="bold"
-                android:drawablePadding="4dp"
-                android:visibility="gone"
-                app:drawableStartCompat="@drawable/ic_gift"
-                app:drawableTint="@color/colorAccent" />
+                android:layout_marginEnd="6dp"/>
+
+            <TextView
+                android:id="@+id/tv_avatar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/circle_background"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:text="A"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
+
+                <TextView
+                    android:id="@+id/tv_nome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="Nome"/>
+
+                <TextView
+                    android:id="@+id/tv_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="Status"/>
+
+                <TextView
+                    android:id="@+id/tv_desejos_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="0 desejos"
+                    android:textSize="11sp"
+                    android:textColor="@color/colorAccent"
+                    android:textStyle="bold"
+                    android:drawablePadding="4dp"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_gift"
+                    app:drawableTint="@color/colorAccent" />
+            </LinearLayout>
+
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btn_desejos"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_gift"
-            app:tint="@color/colorAccent"
-            android:contentDescription="Meus Desejos"/>
+        <!-- Linha 2: botões de ação alinhados à direita -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="end">
 
-        <ImageButton
-            android:id="@+id/btn_regras"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="10dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_rules"
-            app:tint="@color/colorPrimary"
-            android:contentDescription="Restrições"/>
+            <ImageButton
+                android:id="@+id/btn_desejos"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_gift"
+                app:tint="@color/colorAccent"
+                android:contentDescription="Meus Desejos"/>
 
-        <ImageButton
-            android:id="@+id/btn_share"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_share"
-            app:tint="@color/colorSecondary"
-            android:contentDescription="Compartilhar"
-            android:visibility="gone"/>
+            <ImageButton
+                android:id="@+id/btn_regras"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_rules"
+                app:tint="@color/colorPrimary"
+                android:contentDescription="Restrições"/>
 
-        <ImageButton
-            android:id="@+id/btn_editar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_edit"
-            app:tint="@color/colorPrimary"
-            android:contentDescription="Editar"/>
+            <ImageButton
+                android:id="@+id/btn_share"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_share"
+                app:tint="@color/colorSecondary"
+                android:contentDescription="Compartilhar"
+                android:visibility="gone"/>
 
-        <ImageButton
-            android:id="@+id/btn_remover"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_delete"
-            app:tint="@color/colorError"
-            android:contentDescription="Remover"/>
+            <ImageButton
+                android:id="@+id/btn_editar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_edit"
+                app:tint="@color/colorPrimary"
+                android:contentDescription="Editar"/>
+
+            <ImageButton
+                android:id="@+id/btn_remover"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/colorError"
+                android:contentDescription="Remover"/>
+
+        </LinearLayout>
 
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>
