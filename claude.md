@@ -153,9 +153,9 @@ CREATE TABLE participante (
 CREATE TABLE exclusao (
     participante_id INTEGER,
     excluido_id INTEGER,
-    PRIMARY KEY (participante_id, excluido_id)
-    -- sem FOREIGN KEY: registros órfãos possíveis ao remover participante
-    -- melhoria pendente: ON DELETE CASCADE para ambas as colunas
+    PRIMARY KEY (participante_id, excluido_id),
+    FOREIGN KEY(participante_id) REFERENCES participante(id) ON DELETE CASCADE,
+    FOREIGN KEY(excluido_id) REFERENCES participante(id) ON DELETE CASCADE
 );
 
 CREATE TABLE desejo (
@@ -487,7 +487,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Mover ~150 strings hardcoded para `strings.xml`
 - [ ] Remover ~40 recursos não utilizados (Lint `UnusedResources`)
 - [ ] Fechar cursor em `DesejoDAO` (Lint `Recycle`)
-- [ ] Adicionar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` (schema v9)
+- [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
 

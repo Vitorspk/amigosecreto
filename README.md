@@ -215,9 +215,9 @@ CREATE TABLE participante (
 CREATE TABLE exclusao (
     participante_id INTEGER,
     excluido_id INTEGER,
-    PRIMARY KEY (participante_id, excluido_id)
-    -- sem FOREIGN KEY: registros órfãos possíveis ao remover participante
-    -- melhoria pendente: ON DELETE CASCADE para ambas as colunas
+    PRIMARY KEY (participante_id, excluido_id),
+    FOREIGN KEY(participante_id) REFERENCES participante(id) ON DELETE CASCADE,
+    FOREIGN KEY(excluido_id) REFERENCES participante(id) ON DELETE CASCADE
 );
 
 CREATE TABLE desejo (
