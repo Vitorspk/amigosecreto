@@ -81,7 +81,7 @@ cd amigosecreto
 ./gradlew :app:lintRelease
 ```
 
-**Cobertura atual:** 97 testes — modelos, DAOs, motor de sorteio e validações. Ver [`documents/TEST_PLAN.md`](documents/TEST_PLAN.md).
+**Cobertura atual:** 91 testes — modelos, DAOs, motor de sorteio e validações. Ver [`documents/TEST_PLAN.md`](documents/TEST_PLAN.md).
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -149,7 +149,7 @@ app/src/main/java/activity/amigosecreto/
 ├── RevelarAmigoActivity.java              # revelar resultado interativamente
 ├── ParticipanteDesejosActivity.java       # desejos de um participante específico
 ├── VisualizarDesejosActivity.java         # todos os desejos de um grupo
-├── ListarDesejos.java                     # lista de desejos geral
+├── ListarDesejosActivity.java             # lista de desejos geral
 ├── InserirDesejoActivity.java             # adicionar desejo
 ├── AlterarDesejoActivity.java             # editar desejo
 ├── DetalheDesejoActivity.java             # detalhes do desejo + busca Buscape
@@ -216,6 +216,8 @@ CREATE TABLE exclusao (
     participante_id INTEGER,
     excluido_id INTEGER,
     PRIMARY KEY (participante_id, excluido_id)
+    -- sem FOREIGN KEY: registros órfãos possíveis ao remover participante
+    -- melhoria pendente: ON DELETE CASCADE para ambas as colunas
 );
 
 CREATE TABLE desejo (
@@ -261,7 +263,7 @@ SELECT * FROM participante WHERE grupo_id = 1;
                                 └── [ParticipanteDesejosActivity]
 
 Menu global
-    └── [ListarDesejos]
+    └── [ListarDesejosActivity]
             ├── [InserirDesejoActivity]
             └── [DetalheDesejoActivity]
                         └── [AlterarDesejoActivity]

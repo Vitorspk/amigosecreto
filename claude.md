@@ -35,7 +35,7 @@ app/src/main/java/activity/amigosecreto/
 ├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
 ├── ParticipanteDesejosActivity.java       # ver desejos de um participante
 ├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
-├── ListarDesejos.java                     # lista de desejos geral
+├── ListarDesejosActivity.java             # lista de desejos geral
 ├── InserirDesejoActivity.java             # adicionar novo desejo
 ├── AlterarDesejoActivity.java             # editar desejo existente
 ├── DetalheDesejoActivity.java             # detalhes do desejo + busca Buscape
@@ -154,6 +154,8 @@ CREATE TABLE exclusao (
     participante_id INTEGER,
     excluido_id INTEGER,
     PRIMARY KEY (participante_id, excluido_id)
+    -- sem FOREIGN KEY: registros órfãos possíveis ao remover participante
+    -- melhoria pendente: ON DELETE CASCADE para ambas as colunas
 );
 
 CREATE TABLE desejo (
@@ -307,7 +309,7 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
                                         └── [ParticipanteDesejosActivity]
 
 Menu Global
-    └── [ListarDesejos]
+    └── [ListarDesejosActivity]
             ├── [InserirDesejoActivity]
             ├── [DetalheDesejoActivity]
             │   └── [AlterarDesejoActivity]
@@ -453,7 +455,7 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (97 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (91 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -485,6 +487,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Mover ~150 strings hardcoded para `strings.xml`
 - [ ] Remover ~40 recursos não utilizados (Lint `UnusedResources`)
 - [ ] Fechar cursor em `DesejoDAO` (Lint `Recycle`)
+- [ ] Adicionar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` (schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
 
