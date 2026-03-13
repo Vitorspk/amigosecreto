@@ -409,7 +409,7 @@ public class GruposActivity extends AppCompatActivity {
 
             etNome.setText(g.getNome());
             etNome.setSelection(etNome.getText() != null ? etNome.getText().length() : 0);
-            btnCriar.setText(getString(R.string.grupo_btn_salvar));
+            btnCriar.setText(getString(R.string.button_save));
 
             final AlertDialog dialog = new AlertDialog.Builder(ctx)
                     .setView(dialogView)
@@ -475,7 +475,7 @@ public class GruposActivity extends AppCompatActivity {
             new AlertDialog.Builder(ctx)
                     .setTitle(R.string.grupo_dialog_excluir_titulo)
                     .setMessage(ctx.getString(R.string.grupo_dialog_excluir_mensagem, g.getNome()))
-                    .setPositiveButton(R.string.grupo_btn_excluir, new DialogInterface.OnClickListener() {
+                    .setPositiveButton(R.string.button_remove_yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             AsyncDatabaseHelper.executeSimple(

@@ -108,7 +108,8 @@ public class InserirDesejoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.error_save_wish_format, e.getMessage()), Toast.LENGTH_LONG).show();
+            String msg = e.getMessage() != null ? e.getMessage() : getString(R.string.error_unknown);
+            Toast.makeText(this, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }

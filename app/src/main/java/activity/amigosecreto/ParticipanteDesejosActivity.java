@@ -158,7 +158,8 @@ public class ParticipanteDesejosActivity extends AppCompatActivity {
                     Toast.makeText(ParticipanteDesejosActivity.this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 } catch (Exception e) {
-                    Toast.makeText(ParticipanteDesejosActivity.this, getString(R.string.error_generic_format, e.getMessage()), Toast.LENGTH_LONG).show();
+                    String msg = e.getMessage() != null ? e.getMessage() : getString(R.string.error_unknown);
+                    Toast.makeText(ParticipanteDesejosActivity.this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show();
                     e.printStackTrace();
                 }
             }

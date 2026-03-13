@@ -35,13 +35,10 @@
     <!-- Grupos -->
     <string name="grupo_menu_editar_nome">Editar nome</string>
     <string name="grupo_menu_excluir">Excluir grupo</string>
-    <string name="grupo_btn_salvar">Salvar</string>
     <string name="grupo_erro_nome_obrigatorio">O nome do grupo é obrigatório</string>
     <string name="grupo_erro_salvar">Erro ao salvar o nome do grupo</string>
     <string name="grupo_dialog_excluir_titulo">Excluir Grupo</string>
     <string name="grupo_dialog_excluir_mensagem">Deseja excluir o grupo \'%1$s\' e todos os seus participantes?</string>
-    <string name="grupo_btn_excluir">Excluir</string>
-
     <string name="dialog_about_title">Sobre o App</string>
     <string name="dialog_about_message">🎅 Amigo Secreto\n\nOrganize seus amigos secretos de forma fácil e divertida!\n\nRecursos:\n• Múltiplos grupos\n• Restrições personalizadas\n• Lista de desejos\n• Compartilhamento via SMS/WhatsApp\n• Interface moderna\n\nDesenvolvido com ❤️ para tornar suas confraternizações mais especiais!</string>
     <string name="share_app_subject">Amigo Secreto - App</string>
@@ -58,7 +55,6 @@
     <string name="label_my_groups">Meus Grupos</string>
 
     <!-- Participantes -->
-    <string name="participante_btn_adicionar">Adicionar</string>
     <string name="participante_sorteio_titulo">Sorteio Concluído!</string>
     <string name="participante_sorteio_msg_sms">Deseja enviar os resultados agora por SMS?</string>
     <string name="participante_sorteio_btn_sms">Sim, enviar SMS</string>
@@ -197,8 +193,7 @@
     <!-- Dialog editar participante -->
     <string name="dialog_edit_participant_title">Editar Participante</string>
 
-    <!-- Contador de participantes no grupo -->
-    <string name="label_participants_in_group">%1$d participantes no grupo %2$s</string>
+    <!-- Contador de participantes no grupo (plural tratado via getQuantityString) -->
 
     <!-- Compartilhar app (corpo da mensagem) -->
     <string name="share_app_body">🎁 Organize seu Amigo Secreto de forma fácil!\n\nBaixe o app Amigo Secreto e torne suas confraternizações mais divertidas!</string>
@@ -207,6 +202,11 @@
     <string name="share_with_person">Compartilhar com %1$s</string>
 
     <!-- Plurals -->
+    <plurals name="label_participants_in_group">
+        <item quantity="one">%1$d participante no grupo %2$s</item>
+        <item quantity="other">%1$d participantes no grupo %2$s</item>
+    </plurals>
+
     <plurals name="label_participants">
         <item quantity="one">%d Participante</item>
         <item quantity="other">%d Participantes</item>

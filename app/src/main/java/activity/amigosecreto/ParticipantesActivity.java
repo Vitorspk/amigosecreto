@@ -190,7 +190,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (listaParticipantes.isEmpty()) {
             tvCount.setText(R.string.label_no_participants);
         } else {
-            tvCount.setText(getString(R.string.label_participants_in_group, listaParticipantes.size(), grupoAtual.getNome()));
+            tvCount.setText(getResources().getQuantityString(R.plurals.label_participants_in_group, listaParticipantes.size(), listaParticipantes.size(), grupoAtual.getNome()));
         }
     }
 
@@ -218,7 +218,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton(getString(R.string.participante_btn_adicionar), null);
+        builder.setPositiveButton(getString(R.string.button_add), null);
         builder.setNegativeButton(getString(R.string.button_cancel), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
@@ -266,7 +266,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         builder.setView(view);
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
         // o dismiss manualmente e evitar que o dialog feche ao falhar na validacao.
-        builder.setPositiveButton(getString(R.string.grupo_btn_salvar), null);
+        builder.setPositiveButton(getString(R.string.button_save), null);
         builder.setNegativeButton(getString(R.string.button_cancel), null);
         AlertDialog dialog = builder.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
