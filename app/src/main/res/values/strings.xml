@@ -166,14 +166,14 @@
     <string name="label_required_field">* Campo obrigatório</string>
 
     <!-- Dialog criar grupo -->
-    <string name="dialog_title_new_group">Novo Grupo</string>
+    <string name="dialog_new_group_title">Novo Grupo</string>
     <string name="dialog_desc_create_group">Crie um grupo para seu amigo secreto</string>
     <string name="hint_group_name">Nome do grupo</string>
     <string name="label_suggestions">Sugestões:</string>
     <string name="button_create_group">Criar Grupo</string>
 
     <!-- Dialog opções desejo -->
-    <string name="dialog_title_wish_options">Opções do Desejo</string>
+    <string name="dialog_wish_options_title">Opções do Desejo</string>
     <string name="label_edit">Editar</string>
     <string name="label_remove">Remover</string>
     <string name="description_delete_wish">Excluir este desejo</string>
