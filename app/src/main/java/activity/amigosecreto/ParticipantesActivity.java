@@ -48,6 +48,7 @@ import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
 import activity.amigosecreto.util.SorteioEngine;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -702,13 +703,10 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     // Visivel ao pacote para permitir testes unitarios sem reflexao.
-    // Usa NumberFormat com locale pt-BR para garantir separador de milhar (.) e decimal (,).
+    // Usa NumberFormat pt-BR via WindowInsetsUtils para garantir separador de milhar (.) e decimal (,).
     // Ex: 1000.0 -> "1.000,00", 2500.5 -> "2.500,50"
     static String formatarPreco(double valor) {
-        java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(new java.util.Locale("pt", "BR"));
-        nf.setMinimumFractionDigits(2);
-        nf.setMaximumFractionDigits(2);
-        return nf.format(valor);
+        return WindowInsetsUtils.numberFormatPtBr().format(valor);
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {

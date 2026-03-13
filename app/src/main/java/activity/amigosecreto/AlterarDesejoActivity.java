@@ -3,9 +3,7 @@ package activity.amigosecreto;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -41,20 +39,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        // Ajusta padding inferior do ScrollView quando o teclado abre (EdgeToEdge + IME inset).
-        // Garante que o botão Atualizar permaneça visível sem fechar o teclado manualmente.
-        androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scroll_alterar_desejo);
-        if (scrollView != null) {
-            final int padBottomBase = scrollView.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(scrollView, (v, insets) -> {
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                int bottomInset = Math.max(ime.bottom, systemBars.bottom);
-                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(),
-                        padBottomBase + bottomInset);
-                return insets;
-            });
-        }
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_alterar_desejo));
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
@@ -84,12 +69,15 @@ public class AlterarDesejoActivity extends AppCompatActivity {
             et_produto.setText(old_desejo.getProduto());
             et_categoria.setText(old_desejo.getCategoria());
 
-            // Formatar preços para exibição
+            // Formatar preços para exibição nos campos de edição.
+            // Intencional: usa "1.500,00" (sem prefixo R$) pois o layout já exibe
+            // o prefixo "R$ " via app:prefixText. A tela de detalhes usa currencyFormat
+            // que inclui o símbolo — essa diferença é esperada e facilita a digitação.
             if (old_desejo.getPrecoMinimo() > 0) {
-                et_preco_minimo.setText(String.format(new java.util.Locale("pt","BR"), "%.2f", old_desejo.getPrecoMinimo()));
+                et_preco_minimo.setText(String.format(WindowInsetsUtils.LOCALE_PT_BR, "%.2f", old_desejo.getPrecoMinimo()));
             }
             if (old_desejo.getPrecoMaximo() > 0) {
-                et_preco_maximo.setText(String.format(new java.util.Locale("pt","BR"), "%.2f", old_desejo.getPrecoMaximo()));
+                et_preco_maximo.setText(String.format(WindowInsetsUtils.LOCALE_PT_BR, "%.2f", old_desejo.getPrecoMaximo()));
             }
 
             et_lojas.setText(old_desejo.getLojas());

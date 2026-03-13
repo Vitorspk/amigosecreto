@@ -90,7 +90,9 @@
 
         </LinearLayout>
 
-        <!-- Linha 2: botões de ação alinhados à direita -->
+        <!-- Linha 2: botões de ação alinhados à direita.
+             layout_width/height define o tamanho visual (36dp);
+             minWidth/minHeight garante touch target >= 48dp (Material Design + WCAG 2.5.5). -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -103,6 +105,8 @@
                 android:id="@+id/btn_desejos"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:padding="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_gift"
@@ -113,6 +117,8 @@
                 android:id="@+id/btn_regras"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:padding="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_rules"
@@ -123,6 +129,8 @@
                 android:id="@+id/btn_share"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:padding="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_share"
@@ -134,6 +142,8 @@
                 android:id="@+id/btn_editar"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:padding="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
@@ -144,6 +154,8 @@
                 android:id="@+id/btn_remover"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:padding="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_delete"

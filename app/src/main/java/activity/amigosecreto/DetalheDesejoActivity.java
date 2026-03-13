@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import java.text.NumberFormat;
+import activity.amigosecreto.util.WindowInsetsUtils;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
@@ -70,7 +71,7 @@ public class DetalheDesejoActivity extends AppCompatActivity {
     }
 
     private void carregarCampos(Desejo desejo) {
-        NumberFormat nf = NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+        NumberFormat nf = WindowInsetsUtils.currencyFormatPtBr();
         if (tv_produto != null) tv_produto.setText(desejo.getProduto());
         if (tv_categoria != null) tv_categoria.setText(desejo.getCategoria());
         if (tv_preco_minimo != null) tv_preco_minimo.setText(nf.format(desejo.getPrecoMinimo()));

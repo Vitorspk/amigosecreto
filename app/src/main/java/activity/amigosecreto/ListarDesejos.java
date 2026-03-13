@@ -21,6 +21,7 @@ import androidx.core.view.WindowInsetsCompat;
 import android.widget.TextView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.text.NumberFormat;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import java.util.ArrayList;
 import java.util.List;
 import activity.amigosecreto.db.Desejo;
@@ -110,7 +111,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
         StringBuilder sb = new StringBuilder();
-        NumberFormat nf = NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+        NumberFormat nf = WindowInsetsUtils.currencyFormatPtBr();
         String ls = System.getProperty("line.separator");
         if (lista != null && !lista.isEmpty()) {
             for(Desejo d : lista){
@@ -158,7 +159,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
     private class ListarDesejosAdapter extends BaseAdapter {
         private Context ctx;
         private List<Desejo> produtos;
-        private NumberFormat nf = NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+        private NumberFormat nf = WindowInsetsUtils.currencyFormatPtBr();
 
         ListarDesejosAdapter(Context ctx, List<Desejo> produtos) {
             this.ctx = ctx;
