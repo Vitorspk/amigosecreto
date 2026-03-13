@@ -86,7 +86,7 @@
                     android:layout_height="96dp"
                     android:src="@drawable/ic_eye"
                     app:tint="@color/purple_primary"
-                    android:contentDescription="@string/label_tap_to_reveal" />
+                    android:contentDescription="@string/cd_tap_to_reveal" />
 
                 <TextView
                     android:layout_width="wrap_content"

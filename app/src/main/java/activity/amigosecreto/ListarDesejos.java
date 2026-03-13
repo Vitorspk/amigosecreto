@@ -116,7 +116,7 @@ public class ListarDesejos extends AppCompatActivity implements AdapterView.OnIt
         if (lista != null && !lista.isEmpty()) {
             for(Desejo d : lista){
                 sb.append(getString(R.string.share_wish_prefix_desejo)).append(d.getProduto()).append(ls);
-                sb.append(getString(R.string.share_wish_prefix_preco)).append(nf.format(d.getPrecoMinimo())).append(getString(R.string.share_wish_separator_ate)).append(nf.format(d.getPrecoMaximo())).append(ls);
+                sb.append(getString(R.string.share_wish_price_range, nf.format(d.getPrecoMinimo()), nf.format(d.getPrecoMaximo()))).append(ls);
                 String lojas = d.getLojas().replace(ls, ", ");
                 sb.append(getString(R.string.share_wish_prefix_lojas)).append(lojas).append(ls).append(ls);
             }

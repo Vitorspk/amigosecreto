@@ -190,7 +190,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (listaParticipantes.isEmpty()) {
             tvCount.setText(R.string.label_no_participants);
         } else {
-            tvCount.setText(listaParticipantes.size() + " participantes no grupo " + grupoAtual.getNome());
+            tvCount.setText(getString(R.string.label_participants_in_group, listaParticipantes.size(), grupoAtual.getNome()));
         }
     }
 

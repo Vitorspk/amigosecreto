@@ -54,7 +54,7 @@
     <!-- Tela de grupos (layout) -->
     <string name="greeting_welcome">Olá, Bem-vindo!</string>
     <string name="description_organize_groups">Organize seus grupos de amigo secreto</string>
-    <string name="button_create_new_group">   Criar Novo Grupo</string>
+    <string name="button_create_new_group">Criar Novo Grupo</string>
     <string name="label_my_groups">Meus Grupos</string>
 
     <!-- Participantes -->
@@ -127,8 +127,7 @@
     <string name="title_lista_desejos_activity">🎁 Minha Lista de Desejos</string>
     <string name="empty_state_no_wishes">🎄 Nenhum desejo ainda\n\nClique em \'+\' para adicionar!</string>
     <string name="share_wish_prefix_desejo">Desejo: </string>
-    <string name="share_wish_prefix_preco">Preço: de </string>
-    <string name="share_wish_separator_ate"> até </string>
+    <string name="share_wish_price_range">Preço: de %1$s até %2$s</string>
     <string name="share_wish_prefix_lojas">Onde encontrar: </string>
     <string name="share_wishes_empty">Minha lista de desejos está vazia!</string>
     <string name="share_wishes_subject">Minha lista de desejos</string>
@@ -152,12 +151,12 @@
     <string name="greeting_hello">Olá,</string>
     <string name="label_your_secret_friend">🎉 Seu Amigo Secreto é</string>
     <string name="label_tap_to_reveal">👆 Toque para revelar</string>
+    <string name="cd_tap_to_reveal">Toque para revelar</string>
     <string name="button_view_wishlist">🎁 LISTA DE DESEJOS</string>
     <string name="label_keep_secret">Mantenha em segredo! 🤫</string>
     <string name="button_back_to_list">Voltar para a lista</string>
 
     <!-- Dialog participante -->
-    <string name="dialog_title_new_participant">Novo Participante</string>
     <string name="dialog_desc_add_friend">Adicione um amigo ao sorteio</string>
     <string name="label_quick_mode">⚡ Modo Rápido</string>
     <string name="button_import_contacts">Importar dos Contatos</string>
@@ -184,7 +183,6 @@
 
     <!-- Dialog restrições -->
     <string name="dialog_title_restrictions">Restrições de Sorteio</string>
-    <string name="dialog_desc_select_restrictions">Selecione quem não pode ser sorteado</string>
 
     <!-- Tela de participantes (layout) -->
     <string name="label_manage_group">Gerenciar Grupo</string>
@@ -197,6 +195,9 @@
 
     <!-- Dialog editar participante -->
     <string name="dialog_edit_participant_title">Editar Participante</string>
+
+    <!-- Contador de participantes no grupo -->
+    <string name="label_participants_in_group">%1$d participantes no grupo %2$s</string>
 
     <!-- Compartilhar app (corpo da mensagem) -->
     <string name="share_app_body">🎁 Organize seu Amigo Secreto de forma fácil!\n\nBaixe o app Amigo Secreto e torne suas confraternizações mais divertidas!</string>

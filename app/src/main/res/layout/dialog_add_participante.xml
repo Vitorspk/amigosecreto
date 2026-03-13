@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="@string/dialog_title_new_participant"
+                android:text="@string/dialog_new_participant_title"
                 android:textColor="@color/white"
                 android:textSize="24sp"
                 android:textStyle="bold" />
