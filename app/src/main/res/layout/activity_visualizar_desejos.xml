@@ -44,7 +44,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="Lista de desejos de"
+                android:text="@string/label_wishlist_of"
                 android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -94,7 +94,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Nenhum desejo ainda"
+                    android:text="@string/empty_state_no_wishes_yet"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp"
                     android:textStyle="bold" />

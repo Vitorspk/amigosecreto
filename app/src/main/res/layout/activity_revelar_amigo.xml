@@ -14,7 +14,7 @@
         android:id="@+id/tv_instrucao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Olá,"
+        android:text="@string/greeting_hello"
         android:textSize="18sp"
         android:textColor="@color/text_secondary"
         android:layout_marginBottom="4dp"/>
@@ -56,7 +56,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🎉 Seu Amigo Secreto é"
+                    android:text="@string/label_your_secret_friend"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -86,13 +86,13 @@
                     android:layout_height="96dp"
                     android:src="@drawable/ic_eye"
                     app:tint="@color/purple_primary"
-                    android:contentDescription="Revelar" />
+                    android:contentDescription="@string/label_tap_to_reveal" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="👆 Toque para revelar"
+                    android:text="@string/label_tap_to_reveal"
                     android:textSize="20sp"
                     android:textColor="@color/purple_primary"
                     android:textStyle="bold" />
@@ -106,7 +106,7 @@
         android:layout_height="60dp"
         android:layout_marginTop="40dp"
         android:layout_marginHorizontal="32dp"
-        android:text="🎁 LISTA DE DESEJOS"
+        android:text="@string/button_view_wishlist"
         android:textAllCaps="false"
         android:textSize="16sp"
         android:textStyle="bold"
@@ -121,7 +121,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Mantenha em segredo! 🤫"
+        android:text="@string/label_keep_secret"
         android:textColor="@color/colorError"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -131,7 +131,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Voltar para a lista"
+        android:text="@string/button_back_to_list"
         android:textAllCaps="false"
         style="@style/Widget.MaterialComponents.Button.TextButton"/>
 

@@ -188,7 +188,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
 
         if (listaParticipantes.isEmpty()) {
-            tvCount.setText("Nenhum participante ainda");
+            tvCount.setText(R.string.label_no_participants);
         } else {
             tvCount.setText(listaParticipantes.size() + " participantes no grupo " + grupoAtual.getNome());
         }
@@ -196,7 +196,7 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private void exibirDialogAdd() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Novo Participante");
+        builder.setTitle(R.string.dialog_new_participant_title);
 
         View view = getLayoutInflater().inflate(R.layout.dialog_add_participante, null);
         final EditText etNome = view.findViewById(R.id.et_nome);
@@ -247,9 +247,9 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     private void exibirDialogEditar(final Participante participante) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Editar Participante");
+        builder.setTitle(R.string.dialog_new_participant_title);
         if (participante.isEnviado()) {
-            builder.setMessage("⚠️ O resultado deste participante já foi compartilhado. Editar os dados não atualizará a mensagem já enviada.");
+            builder.setMessage(R.string.dialog_edit_sent_warning);
         }
 
         View view = getLayoutInflater().inflate(R.layout.dialog_add_participante, null);
@@ -326,7 +326,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                         participante.setTelefone(telefoneOriginal);
                                         participante.setEmail(emailOriginal);
                                         Toast.makeText(ParticipantesActivity.this,
-                                                "Erro ao salvar. Tente novamente.", Toast.LENGTH_SHORT).show();
+                                                R.string.error_save_failed, Toast.LENGTH_SHORT).show();
                                     }
                                 }
                             });
@@ -362,7 +362,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     dao.inserir(p, grupoAtual.getId());
                     dao.close();
                     atualizarLista();
-                    Toast.makeText(this, name + " adicionado!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.toast_contact_added_format, name), Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -428,7 +428,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                     public void run() {
                                         if (isFinishing() || isDestroyed()) return;
                                         Toast.makeText(ParticipantesActivity.this,
-                                                "Erro ao retomar envio. Tente novamente.", Toast.LENGTH_LONG).show();
+                                                R.string.error_resume_sms_failed, Toast.LENGTH_LONG).show();
                                     }
                                 });
                                 return;
@@ -582,7 +582,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                             public void run() {
                                 if (isFinishing() || isDestroyed()) return;
                                 Toast.makeText(ParticipantesActivity.this,
-                                        "Erro ao preparar mensagens. Tente novamente.", Toast.LENGTH_LONG).show();
+                                        R.string.error_prepare_messages_failed, Toast.LENGTH_LONG).show();
                             }
                         });
                         return;
@@ -597,7 +597,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                             if (isFinishing() || isDestroyed()) return;
                             if (comTelefone.isEmpty()) {
                                 Toast.makeText(ParticipantesActivity.this,
-                                        "Nenhum participante com telefone cadastrado.", Toast.LENGTH_LONG).show();
+                                        R.string.error_no_phone_participants, Toast.LENGTH_LONG).show();
                                 return;
                             }
                             enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
@@ -619,7 +619,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 String m = mensagensMap.get(p.getId());
                 if (m != null && !m.isEmpty()) enviados++;
             }
-            Toast.makeText(this, "SMS preparados para " + enviados + " participante(s).", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_sms_prepared_format, enviados), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -636,9 +636,9 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Enviar para " + p.getNome() + " (" + (index + 1) + "/" + lista.size() + ")")
-                .setMessage("Abrir app de SMS para " + p.getTelefone() + "?")
-                .setPositiveButton("Abrir SMS", new DialogInterface.OnClickListener() {
+                .setTitle(getString(R.string.dialog_send_sms_title_format, p.getNome(), index + 1, lista.size()))
+                .setMessage(getString(R.string.dialog_send_sms_message_format, p.getTelefone()))
+                .setPositiveButton(R.string.button_open_sms, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // Nao usar Uri.encode: converte '+' de numeros internacionais em '%2B'
@@ -660,7 +660,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                             pendingSmsMensagens = null;
                             pendingSmsNextIndex = -1;
                             Toast.makeText(ParticipantesActivity.this,
-                                    "Nenhum app de SMS encontrado.", Toast.LENGTH_SHORT).show();
+                                    R.string.error_no_sms_app, Toast.LENGTH_SHORT).show();
                             // Postar no Handler evita abrir novo AlertDialog enquanto o atual ainda
                             // esta sendo descartado, prevenindo WindowManager exception.
                             mainHandler
@@ -673,7 +673,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         }
                     }
                 })
-                .setNegativeButton("Pular", new DialogInterface.OnClickListener() {
+                .setNegativeButton(R.string.button_skip, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // Limpa id possivelmente restaurado do bundle para evitar estado inconsistente.
@@ -688,7 +688,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 });
                     }
                 })
-                .setNeutralButton("Cancelar tudo", new DialogInterface.OnClickListener() {
+                .setNeutralButton(R.string.button_cancel_all, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         pendingSmsParticipanteId = -1;
@@ -762,8 +762,8 @@ public class ParticipantesActivity extends AppCompatActivity {
         TextView tvSubtitle = dialogView.findViewById(R.id.tv_dialog_subtitle);
         android.widget.LinearLayout layoutLista = dialogView.findViewById(R.id.layout_lista_participantes);
 
-        tvTitle.setText("Restrições para " + p.getNome());
-        tvSubtitle.setText("Selecione quem NÃO pode ser sorteado");
+        tvTitle.setText(getString(R.string.dialog_restrictions_title_format, p.getNome()));
+        tvSubtitle.setText(R.string.dialog_restrictions_subtitle);
 
         // Criar checkboxes para cada participante
         final boolean[] selecionados = new boolean[outros.size()];
@@ -801,7 +801,7 @@ public class ParticipantesActivity extends AppCompatActivity {
 
         new AlertDialog.Builder(this)
                 .setView(dialogView)
-                .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.button_save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dao.open();
@@ -813,7 +813,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                         atualizarLista();
                     }
                 })
-                .setNegativeButton("Cancelar", null)
+                .setNegativeButton(R.string.button_cancel, null)
                 .show();
     }
 
@@ -871,18 +871,22 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (countDesejos == null) countDesejos = 0;
 
             if (countDesejos > 0) {
-                tvDesejosCount.setText(countDesejos + (countDesejos == 1 ? " desejo" : " desejos"));
+                tvDesejosCount.setText(countDesejos + (countDesejos == 1
+                        ? getString(R.string.label_wish_count_suffix)
+                        : getString(R.string.label_wishes_count_suffix)));
                 tvDesejosCount.setVisibility(View.VISIBLE);
             } else {
                 tvDesejosCount.setVisibility(View.GONE);
             }
 
             if (p.getAmigoSorteadoId() != null && p.getAmigoSorteadoId() > 0) {
-                tvEmail.setText(p.isEnviado() ? "✓ Resultado enviado" : "Pronto p/ compartilhar");
+                tvEmail.setText(p.isEnviado() ? getString(R.string.status_result_sent) : getString(R.string.status_ready_share));
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, p.isEnviado() ? R.color.text_secondary : R.color.colorAccent));
                 btnShare.setVisibility(View.VISIBLE);
             } else {
-                tvEmail.setText(p.getIdsExcluidos().isEmpty() ? "Sem restrições" : p.getIdsExcluidos().size() + " restrições");
+                tvEmail.setText(p.getIdsExcluidos().isEmpty()
+                        ? getString(R.string.status_no_restrictions)
+                        : p.getIdsExcluidos().size() + getString(R.string.label_restrictions_suffix));
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary));
                 btnShare.setVisibility(View.GONE);
             }
@@ -989,7 +993,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 Intent intent = new Intent(Intent.ACTION_SEND);
                                 intent.setType("text/plain");
                                 intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-                                ctx.startActivity(Intent.createChooser(intent, "Compartilhar com " + p.getNome()));
+                                ctx.startActivity(Intent.createChooser(intent, ((android.content.Context)ctx).getString(R.string.menu_compartilhar) + " com " + p.getNome()));
                             }
                         });
                     }

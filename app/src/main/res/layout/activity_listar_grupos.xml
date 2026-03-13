@@ -86,7 +86,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Olá, Bem-vindo!"
+                        android:text="@string/greeting_welcome"
                         android:textColor="@color/purple_dark"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -97,7 +97,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Organize seus grupos de amigo secreto"
+                    android:text="@string/description_organize_groups"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -110,7 +110,7 @@
                 android:layout_height="64dp"
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/btn_gradient_purple"
-                android:text="   Criar Novo Grupo"
+                android:text="@string/button_create_new_group"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -130,7 +130,7 @@
                 android:id="@+id/tv_grupos_header"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Meus Grupos"
+                android:text="@string/label_my_groups"
                 android:textColor="@color/purple_dark"
                 android:textSize="20sp"
                 android:textStyle="bold"

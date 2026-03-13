@@ -33,7 +33,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Opções do Desejo"
+                android:text="@string/dialog_title_wish_options"
                 android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -100,7 +100,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Editar"
+                    android:text="@string/label_edit"
                     android:textColor="@color/text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -109,7 +109,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Alterar informações do desejo"
+                    android:text="@string/description_edit_wish"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
@@ -165,7 +165,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Remover"
+                    android:text="@string/label_remove"
                     android:textColor="@color/colorError"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -174,7 +174,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Excluir este desejo"
+                    android:text="@string/description_delete_wish"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
@@ -197,7 +197,7 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cancelar"
+        android:text="@string/button_cancel"
         android:textColor="@color/text_secondary"
         android:textAllCaps="false" />
 

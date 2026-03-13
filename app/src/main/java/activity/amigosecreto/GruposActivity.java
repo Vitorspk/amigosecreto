@@ -147,18 +147,8 @@ public class GruposActivity extends AppCompatActivity {
 
     private void exibirSobre() {
         new AlertDialog.Builder(this)
-                .setTitle("Sobre o App")
-                .setMessage(
-                    "🎅 Amigo Secreto\n\n" +
-                    "Organize seus amigos secretos de forma fácil e divertida!\n\n" +
-                    "Recursos:\n" +
-                    "• Múltiplos grupos\n" +
-                    "• Restrições personalizadas\n" +
-                    "• Lista de desejos\n" +
-                    "• Compartilhamento via SMS/WhatsApp\n" +
-                    "• Interface moderna\n\n" +
-                    "Desenvolvido com ❤️ para tornar suas confraternizações mais especiais!"
-                )
+                .setTitle(R.string.dialog_about_title)
+                .setMessage(R.string.dialog_about_message)
                 .setPositiveButton("OK", null)
                 .show();
     }
@@ -166,13 +156,12 @@ public class GruposActivity extends AppCompatActivity {
     private void compartilharApp() {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Amigo Secreto - App");
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_app_subject));
         intent.putExtra(Intent.EXTRA_TEXT,
-            "🎁 Organize seu Amigo Secreto de forma fácil!\n\n" +
-            "Baixe o app Amigo Secreto e torne suas confraternizações mais divertidas!\n\n" +
+            getString(R.string.share_app_subject) + "\n\n" +
             "https://play.google.com/store/apps/details?id=" + getPackageName()
         );
-        startActivity(Intent.createChooser(intent, "Compartilhar app"));
+        startActivity(Intent.createChooser(intent, getString(R.string.action_share_app)));
     }
 
     private void abrirPlayStore() {
@@ -187,19 +176,19 @@ public class GruposActivity extends AppCompatActivity {
 
     private void confirmarLimparTodosDados() {
         new AlertDialog.Builder(this)
-                .setTitle("⚠️ Limpar Todos os Dados")
-                .setMessage("Isso irá remover TODOS os grupos, participantes e sorteios.\n\nEsta ação NÃO pode ser desfeita!\n\nDeseja continuar?")
-                .setPositiveButton("Sim, limpar tudo", new DialogInterface.OnClickListener() {
+                .setTitle(R.string.dialog_clear_all_title)
+                .setMessage(R.string.dialog_clear_all_message)
+                .setPositiveButton(R.string.button_clear_all_yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dao.open();
                         dao.limparTudo();
                         dao.close();
                         atualizarLista();
-                        Toast.makeText(GruposActivity.this, "Todos os dados foram removidos", Toast.LENGTH_LONG).show();
+                        Toast.makeText(GruposActivity.this, R.string.toast_all_data_cleared, Toast.LENGTH_LONG).show();
                     }
                 })
-                .setNegativeButton("Cancelar", null)
+                .setNegativeButton(R.string.button_cancel, null)
                 .show();
     }
 
@@ -273,7 +262,7 @@ public class GruposActivity extends AppCompatActivity {
                     atualizarLista();
                     dialog.dismiss();
                 } else {
-                    Toast.makeText(GruposActivity.this, "O nome do grupo é obrigatório", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GruposActivity.this, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -347,7 +336,9 @@ public class GruposActivity extends AppCompatActivity {
             // Set participantes count - usar contagem pré-carregada
             int numParticipantes = contagemParticipantes.containsKey(g.getId())
                 ? contagemParticipantes.get(g.getId()) : 0;
-            tvParticipantes.setText(numParticipantes + (numParticipantes == 1 ? " Participante" : " Participantes"));
+            tvParticipantes.setText(numParticipantes + (numParticipantes == 1
+                    ? getString(R.string.label_participant_singular)
+                    : getString(R.string.label_participant_plural)));
 
             // Set emoji baseado na posição
             String emoji = emojis[position % emojis.length];

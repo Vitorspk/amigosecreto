@@ -14,14 +14,23 @@
     <string name="label_lojas">Lojas onde achar:</string>
     <string name="hint_produto">Nome do produto</string>
     <string name="hint_categoria">Categoria</string>
-    <string name="hint_preco_minimo">Preço Mínimo</string>
-    <string name="hint_preco_maximo">Preço Máximo</string>
-    <string name="hint_lojas">Lojas onde achar</string>
+    <string name="hint_preco_minimo">Mínimo</string>
+    <string name="hint_preco_maximo">Máximo</string>
+    <string name="hint_lojas">Onde encontrar (lojas)</string>
     <string name="menu_editar">Editar</string>
     <string name="menu_salvar">Salvar</string>
     <string name="menu_excluir">Excluir</string>
     <string name="menu_novo">Novo</string>
     <string name="menu_compartilhar">Compartilhar</string>
+
+    <!-- Botões genéricos -->
+    <string name="button_save">Salvar</string>
+    <string name="button_cancel">Cancelar</string>
+    <string name="button_add">Adicionar</string>
+    <string name="button_remove_yes">Sim, remover</string>
+    <string name="button_skip">Pular</string>
+    <string name="button_cancel_all">Cancelar tudo</string>
+    <string name="button_open_sms">Abrir SMS</string>
 
     <!-- Grupos -->
     <string name="grupo_menu_editar_nome">Editar nome</string>
@@ -33,6 +42,22 @@
     <string name="grupo_dialog_excluir_mensagem">Deseja excluir o grupo \'%1$s\' e todos os seus participantes?</string>
     <string name="grupo_btn_excluir">Excluir</string>
     <string name="grupo_btn_cancelar">Cancelar</string>
+    <string name="dialog_about_title">Sobre o App</string>
+    <string name="dialog_about_message">🎅 Amigo Secreto\n\nOrganize seus amigos secretos de forma fácil e divertida!\n\nRecursos:\n• Múltiplos grupos\n• Restrições personalizadas\n• Lista de desejos\n• Compartilhamento via SMS/WhatsApp\n• Interface moderna\n\nDesenvolvido com ❤️ para tornar suas confraternizações mais especiais!</string>
+    <string name="share_app_subject">Amigo Secreto - App</string>
+    <string name="action_share_app">Compartilhar app</string>
+    <string name="dialog_clear_all_title">⚠️ Limpar Todos os Dados</string>
+    <string name="dialog_clear_all_message">Isso irá remover TODOS os grupos, participantes e sorteios.\n\nEsta ação NÃO pode ser desfeita!\n\nDeseja continuar?</string>
+    <string name="button_clear_all_yes">Sim, limpar tudo</string>
+    <string name="toast_all_data_cleared">Todos os dados foram removidos</string>
+    <string name="label_participant_singular"> Participante</string>
+    <string name="label_participant_plural"> Participantes</string>
+
+    <!-- Tela de grupos (layout) -->
+    <string name="greeting_welcome">Olá, Bem-vindo!</string>
+    <string name="description_organize_groups">Organize seus grupos de amigo secreto</string>
+    <string name="button_create_new_group">   Criar Novo Grupo</string>
+    <string name="label_my_groups">Meus Grupos</string>
 
     <!-- Participantes -->
     <string name="participante_btn_adicionar">Adicionar</string>
@@ -44,6 +69,130 @@
     <string name="participante_limpar_titulo">Limpar Tudo</string>
     <string name="participante_limpar_msg">Deseja remover todos os participantes deste grupo?</string>
     <string name="participante_limpar_btn_sim">Sim, limpar</string>
+    <string name="label_no_participants">Nenhum participante ainda</string>
+    <string name="dialog_new_participant_title">Novo Participante</string>
+    <string name="dialog_edit_sent_warning">⚠️ O resultado deste participante já foi compartilhado. Editar os dados não atualizará a mensagem já enviada.</string>
+    <string name="error_save_failed">Erro ao salvar. Tente novamente.</string>
+    <string name="error_resume_sms_failed">Erro ao retomar envio. Tente novamente.</string>
+    <string name="error_prepare_messages_failed">Erro ao preparar mensagens. Tente novamente.</string>
+    <string name="error_no_phone_participants">Nenhum participante com telefone cadastrado.</string>
+    <string name="error_no_sms_app">Nenhum app de SMS encontrado.</string>
+    <string name="status_result_sent">✓ Resultado enviado</string>
+    <string name="status_ready_share">Pronto p/ compartilhar</string>
+    <string name="status_no_restrictions">Sem restrições</string>
+    <string name="label_restrictions_suffix"> restrições</string>
+    <string name="label_wish_count_suffix"> desejo</string>
+    <string name="label_wishes_count_suffix"> desejos</string>
+    <string name="dialog_send_sms_title_format">Enviar para %1$s (%2$d/%3$d)</string>
+    <string name="dialog_send_sms_message_format">Abrir app de SMS para %1$s?</string>
+    <string name="toast_sms_prepared_format">SMS preparados para %1$d participante(s).</string>
+    <string name="toast_contact_added_format">%1$s adicionado!</string>
+
+    <!-- Restrições (tela de sorteio) -->
+    <string name="dialog_restrictions_title_format">Restrições para %1$s</string>
+    <string name="dialog_restrictions_subtitle">Selecione quem NÃO pode ser sorteado</string>
+    <string name="info_restrictions_note">💡 As pessoas selecionadas NÃO poderão ser sorteadas para este participante</string>
+
+    <!-- Revelar amigo -->
+    <string name="label_no_draw">Sorteio não realizado</string>
+    <string name="error_no_draw">O sorteio ainda não foi feito!</string>
+    <string name="toast_no_wishes_format">%1$s ainda não adicionou desejos</string>
+
+    <!-- Desejos (inserir/alterar) -->
+    <string name="title_activity_inserir_desejo">Adicionar Desejo</string>
+    <string name="label_new_wish">Novo Desejo</string>
+    <string name="description_add_wish">Adicione um presente à sua lista</string>
+    <string name="label_price_range">Faixa de Preço</string>
+    <string name="button_save_wish">Salvar Desejo</string>
+    <string name="button_update_wish">Atualizar Desejo</string>
+    <string name="label_edit_wish">Editar Desejo</string>
+    <string name="description_edit_wish">Atualize as informações do presente</string>
+    <string name="error_product_name_required">Informe o nome do produto</string>
+    <string name="error_invalid_price">Erro: preço inválido</string>
+    <string name="toast_wish_saved">Desejo salvo com sucesso!</string>
+    <string name="toast_wish_deleted">Desejo excluído</string>
+    <string name="toast_wish_added">Desejo adicionado!</string>
+    <string name="toast_wish_removed">Desejo removido</string>
+    <string name="error_load_wish">Erro ao carregar desejo</string>
+    <string name="error_save_wish_format">Erro ao salvar desejo: %1$s</string>
+    <string name="error_update_wish_format">Erro ao atualizar desejo: %1$s</string>
+    <string name="error_generic_format">Erro: %1$s</string>
+    <string name="dialog_remove_wish_title">⚠️ Remover Desejo</string>
+    <string name="dialog_remove_wish_message_format">Tem certeza que deseja remover \"%1$s\"?\n\nEsta ação não pode ser desfeita.</string>
+
+    <!-- Detalhe do desejo (layout) -->
+    <string name="label_price_range_detail">💰 Faixa de Preço</string>
+    <string name="label_minimum_price">Mínimo</string>
+    <string name="label_maximum_price">Máximo</string>
+    <string name="label_where_to_find">📍 Onde Encontrar</string>
+    <string name="button_search_buscape">Pesquisar no Buscapé</string>
+
+    <!-- Lista de desejos -->
+    <string name="title_lista_desejos_activity">🎁 Minha Lista de Desejos</string>
+    <string name="empty_state_no_wishes">🎄 Nenhum desejo ainda\n\nClique em \'+\' para adicionar!</string>
+    <string name="share_wish_prefix_desejo">Desejo: </string>
+    <string name="share_wish_prefix_preco">Preço: de </string>
+    <string name="share_wish_separator_ate"> até </string>
+    <string name="share_wish_prefix_lojas">Onde encontrar: </string>
+    <string name="share_wishes_empty">Minha lista de desejos está vazia!</string>
+    <string name="share_wishes_subject">Minha lista de desejos</string>
+    <string name="error_participant_not_found">Erro: participante não encontrado</string>
+
+    <!-- Participante desejos -->
+    <string name="label_wishes_count_format">Presentes (%1$d)</string>
+    <string name="dialog_add_wish_title">Adicionar Desejo</string>
+    <string name="label_my_wishes_list">Minha lista de desejos</string>
+    <string name="description_add_wishes_hint">Adicione presentes para que seu Papai Noel secreto não erre com você 😘</string>
+    <string name="label_gifts_initial_count">Presentes (0)</string>
+    <string name="empty_state_no_wishes_added">Nenhum desejo adicionado</string>
+    <string name="empty_state_click_add">Clique em \'Adicionar\' para começar</string>
+
+    <!-- Visualizar desejos -->
+    <string name="title_wishes_list">Lista de Desejos</string>
+    <string name="label_wishlist_of">Lista de desejos de</string>
+    <string name="empty_state_no_wishes_yet">Nenhum desejo ainda</string>
+
+    <!-- Revelar amigo (layout) -->
+    <string name="greeting_hello">Olá,</string>
+    <string name="label_your_secret_friend">🎉 Seu Amigo Secreto é</string>
+    <string name="label_tap_to_reveal">👆 Toque para revelar</string>
+    <string name="button_view_wishlist">🎁 LISTA DE DESEJOS</string>
+    <string name="label_keep_secret">Mantenha em segredo! 🤫</string>
+    <string name="button_back_to_list">Voltar para a lista</string>
+
+    <!-- Dialog participante -->
+    <string name="dialog_title_new_participant">Novo Participante</string>
+    <string name="dialog_desc_add_friend">Adicione um amigo ao sorteio</string>
+    <string name="label_quick_mode">⚡ Modo Rápido</string>
+    <string name="button_import_contacts">Importar dos Contatos</string>
+    <string name="label_or_fill">OU PREENCHA</string>
+    <string name="hint_participant_name">Nome do Participante *</string>
+    <string name="helper_phone_format">Ex: 11987654321 (DDD + número sem espaços)</string>
+    <string name="prefix_country_code">+55 </string>
+    <string name="hint_phone">DDD + Telefone (WhatsApp)</string>
+    <string name="hint_email">E-mail (opcional)</string>
+    <string name="label_required_field">* Campo obrigatório</string>
+
+    <!-- Dialog criar grupo -->
+    <string name="dialog_title_new_group">Novo Grupo</string>
+    <string name="dialog_desc_create_group">Crie um grupo para seu amigo secreto</string>
+    <string name="hint_group_name">Nome do grupo</string>
+    <string name="label_suggestions">Sugestões:</string>
+    <string name="button_create_group">Criar Grupo</string>
+
+    <!-- Dialog opções desejo -->
+    <string name="dialog_title_wish_options">Opções do Desejo</string>
+    <string name="label_edit">Editar</string>
+    <string name="label_remove">Remover</string>
+    <string name="description_delete_wish">Excluir este desejo</string>
+
+    <!-- Dialog restrições -->
+    <string name="dialog_title_restrictions">Restrições de Sorteio</string>
+    <string name="dialog_desc_select_restrictions">Selecione quem não pode ser sorteado</string>
+
+    <!-- Tela de participantes (layout) -->
+    <string name="label_manage_group">Gerenciar Grupo</string>
+    <string name="button_clear_participants">Limpar Lista de Participantes</string>
 
     <!-- Chips de sugestao de nome de grupo -->
     <string name="chip_sugestao_familia">Família</string>

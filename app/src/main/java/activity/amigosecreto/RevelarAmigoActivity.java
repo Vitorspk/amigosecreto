@@ -76,7 +76,7 @@ public class RevelarAmigoActivity extends AppCompatActivity {
 
                 tvAmigoSorteado.setText(nomeAmigo);
             } else {
-                tvAmigoSorteado.setText("Sorteio não realizado");
+                tvAmigoSorteado.setText(R.string.label_no_draw);
             }
         }
 
@@ -95,10 +95,10 @@ public class RevelarAmigoActivity extends AppCompatActivity {
                         intent.putExtra("somente_visualizar", true);
                         startActivity(intent);
                     } else {
-                        Toast.makeText(RevelarAmigoActivity.this, amigoSorteado.getNome() + " ainda não adicionou desejos", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RevelarAmigoActivity.this, getString(R.string.toast_no_wishes_format, amigoSorteado.getNome()), Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(RevelarAmigoActivity.this, "Sorteio não realizado", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RevelarAmigoActivity.this, R.string.label_no_draw, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -113,7 +113,7 @@ public class RevelarAmigoActivity extends AppCompatActivity {
                         btnVerDesejos.setVisibility(View.VISIBLE);
                         revelado = true;
                     } else {
-                        Toast.makeText(RevelarAmigoActivity.this, "O sorteio ainda não foi feito!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RevelarAmigoActivity.this, R.string.error_no_draw, Toast.LENGTH_SHORT).show();
                     }
                 } else {
                     layoutEscondido.setVisibility(View.VISIBLE);

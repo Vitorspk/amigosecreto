@@ -21,7 +21,7 @@
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_clear"
             app:navigationIconTint="@color/white"
-            app:title="Editar Desejo"
+            app:title="@string/label_edit_wish"
             app:titleTextColor="@color/white" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -65,7 +65,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar Desejo"
+                        android:text="@string/label_edit_wish"
                         android:textColor="@color/text_primary"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -74,7 +74,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Atualize as informações do presente"
+                        android:text="@string/description_edit_wish"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
@@ -87,7 +87,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="Nome do produto"
+                android:hint="@string/hint_produto"
                 app:boxBackgroundMode="outline"
                 app:boxStrokeColor="@color/purple_primary"
                 app:boxCornerRadiusTopStart="12dp"
@@ -112,7 +112,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="Categoria"
+                android:hint="@string/hint_categoria"
                 app:boxBackgroundMode="outline"
                 app:boxStrokeColor="@color/purple_primary"
                 app:boxCornerRadiusTopStart="12dp"
@@ -136,7 +136,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Faixa de Preço"
+                android:text="@string/label_price_range"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -154,7 +154,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    android:hint="Mínimo"
+                    android:hint="@string/hint_preco_minimo"
                     app:boxBackgroundMode="outline"
                     app:boxStrokeColor="@color/purple_primary"
                     app:boxCornerRadiusTopStart="12dp"
@@ -179,7 +179,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:hint="Máximo"
+                    android:hint="@string/hint_preco_maximo"
                     app:boxBackgroundMode="outline"
                     app:boxStrokeColor="@color/purple_primary"
                     app:boxCornerRadiusTopStart="12dp"
@@ -205,7 +205,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
-                android:hint="Onde encontrar (lojas)"
+                android:hint="@string/hint_lojas"
                 app:boxBackgroundMode="outline"
                 app:boxStrokeColor="@color/purple_primary"
                 app:boxCornerRadiusTopStart="12dp"
@@ -232,7 +232,7 @@
                 android:id="@+id/btn_atualizar"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Atualizar Desejo"
+                android:text="@string/button_update_wish"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
