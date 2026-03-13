@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/purple_primary"
+        android:fitsSystemWindows="true"
         app:elevation="4dp">
 
         <com.google.android.material.appbar.MaterialToolbar

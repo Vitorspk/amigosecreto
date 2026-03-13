@@ -3,6 +3,7 @@ package activity.amigosecreto;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -38,6 +39,8 @@ public class AlterarDesejoActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_alterar_desejo));
+
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             old_desejo = (Desejo) extras.get("desejo");
@@ -66,12 +69,15 @@ public class AlterarDesejoActivity extends AppCompatActivity {
             et_produto.setText(old_desejo.getProduto());
             et_categoria.setText(old_desejo.getCategoria());
 
-            // Formatar preços para exibição
+            // Formatar preços para exibição nos campos de edição.
+            // Intencional: usa "1.500,00" (sem prefixo R$) pois o layout já exibe
+            // o prefixo "R$ " via app:prefixText. A tela de detalhes usa currencyFormat
+            // que inclui o símbolo — essa diferença é esperada e facilita a digitação.
             if (old_desejo.getPrecoMinimo() > 0) {
-                et_preco_minimo.setText(String.format("%.2f", old_desejo.getPrecoMinimo()));
+                et_preco_minimo.setText(String.format(WindowInsetsUtils.LOCALE_PT_BR, "%.2f", old_desejo.getPrecoMinimo()));
             }
             if (old_desejo.getPrecoMaximo() > 0) {
-                et_preco_maximo.setText(String.format("%.2f", old_desejo.getPrecoMaximo()));
+                et_preco_maximo.setText(String.format(WindowInsetsUtils.LOCALE_PT_BR, "%.2f", old_desejo.getPrecoMaximo()));
             }
 
             et_lojas.setText(old_desejo.getLojas());

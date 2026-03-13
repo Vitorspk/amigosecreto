@@ -5,21 +5,26 @@ import static org.junit.Assert.*;
 
 public class FormatarPrecoTest {
 
-    // --- valores inteiros exatos ---
+    // --- valores inteiros --- (agora sempre 2 casas decimais com NumberFormat pt-BR)
 
     @Test
-    public void inteiro_zero_retorna_zero() {
-        assertEquals("0", ParticipantesActivity.formatarPreco(0.0));
+    public void inteiro_zero_retorna_formatado() {
+        assertEquals("0,00", ParticipantesActivity.formatarPreco(0.0));
     }
 
     @Test
-    public void inteiro_positivo_sem_centavos() {
-        assertEquals("100", ParticipantesActivity.formatarPreco(100.0));
+    public void inteiro_positivo_com_duas_casas() {
+        assertEquals("100,00", ParticipantesActivity.formatarPreco(100.0));
     }
 
     @Test
-    public void inteiro_grande_sem_centavos() {
-        assertEquals("1500", ParticipantesActivity.formatarPreco(1500.0));
+    public void inteiro_com_separador_de_milhar() {
+        assertEquals("1.500,00", ParticipantesActivity.formatarPreco(1500.0));
+    }
+
+    @Test
+    public void valor_grande_com_separador_de_milhar() {
+        assertEquals("1.000.000,00", ParticipantesActivity.formatarPreco(1000000.0));
     }
 
     // --- valores com centavos ---
@@ -39,31 +44,32 @@ public class FormatarPrecoTest {
         assertEquals("0,99", ParticipantesActivity.formatarPreco(0.99));
     }
 
+    @Test
+    public void milhar_com_centavos() {
+        assertEquals("2.500,50", ParticipantesActivity.formatarPreco(2500.5));
+    }
+
     // --- edge cases IEEE 754 ---
 
     @Test
-    public void ieee754_muito_proximo_de_inteiro_exibe_sem_centavos() {
-        // 100.0000000001 pode surgir de arredondamento ao ler REAL do SQLite
-        assertEquals("100", ParticipantesActivity.formatarPreco(100.0000000001));
+    public void ieee754_arredonda_para_duas_casas() {
+        // NumberFormat arredonda automaticamente para 2 casas
+        assertEquals("100,00", ParticipantesActivity.formatarPreco(100.0000000001));
     }
 
     @Test
-    public void ieee754_logo_abaixo_de_inteiro_exibe_centavos_arredondados() {
-        // 99.9999999999 difere de 100 em ~1e-10, acima da tolerancia de 0.005;
-        // String.format("%.2f") arredonda para "100,00", nao para inteiro "100".
+    public void ieee754_logo_abaixo_de_inteiro_arredonda() {
         assertEquals("100,00", ParticipantesActivity.formatarPreco(99.9999999999));
     }
 
     @Test
     public void valor_com_centavos_reais_nao_e_arredondado_para_inteiro() {
-        // 19.99 NAO deve virar "20"
-        assertNotEquals("20", ParticipantesActivity.formatarPreco(19.99));
+        assertNotEquals("20,00", ParticipantesActivity.formatarPreco(19.99));
         assertEquals("19,99", ParticipantesActivity.formatarPreco(19.99));
     }
 
     @Test
-    public void limiar_inferior_da_tolerancia_exibe_centavos() {
-        // 0.01 esta acima da tolerancia de 0.005 — deve mostrar centavos
+    public void centavo_minimo() {
         assertEquals("0,01", ParticipantesActivity.formatarPreco(0.01));
     }
 }

@@ -48,6 +48,7 @@ import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
 import activity.amigosecreto.util.SorteioEngine;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -702,25 +703,18 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     // Visivel ao pacote para permitir testes unitarios sem reflexao.
+    // Usa NumberFormat pt-BR via WindowInsetsUtils para garantir separador de milhar (.) e decimal (,).
+    // Ex: 1000.0 -> "1.000,00", 2500.5 -> "2.500,50"
     static String formatarPreco(double valor) {
-        long inteiro = (long) valor;
-        if (Math.abs(valor - inteiro) < 0.005) {
-            return String.valueOf(inteiro);
-        }
-        return String.format(java.util.Locale.US, "%.2f", valor).replace('.', ',');
+        return WindowInsetsUtils.numberFormatPtBr().format(valor);
     }
 
     private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
         if (nomeParticipante == null) nomeParticipante = "???";
         if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
-        sb.append("🎁 *Amigo Secreto* 🎁\n\n");
-        sb.append("Olá, *").append(nomeParticipante).append("*!\n\n");
-        sb.append("O sorteio foi realizado e voce foi escolhido(a) para presentear alguem especial!\n");
-        sb.append("Role para baixo para descobrir quem e o seu Amigo Secreto\n\n");
-        // Separador em linha unica substitui o loop original de 25 pontos quebrados.
-        // A mensagem ja usa emojis (UCS-2), entao o charset nao e uma preocupacao aqui.
-        sb.append("- - - - - - - - - - - - -\n\n");
+        sb.append("\uD83C\uDF81 Ola, *").append(nomeParticipante).append("*!\n\n");
+        sb.append("Voce foi sorteado(a) no *Amigo Secreto* e vai presentear alguem especial!\n\n");
         sb.append("Seu Amigo Secreto e:\n");
         sb.append("*").append(nomeAmigo).append("* \uD83C\uDF89\n\n");
         if (desejos != null && !desejos.isEmpty()) {

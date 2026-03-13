@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
-import androidx.core.app.NavUtils;
+import activity.amigosecreto.util.WindowInsetsUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,6 +34,8 @@ public class InserirDesejoActivity extends AppCompatActivity {
         // Configurar MaterialToolbar
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
+
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_inserir_desejo));
 
         et_produto = findViewById(R.id.et_produto_ins);
         et_categoria = findViewById(R.id.et_categoria_ins);

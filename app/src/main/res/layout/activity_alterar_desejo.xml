@@ -9,6 +9,7 @@
 
     <!-- AppBar Roxa -->
     <com.google.android.material.appbar.AppBarLayout
+        android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/purple_primary"
@@ -27,6 +28,7 @@
 
     <!-- Conteúdo -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_alterar_desejo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
