@@ -50,8 +50,6 @@
     <string name="dialog_clear_all_message">Isso irá remover TODOS os grupos, participantes e sorteios.\n\nEsta ação NÃO pode ser desfeita!\n\nDeseja continuar?</string>
     <string name="button_clear_all_yes">Sim, limpar tudo</string>
     <string name="toast_all_data_cleared">Todos os dados foram removidos</string>
-    <string name="label_participant_singular"> Participante</string>
-    <string name="label_participant_plural"> Participantes</string>
 
     <!-- Tela de grupos (layout) -->
     <string name="greeting_welcome">Olá, Bem-vindo!</string>
@@ -80,9 +78,6 @@
     <string name="status_result_sent">✓ Resultado enviado</string>
     <string name="status_ready_share">Pronto p/ compartilhar</string>
     <string name="status_no_restrictions">Sem restrições</string>
-    <string name="label_restrictions_suffix"> restrições</string>
-    <string name="label_wish_count_suffix"> desejo</string>
-    <string name="label_wishes_count_suffix"> desejos</string>
     <string name="dialog_send_sms_title_format">Enviar para %1$s (%2$d/%3$d)</string>
     <string name="dialog_send_sms_message_format">Abrir app de SMS para %1$s?</string>
     <string name="toast_sms_prepared_format">SMS preparados para %1$d participante(s).</string>
@@ -110,6 +105,7 @@
     <string name="error_product_name_required">Informe o nome do produto</string>
     <string name="error_invalid_price">Erro: preço inválido</string>
     <string name="toast_wish_saved">Desejo salvo com sucesso!</string>
+    <string name="toast_wish_updated">Desejo atualizado com sucesso!</string>
     <string name="toast_wish_deleted">Desejo excluído</string>
     <string name="toast_wish_added">Desejo adicionado!</string>
     <string name="toast_wish_removed">Desejo removido</string>

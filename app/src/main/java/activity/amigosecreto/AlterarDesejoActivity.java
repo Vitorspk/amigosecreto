@@ -155,7 +155,7 @@ public class AlterarDesejoActivity extends AppCompatActivity {
 
             dao.alterar(old_desejo, new_desejo);
             dao.close();
-            Toast.makeText(this, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show();
         } catch (NumberFormatException e) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show();
             e.printStackTrace();
