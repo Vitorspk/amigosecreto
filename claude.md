@@ -1,16 +1,28 @@
-# AmigoSecreto - Documentacao do Projeto
+# AmigoSecreto — Documentação para Claude
 
-## Visao Geral
+## Visão Geral
 
-**AmigoSecreto** e um aplicativo Android para organizar e gerenciar amigo secreto. O app permite criar grupos, adicionar participantes, realizar sorteios aleatorios com exclusoes, revelar resultados de forma interativa, compartilhar via WhatsApp/SMS e gerenciar listas de desejos por participante.
+**AmigoSecreto** é um aplicativo Android para organizar sorteios de amigo secreto. Permite criar grupos, adicionar participantes, realizar sorteios com restrições, revelar resultados de forma interativa, compartilhar via WhatsApp/SMS e gerenciar listas de desejos por participante.
 
-**Versao Atual**: 2.0 (versionCode gerado pelo CI: `100 + git rev-list --count HEAD`; producao atual ~157+)
-**Package**: `activity.amigosecreto`
-**Application ID**: `com.amigosecreto.sorteio`
-**SDK Minimo**: 21 (Android 5.0)
-**SDK Alvo/Compile**: 35 (Android 15)
-**Java**: 17
-**Branch Principal**: `master`
+| Campo | Valor |
+|-------|-------|
+| Versão atual | 2.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
+| Application ID | `com.amigosecreto.sorteio` |
+| Package Java | `activity.amigosecreto` |
+| Min SDK | 21 (Android 5.0) |
+| Target / Compile SDK | 35 (Android 15) |
+| Linguagem | Java 17 |
+| Branch principal | `master` |
+
+---
+
+## Regras de Trabalho
+
+- **Nunca commitar diretamente na `master`.** Sempre criar branch → commitar → abrir PR.
+- Tipos de branch: `fix/`, `feat/`, `chore/`, `docs/`
+- Sempre rodar `./gradlew :app:testDebugUnitTest` antes de abrir PR.
+- Sempre rodar `./gradlew :app:lintRelease` e não introduzir novos erros de lint.
+- Cobertura mínima: 80% — novos métodos de lógica de negócio precisam de testes.
 
 ---
 
@@ -18,72 +30,72 @@
 
 ```
 app/src/main/java/activity/amigosecreto/
-├── GruposActivity.java                    # LAUNCHER - Tela principal, gerenciar grupos
-├── ParticipantesActivity.java             # Gerenciar participantes de um grupo
-├── RevelarAmigoActivity.java              # Revelar amigo secreto interativamente
-├── ParticipanteDesejosActivity.java       # Ver desejos de um participante
-├── VisualizarDesejosActivity.java         # Ver todos os desejos de um grupo
-├── ListarDesejos.java                     # Listar desejos gerais
-├── InserirDesejoActivity.java             # Adicionar novo desejo
-├── AlterarDesejoActivity.java             # Editar desejo existente
-├── DetalheDesejoActivity.java             # Detalhes do desejo
+├── GruposActivity.java                    # LAUNCHER — tela principal, gerenciar grupos
+├── ParticipantesActivity.java             # gerenciar participantes de um grupo
+├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
+├── ParticipanteDesejosActivity.java       # ver desejos de um participante
+├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
+├── ListarDesejosActivity.java             # lista de desejos geral
+├── InserirDesejoActivity.java             # adicionar novo desejo
+├── AlterarDesejoActivity.java             # editar desejo existente
+├── DetalheDesejoActivity.java             # detalhes do desejo + busca Buscape
 │
 ├── adapter/
 │   └── ParticipantesRecyclerAdapter.java  # RecyclerView adapter para participantes
 │
 ├── db/
-│   ├── MySQLiteOpenHelper.java            # Schema do banco SQLite (v8)
-│   ├── Grupo.java                         # Model de grupo (Serializable)
+│   ├── MySQLiteOpenHelper.java            # schema SQLite v8 + migrações
+│   ├── Grupo.java                         # model de grupo (Serializable)
 │   ├── GrupoDAO.java                      # CRUD de grupos
-│   ├── Participante.java                  # Model de participante (Serializable)
-│   ├── ParticipanteDAO.java               # CRUD de participantes + exclusoes + sorteio
-│   ├── Desejo.java                        # Model de desejo
+│   ├── Participante.java                  # model de participante (Serializable)
+│   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio
+│   ├── Desejo.java                        # model de desejo (Serializable)
 │   └── DesejoDAO.java                     # CRUD de desejos
 │
 └── util/
-    ├── AnimationUtils.java                # Helpers de animacao
-    ├── AsyncDatabaseHelper.java           # Operacoes async no banco
-    ├── HapticFeedbackUtils.java           # Feedback haptico (respeita acessibilidade)
-    ├── SnackbarHelper.java                # Helpers de Snackbar
-    ├── SorteioEngine.java                 # Motor de sorteio (extraido para testabilidade)
-    └── ValidationUtils.java              # Validacao de inputs
+    ├── AnimationUtils.java                # animações reutilizáveis
+    ├── AsyncDatabaseHelper.java           # operações assíncronas no banco
+    ├── HapticFeedbackUtils.java           # feedback háptico (flags=0, respeita acessibilidade)
+    ├── SnackbarHelper.java                # mensagens padronizadas
+    ├── SorteioEngine.java                 # motor de sorteio (extraído para testabilidade)
+    ├── ValidationUtils.java               # validação centralizada de inputs
+    └── WindowInsetsUtils.java             # IME padding, Locale pt-BR, formatação monetária
 ```
-
-### Outros Diretorios Relevantes
 
 ```
 .github/workflows/
-├── release.yml                    # Deploy automatico para Play Store (tag v*)
-├── ci.yml                         # CI + deploy internal track (push master)
-├── claude-code-review.yml         # Review automatico de PRs
-└── claude.yml                     # Workflow Claude
+├── release.yml          # deploy automático → Play Store production (tag v*)
+├── ci.yml               # CI + deploy internal track (push master)
+├── claude-code-review.yml  # review automático de PRs
+├── pr-checks.yml        # validações de PR
+└── claude.yml           # workflow Claude
 
 distribution/whatsnew/
-├── whatsnew-pt-BR                 # Release notes em portugues
-└── whatsnew-en-US                 # Release notes em ingles
+├── whatsnew-pt-BR       # release notes em português
+└── whatsnew-en-US       # release notes em inglês
 
 documents/
-├── PRIVACY_POLICY.md
-├── PLAY_STORE_LISTING.md
-└── RELEASE_INSTRUCTIONS.md
+├── TECHNICAL_ANALYSIS.md   # análise técnica completa e roadmap
+├── TEST_PLAN.md             # plano de testes (Fases 1–3)
+└── RELEASE_INSTRUCTIONS.md # processo de release detalhado
 ```
 
 ---
 
 ## CI/CD Pipeline
 
-### Deploy para Producao (tag)
+### Deploy para Produção (tag)
 
 ```bash
 git tag v2.x
 git push origin v2.x
 ```
 
-**Workflow**: `.github/workflows/release.yml`
+**Workflow:** `.github/workflows/release.yml`
 - Trigger: push de tag `v*` (formato: `v2.1` ou `v2.1.0`)
 - versionCode: `100 + git rev-list --count HEAD`
-- versionName: extraido da tag (v2.1 -> 2.1)
-- Steps: checkout -> JDK 21 -> lint -> testes -> bundleRelease -> Play Store (production) -> GitHub Release
+- versionName: extraído da tag (`v2.1` → `2.1`)
+- Steps: checkout → JDK 21 → lint → testes → `bundleRelease` → Play Store (production) → GitHub Release
 - Todas as actions pinadas por commit SHA
 
 ### CI / Deploy Interno (master)
@@ -92,45 +104,41 @@ git push origin v2.x
 git push origin master
 ```
 
-**Workflow**: `.github/workflows/ci.yml`
-- Trigger: push no master (excluindo tags v*)
+**Workflow:** `.github/workflows/ci.yml`
+- Trigger: push no master (excluindo tags `v*`)
 - versionName: `2.0-dev.<short-sha>`
-- Track: **internal** (QA antes de producao)
+- Track: **internal** (QA antes de produção)
 - `cancel-in-progress: true`
-
-### GitHub Secrets Necessarios
-
-| Secret | Descricao |
-|--------|-----------|
-| `KEYSTORE_BASE64` | Keystore em base64 |
-| `KEYSTORE_PASSWORD` | Senha do keystore |
-| `KEY_ALIAS` | Alias da chave (ex: amigosecreto) |
-| `KEY_PASSWORD` | Senha da chave |
-| `PLAY_STORE_SERVICE_ACCOUNT_JSON` | JSON da service account do Google Play |
 
 ### Signing Config
 
 O `build.gradle` suporta dois modos:
-1. **Local**: le de `keystore.properties` (arquivo nao commitado)
-2. **CI**: le de environment variables (`CI_KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, etc.)
+1. **Local:** lê de `keystore.properties` (arquivo não commitado)
+2. **CI:** lê de environment variables (`CI_KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, etc.)
+
+### GitHub Secrets Necessários
+
+| Secret | Descrição |
+|--------|-----------|
+| `KEYSTORE_BASE64` | Keystore em base64 |
+| `KEYSTORE_PASSWORD` | Senha do keystore |
+| `KEY_ALIAS` | Alias da chave (ex: `amigosecreto`) |
+| `KEY_PASSWORD` | Senha da chave |
+| `PLAY_STORE_SERVICE_ACCOUNT_JSON` | JSON da service account do Google Play |
 
 ---
 
 ## Banco de Dados
 
-### Nome: `amigosecreto_v8.db` (versao 8)
+### Nome: `amigosecreto_v8.db` (versão 8)
 
-#### Tabela: `grupo`
 ```sql
 CREATE TABLE grupo (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     data TEXT
-)
-```
+);
 
-#### Tabela: `participante`
-```sql
 CREATE TABLE participante (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
@@ -140,20 +148,16 @@ CREATE TABLE participante (
     enviado INTEGER DEFAULT 0,
     grupo_id INTEGER,
     FOREIGN KEY(grupo_id) REFERENCES grupo(id)
-)
-```
+);
 
-#### Tabela: `exclusao`
-```sql
 CREATE TABLE exclusao (
     participante_id INTEGER,
     excluido_id INTEGER,
-    PRIMARY KEY (participante_id, excluido_id)
-)
-```
+    PRIMARY KEY (participante_id, excluido_id),
+    FOREIGN KEY(participante_id) REFERENCES participante(id) ON DELETE CASCADE,
+    FOREIGN KEY(excluido_id) REFERENCES participante(id) ON DELETE CASCADE
+);
 
-#### Tabela: `desejo`
-```sql
 CREATE TABLE desejo (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     produto TEXT NOT NULL,
@@ -163,13 +167,13 @@ CREATE TABLE desejo (
     lojas TEXT,
     participante_id INTEGER,
     FOREIGN KEY(participante_id) REFERENCES participante(id)
-)
+);
 ```
 
-### Migracoes
+### Migrações
 
-- **< v7**: Drop e recria tudo (versoes muito antigas)
-- **v7 -> v8**: Adiciona coluna `participante_id` na tabela `desejo`
+- `< v7` → drop e recria tudo (versões muito antigas)
+- `v7 → v8` → adiciona coluna `participante_id` na tabela `desejo`
 
 ---
 
@@ -177,60 +181,60 @@ CREATE TABLE desejo (
 
 ### 1. Sistema de Grupos
 - Criar/editar/remover grupos de amigo secreto
-- Cada grupo tem seus proprios participantes e sorteio
+- Cada grupo tem seus próprios participantes e sorteio
 - Entrada principal via `GruposActivity` (LAUNCHER)
 
 ### 2. Gerenciamento de Participantes
 - Adicionar manualmente ou importar dos contatos
 - Remover individual ou limpar todos do grupo
-- RecyclerView com animacoes de entrada
-- Minimo de 3 participantes para sorteio
+- RecyclerView com animações de entrada
+- Mínimo de 3 participantes para sorteio
 
-### 3. Exclusoes (Restricoes)
-- Definir quem NAO pode tirar quem
+### 3. Exclusões (Restrições)
+- Definir quem NÃO pode tirar quem
 - Tabela `exclusao` com chave composta
-- Validacao durante o sorteio
+- Validação durante o sorteio
 
 ### 4. Sorteio
-- Algoritmo de embaralhamento com validacao
-- Ninguem tira a si mesmo
-- Respeita exclusoes definidas
+- Algoritmo de embaralhamento com validação
+- Ninguém tira a si mesmo
+- Respeita exclusões definidas
 - Resultados persistidos no banco
-- Transacao atomica via `salvarSorteio()`
+- Transação atômica via `salvarSorteio()`
 
-### 5. Revelacao Interativa
-- Resultado acessivel apenas via botao de compartilhamento individual por participante
-- Organizador nao consegue ver quem tirou quem diretamente na lista
-- RevelarAmigoActivity disponivel para uso futuro (ex: o proprio participante revela no celular)
-- Protecao contra spoilers (layout escondido na RevelarAmigoActivity)
-- Animacoes e feedback haptico
+### 5. Revelação Interativa
+- Resultado acessível apenas via botão de compartilhamento individual por participante
+- Organizador não consegue ver quem tirou quem diretamente na lista
+- `RevelarAmigoActivity` disponível para uso futuro (o próprio participante revela no celular)
+- Proteção contra spoilers (layout escondido)
+- Animações e feedback háptico
 
 ### 6. Compartilhamento
-- WhatsApp com protecao anti-spoiler (30 linhas em branco)
+- WhatsApp com proteção anti-spoiler (30 linhas em branco)
 - SMS via intent nativo
-- Marca como "enviado" apos compartilhar
+- Marca como "enviado" após compartilhar
 - URL encoding seguro via `Uri.Builder`
-- **Limitacao conhecida**: `marcarComoEnviado` e chamado antes do usuario confirmar o share sheet (a API `ACTION_SEND` nao oferece callback de confirmacao). Se o usuario abrir o chooser e cancelar, o participante ficara marcado como "enviado" sem que a mensagem tenha sido de fato enviada.
+- **Limitação conhecida:** `marcarComoEnviado` é chamado antes do usuário confirmar o share sheet (a API `ACTION_SEND` não oferece callback de confirmação). Se o usuário abrir o chooser e cancelar, o participante ficará marcado como "enviado" sem que a mensagem tenha sido de fato enviada.
 
 ### 7. Lista de Desejos
-- CRUD completo: produto, categoria, faixa de preco, lojas
+- CRUD completo: produto, categoria, faixa de preço, lojas
 - Vinculada a participante via `participante_id`
 - Compartilhamento formatado
-- Integracao BuscaPe (HTTPS via Uri.Builder)
+- Integração Buscape (HTTPS via `Uri.Builder`)
 
 ---
 
-## Tecnologias
+## Tecnologias e Dependências
 
 ### Build
-- **Android Gradle Plugin**: 9.0.1
-- **Compile SDK**: 35
-- **Java**: 17
-- **ViewBinding**: Habilitado
-- **MultiDex**: Habilitado
-- **R8/ProGuard**: Minificacao + shrink em release
+- Android Gradle Plugin: 9.0.1
+- Compile SDK: 35
+- Java: 17
+- ViewBinding: habilitado
+- MultiDex: habilitado
+- R8/ProGuard: minificação + shrink em release
 
-### Dependencias
+### Dependências
 ```gradle
 implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
@@ -238,74 +242,74 @@ implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 implementation 'androidx.recyclerview:recyclerview:1.3.2'
 implementation 'androidx.core:core-splashscreen:1.0.1'
 
-// Testes unitarios
 testImplementation 'junit:junit:4.13.2'
 testImplementation 'org.mockito:mockito-core:5.11.0'
 testImplementation 'org.robolectric:robolectric:4.13'
 testImplementation 'androidx.test:core:1.6.1'
 testImplementation 'androidx.test.ext:junit:1.2.1'
 
-// Testes instrumentados
 androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 androidTestImplementation 'androidx.test:runner:1.6.2'
 androidTestImplementation 'androidx.test:rules:1.6.1'
 ```
 
-### Permissoes
-- `INTERNET` - WhatsApp e BuscaPe
-- `ACCESS_NETWORK_STATE` - Verificacao de conectividade
-- `VIBRATE` - Feedback haptico
-- `READ_CONTACTS` - Importar participantes
+### Permissões
+- `INTERNET` — WhatsApp e Buscape
+- `ACCESS_NETWORK_STATE` — verificação de conectividade
+- `VIBRATE` — feedback háptico
+- `READ_CONTACTS` — importar participantes
 
 ---
 
-## Padroes de Arquitetura
+## Padrões de Arquitetura
 
 ### DAO Pattern
 - `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`
-- Queries parametrizadas (prevencao SQL injection)
+- Queries parametrizadas (prevenção SQL injection)
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
-- Transacoes atomicas para sorteio
+- Transações atômicas para sorteio
 
 ### Utility Layer
-- `HapticFeedbackUtils` - flags = 0 (respeita configuracoes de acessibilidade)
-- `ValidationUtils` - Validacao centralizada de inputs
-- `AsyncDatabaseHelper` - Operacoes assincronas
-- `SnackbarHelper` - Mensagens padronizadas
-- `AnimationUtils` - Animacoes reutilizaveis
-- `SorteioEngine` - Motor de sorteio (extraido de ParticipantesActivity para testabilidade)
+- `WindowInsetsUtils` — IME padding + locale `pt-BR` + formatação monetária (centralizado)
+- `HapticFeedbackUtils` — `flags = 0` (respeita configurações de acessibilidade)
+- `ValidationUtils` — validação centralizada de inputs
+- `AsyncDatabaseHelper` — operações assíncronas
+- `SnackbarHelper` — mensagens padronizadas
+- `AnimationUtils` — animações reutilizáveis
+- `SorteioEngine` — motor de sorteio extraído de `ParticipantesActivity` para testabilidade
 
 ### Adapter Pattern
 - `ParticipantesRecyclerAdapter` com `getBindingAdapterPosition()`
-- Interface `OnItemClickListener` para item/remove/share
+- Interface `OnItemClickListener` para item / remove / share
 
 ### Activity-based
 - Cada tela = uma Activity
 - Dados via Intent extras (Serializable)
-- GruposActivity como ponto de entrada
+- `GruposActivity` como ponto de entrada
 
 ---
 
-## Fluxo do Usuario
+## Fluxo do Usuário
 
 ```
-[GruposActivity] - Tela Principal (LAUNCHER)
-    ├── Criar Grupo
-    ├── Selecionar Grupo
-    │   └── [ParticipantesActivity]
-    │       ├── Adicionar Participantes
-    │       │   ├── Manualmente (dialog)
-    │       │   └── Importar dos Contatos
-    │       ├── Configurar Exclusoes
-    │       ├── Realizar Sorteio (>= 3 participantes)
-    │       ├── Editar Participante (nome, telefone, email)
-    │       ├── Compartilhar via WhatsApp/SMS (resultado individual, inclui lista de desejos)
-    │       └── Ver Desejos
-    │           └── [VisualizarDesejosActivity]
-    │               └── [ParticipanteDesejosActivity]
-    └── Menu: Lista de Desejos
-        └── [ListarDesejos]
+[GruposActivity] — Tela Principal (LAUNCHER)
+    ├── Criar / Editar / Remover Grupo
+    └── Selecionar Grupo
+            └── [ParticipantesActivity]
+                    ├── Adicionar Participantes
+                    │   ├── Manualmente (dialog)
+                    │   └── Importar dos Contatos
+                    ├── Configurar Exclusões
+                    ├── Realizar Sorteio (>= 3 participantes)
+                    ├── Editar Participante (nome, telefone, email)
+                    ├── Compartilhar via WhatsApp/SMS
+                    └── Ver Desejos
+                            └── [VisualizarDesejosActivity]
+                                        └── [ParticipanteDesejosActivity]
+
+Menu Global
+    └── [ListarDesejosActivity]
             ├── [InserirDesejoActivity]
             ├── [DetalheDesejoActivity]
             │   └── [AlterarDesejoActivity]
@@ -316,67 +320,70 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 
 ## Esquema de Cores
 
-**Paleta**: Indigo & Emerald
+**Paleta:** Indigo & Emerald
 
-| Nome | Hex | Uso |
-|------|-----|-----|
-| colorPrimary | #4F46E5 | Cor primaria (Indigo) |
-| colorPrimaryDark | #3730A3 | Variante escura |
-| colorAccent | #10B981 | Destaque/sucesso (Emerald) |
-| background | #F9FAFB | Fundo de telas |
-| text_primary | #111827 | Texto principal |
-| text_secondary | #6B7280 | Texto secundario |
-| error | #EF4444 | Acoes destrutivas |
-| success | #10B981 | Feedback positivo |
+| Token | Hex | Uso |
+|-------|-----|-----|
+| `colorPrimary` | `#4F46E5` | Cor principal (Indigo) |
+| `colorPrimaryDark` | `#3730A3` | Variante escura |
+| `colorAccent` | `#10B981` | Destaque/sucesso (Emerald) |
+| `background` | `#F9FAFB` | Fundo das telas |
+| `text_primary` | `#111827` | Texto principal |
+| `text_secondary` | `#6B7280` | Texto secundário |
+| `error` | `#EF4444` | Ações destrutivas |
+| `success` | `#10B981` | Feedback positivo |
 
 ---
 
-## Comandos Uteis
+## Comandos Úteis
 
-### Build Local
+### Build
+
 ```bash
-./gradlew assembleDebug          # Build debug
-./gradlew installDebug           # Instalar no dispositivo
-./gradlew bundleRelease          # Build release AAB (requer keystore.properties)
-./gradlew clean                  # Limpar build
-./gradlew :app:lintRelease       # Rodar lint
-./gradlew :app:testDebugUnitTest # Rodar testes unitarios + Robolectric
+./gradlew assembleDebug          # build debug
+./gradlew installDebug           # instalar no dispositivo
+./gradlew bundleRelease          # build release AAB (requer keystore.properties)
+./gradlew clean                  # limpar build
+./gradlew :app:lintRelease       # lint
+./gradlew :app:testDebugUnitTest # testes unitários + Robolectric
 ```
 
 ### Testes
+
 ```bash
-# Testes unitarios e de DAO (sem emulador — rapido)
+# Unitários e de DAO (sem emulador — rápido)
 ./gradlew :app:testDebugUnitTest
 
-# Testes instrumentados (requer emulador/dispositivo)
+# Instrumentados (requer emulador/dispositivo)
 ./gradlew :app:connectedDebugAndroidTest
 
 # Tudo junto
 ./gradlew :app:test :app:connectedCheck
 ```
 
-### Deploy via CI/CD
+### Deploy
+
 ```bash
-# Producao (Play Store):
+# Produção (Play Store):
 git tag v2.x && git push origin v2.x
 
 # Interno (QA):
 git push origin master
 ```
 
-### Logs
+### Logs ADB
+
 ```bash
 adb logcat | grep -i "amigosecreto"
 adb logcat | grep -E "AndroidRuntime|FATAL"
 ```
 
-### Banco de Dados (Debug)
+### Banco de Dados (debug)
+
 ```bash
 adb shell
-run-as com.amigosecreto.sorteio.debug   # Nota: sufixo .debug em builds debug
-cd databases
-sqlite3 amigosecreto_v8.db
-
+run-as com.amigosecreto.sorteio.debug
+cd databases && sqlite3 amigosecreto_v8.db
 .tables
 .schema participante
 SELECT * FROM grupo;
@@ -385,75 +392,48 @@ SELECT * FROM participante WHERE grupo_id = 1;
 
 ---
 
-## Recursos de UI
-
-### Animacoes (res/anim/)
-- `bounce.xml`, `button_press.xml`, `card_appear.xml`
-- `fade_in.xml`, `fade_out.xml`
-- `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
-
-### Layouts (res/layout/) - 21 arquivos
-- 9 layouts de Activity
-- 5 layouts de Dialog
-- 7 layouts de Item/Helper (incluindo `empty_state.xml`, `loading_state.xml`)
-
-### Drawables
-- Gradientes, botoes, backgrounds, icones SVG, ripples
-- Launcher icons com adaptive icon (API 26+)
-- **Nota**: `buscape.jpg` removido (imagem de marca externa, sem uso direto como asset)
-
----
-
 ## Edge-to-Edge (Android 15)
 
 Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView()`.
 
-- **CoordinatorLayout + AppBarLayout**: trata insets do topo automaticamente (maioria das telas)
-- **RevelarAmigoActivity**: inset listener manual no `root_revelar` (LinearLayout sem toolbar)
-- **ParticipantesActivity**: inset listener no `layout_bottom_buttons` com `padBottom` original capturado fora da lambda
-- **ListarDesejos**: inset listener no FAB ajustando `bottomMargin` via `requestLayout()`
-- `android:statusBarColor` e `android:windowLightStatusBar` removidos do tema (deprecated no Android 15, conflitam com EdgeToEdge)
+| Tela | Estratégia |
+|------|------------|
+| CoordinatorLayout + AppBarLayout | `fitsSystemWindows="true"` — trata insets automaticamente |
+| `RevelarAmigoActivity` | listener manual no `root_revelar` (LinearLayout sem toolbar) |
+| `ParticipantesActivity` | listener no `layout_bottom_buttons` com `padBottom` capturado fora da lambda |
+| `ListarDesejos` (FAB) | ajuste de `bottomMargin` via `requestLayout()` |
+| `InserirDesejoActivity`, `AlterarDesejoActivity` | `WindowInsetsUtils.applyImeBottomPadding()` |
+
+`android:statusBarColor` e `android:windowLightStatusBar` removidos do tema (deprecated no Android 15, conflitam com EdgeToEdge).
 
 ---
 
-## Seguranca
+## Segurança
 
-- **HTTPS only**: `usesCleartextTraffic="false"` no Manifest
-- **Network Security Config**: `xml/network_security_config.xml`
-- **ProGuard/R8**: Ofuscacao em release, remove logs de debug
-- **Queries parametrizadas**: Prevencao de SQL injection em todos os DAOs
-- **FileProvider**: Compartilhamento seguro de arquivos
-- **Keystore nunca commitado**: Signing via `keystore.properties` (local) ou env vars (CI)
-- **Actions pinadas por SHA**: Supply-chain security nos workflows
-- **Backup rules**: `xml/backup_rules.xml` e `xml/data_extraction_rules.xml`
+- **HTTPS only:** `usesCleartextTraffic="false"` no Manifest
+- **Network Security Config:** `xml/network_security_config.xml`
+- **ProGuard/R8:** ofuscação em release, remove logs de debug
+- **Queries parametrizadas:** prevenção de SQL injection em todos os DAOs
+- **FileProvider:** compartilhamento seguro de arquivos
+- **Keystore nunca commitada:** signing via `keystore.properties` (local) ou env vars (CI)
+- **Actions pinadas por SHA:** supply-chain security nos workflows
+- **Backup rules:** `xml/backup_rules.xml` e `xml/data_extraction_rules.xml`
 
 ---
 
-## Proximas Melhorias
+## Recursos de UI
 
-### Arquitetura
-- [ ] Migrar para MVVM com ViewModel e LiveData
-- [ ] Implementar Repository pattern
-- [ ] Adicionar Dependency Injection (Hilt)
-- [ ] Migrar para Kotlin
+### Animações (`res/anim/`)
+`bounce.xml`, `button_press.xml`, `card_appear.xml`, `fade_in.xml`, `fade_out.xml`, `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
 
-### UI/UX
-- [ ] Modo escuro completo (Dark Theme) - suporte parcial em `values-night/`
-- [ ] Suporte a tablets (layout responsivo)
-- [ ] Transicoes entre Activities com shared elements
+### Layouts (`res/layout/`) — 21 arquivos
+- 9 layouts de Activity
+- 5 layouts de Dialog
+- 7 layouts de Item/Helper (`empty_state.xml`, `loading_state.xml`, etc.)
 
-### Funcionalidades
-- [ ] Backup/restore de dados (Google Drive)
-- [ ] Historico de sorteios anteriores
-- [ ] Notificacoes de lembrete
-- [ ] Compartilhar via Telegram/Email
-- [ ] QR Code para compartilhamento
-
-### Qualidade
-- [x] Testes unitarios puros — ValidationUtils, SorteioEngine, models Grupo/Participante
-- [x] Testes de DAO com Robolectric — GrupoDAO, ParticipanteDAO, MySQLiteOpenHelper
-- [ ] Testes de UI com Espresso (Fase 3 do plano — requer emulador)
-- [ ] Logs estruturados (Timber)
+### Drawables
+- Gradientes, botões, backgrounds, ícones SVG, ripples
+- Launcher icons com adaptive icon (API 26+)
 
 ---
 
@@ -463,39 +443,70 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 
 ```
 app/src/test/java/activity/amigosecreto/
-├── FormatarPrecoTest.java               # Formatacao de preco (legado)
+├── FormatarPrecoTest.java               # formatação de preço pt-BR
 ├── db/
 │   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
-│   ├── GrupoModelTest.java              # Model Grupo — Serializable
-│   ├── MySQLiteOpenHelperTest.java      # Schema do banco (Robolectric)
+│   ├── GrupoModelTest.java              # model Grupo — Serializable
+│   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
 │   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
-│   └── ParticipanteModelTest.java       # Model Participante — Serializable
+│   └── ParticipanteModelTest.java       # model Participante — Serializable
 └── util/
-    ├── SorteioEngineTest.java           # Algoritmo de sorteio — propriedades e exclusoes
-    └── ValidationUtilsTest.java         # Validacoes de input e regex
+    ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
+    └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (97 testes, BUILD SUCCESSFUL)
+### Cobertura Atual (91 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
-|--------|---------|-------|
+|--------|---------|------:|
 | Util | `ValidationUtilsTest` | 14 |
 | Util | `SorteioEngineTest` | 11 |
+| Util | `FormatarPrecoTest` | 9 |
 | Model | `GrupoModelTest` | 7 |
 | Model | `ParticipanteModelTest` | 11 |
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `ParticipanteDAOTest` | 20 |
 | DAO | `MySQLiteOpenHelperTest` | 7 |
-| Util | `FormatarPrecoTest` | 9 |
 
-### Plano Completo
-
-Ver `documents/TEST_PLAN.md` para descricao detalhada das Fases 1–3 e progresso.
+Ver `documents/TEST_PLAN.md` para descrição detalhada das Fases 1–3 e progresso.
 
 ---
 
-## Repositorio
+## Próximas Melhorias
 
-**URL**: https://github.com/Vitorspk/amigosecreto
-**Branch Principal**: `master`
-**Package Play Store**: `com.amigosecreto.sorteio`
+Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizado.
+
+### Arquitetura
+- [ ] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas
+- [ ] Migrar para MVVM com ViewModel e LiveData
+- [ ] Implementar Repository pattern
+- [ ] Adicionar Dependency Injection (Hilt)
+- [ ] Migrar para Kotlin
+
+### Qualidade
+- [ ] Mover ~150 strings hardcoded para `strings.xml`
+- [ ] Remover ~40 recursos não utilizados (Lint `UnusedResources`)
+- [ ] Fechar cursor em `DesejoDAO` (Lint `Recycle`)
+- [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
+- [ ] Testes de UI com Espresso
+- [ ] Logs estruturados (Timber)
+
+### UI/UX
+- [ ] Modo escuro completo (suporte parcial em `values-night/`)
+- [ ] Suporte a tablets
+- [ ] Transições entre Activities com shared elements
+
+### Funcionalidades
+- [ ] Backup/restore de dados (Google Drive)
+- [ ] Histórico de sorteios anteriores
+- [ ] Notificações de lembrete
+- [ ] Compartilhar via Telegram/Email
+- [ ] QR Code para compartilhamento
+
+---
+
+## Repositório
+
+**URL:** https://github.com/Vitorspk/amigosecreto
+**Branch Principal:** `master`
+**Package Play Store:** `com.amigosecreto.sorteio`
