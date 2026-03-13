@@ -41,7 +41,7 @@
     <string name="grupo_dialog_excluir_titulo">Excluir Grupo</string>
     <string name="grupo_dialog_excluir_mensagem">Deseja excluir o grupo \'%1$s\' e todos os seus participantes?</string>
     <string name="grupo_btn_excluir">Excluir</string>
-    <string name="grupo_btn_cancelar">Cancelar</string>
+
     <string name="dialog_about_title">Sobre o App</string>
     <string name="dialog_about_message">🎅 Amigo Secreto\n\nOrganize seus amigos secretos de forma fácil e divertida!\n\nRecursos:\n• Múltiplos grupos\n• Restrições personalizadas\n• Lista de desejos\n• Compartilhamento via SMS/WhatsApp\n• Interface moderna\n\nDesenvolvido com ❤️ para tornar suas confraternizações mais especiais!</string>
     <string name="share_app_subject">Amigo Secreto - App</string>
@@ -104,6 +104,7 @@
     <string name="description_edit_wish">Atualize as informações do presente</string>
     <string name="error_product_name_required">Informe o nome do produto</string>
     <string name="error_invalid_price">Erro: preço inválido</string>
+    <string name="error_unknown">Erro desconhecido</string>
     <string name="toast_wish_saved">Desejo salvo com sucesso!</string>
     <string name="toast_wish_updated">Desejo atualizado com sucesso!</string>
     <string name="toast_wish_deleted">Desejo excluído</string>

@@ -149,7 +149,7 @@ public class GruposActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_about_title)
                 .setMessage(R.string.dialog_about_message)
-                .setPositiveButton("OK", null)
+                .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
 
@@ -488,7 +488,7 @@ public class GruposActivity extends AppCompatActivity {
                             );
                         }
                     })
-                    .setNegativeButton(R.string.grupo_btn_cancelar, null)
+                    .setNegativeButton(R.string.button_cancel, null)
                     .show();
         }
     }
