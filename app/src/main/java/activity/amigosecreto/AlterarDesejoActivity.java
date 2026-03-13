@@ -3,6 +3,9 @@ package activity.amigosecreto;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -37,6 +40,21 @@ public class AlterarDesejoActivity extends AppCompatActivity {
         // Configurar MaterialToolbar
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
+
+        // Ajusta padding inferior do ScrollView quando o teclado abre (EdgeToEdge + IME inset).
+        // Garante que o botão Atualizar permaneça visível sem fechar o teclado manualmente.
+        androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scroll_alterar_desejo);
+        if (scrollView != null) {
+            final int padBottomBase = scrollView.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(scrollView, (v, insets) -> {
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                int bottomInset = Math.max(ime.bottom, systemBars.bottom);
+                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(),
+                        padBottomBase + bottomInset);
+                return insets;
+            });
+        }
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
