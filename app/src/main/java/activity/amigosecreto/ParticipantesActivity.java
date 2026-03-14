@@ -62,7 +62,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
     // Índice de retomada após rotação quando ViewModel reconstrói mensagens em background.
-    private int pendingSmsResumeIndex = -1;
+    // volatile garante visibilidade entre a thread do executor do ViewModel e a main thread.
+    private volatile int pendingSmsResumeIndex = -1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 

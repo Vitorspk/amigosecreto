@@ -103,6 +103,19 @@ public class ParticipanteRepository {
         }
     }
 
+    /**
+     * Aplica todas as alterações de exclusão em uma única transação atômica (evita falha parcial
+     * e múltiplos open/close que ocorreriam num loop de chamadas individuais).
+     */
+    public void salvarExclusoes(int participanteId, List<Integer> adicionar, List<Integer> remover) {
+        dao.open();
+        try {
+            dao.salvarExclusoes(participanteId, adicionar, remover);
+        } finally {
+            dao.close();
+        }
+    }
+
     public boolean salvarSorteio(List<Participante> participantes, List<Participante> sorteados) {
         dao.open();
         try {

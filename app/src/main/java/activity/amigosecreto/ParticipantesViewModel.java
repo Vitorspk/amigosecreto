@@ -129,11 +129,10 @@ public class ParticipantesViewModel extends AndroidViewModel {
         });
     }
 
-    /** Salva exclusões de um participante em background (evita ANR). */
+    /** Salva exclusões de um participante em background em transação atômica (evita ANR e falha parcial). */
     public void salvarExclusoes(int participanteId, List<Integer> adicionar, List<Integer> remover) {
         executor.execute(() -> {
-            for (int id : adicionar) participanteRepository.adicionarExclusao(participanteId, id);
-            for (int id : remover) participanteRepository.removerExclusao(participanteId, id);
+            participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
             postMain(this::carregarParticipantes);
         });
     }
@@ -299,7 +298,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
 
     @VisibleForTesting
     void setExecutorService(ExecutorService executor) {
-        this.executor.shutdown();
+        if (!this.executor.isShutdown()) this.executor.shutdown();
         this.executor = executor;
     }
 

@@ -12,6 +12,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.List;
+import java.util.Map;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
@@ -34,6 +35,7 @@ public class DesejoRepositoryTest {
     private DesejoRepository repository;
     private GrupoDAO grupoDao;
     private ParticipanteDAO participanteDao;
+    private int grupoId;
     private int participanteId;
 
     @Before
@@ -45,7 +47,7 @@ public class DesejoRepositoryTest {
         Grupo g = new Grupo();
         g.setNome("Grupo Teste");
         g.setData("01/01/2025");
-        int grupoId = (int) grupoDao.inserir(g);
+        grupoId = (int) grupoDao.inserir(g);
 
         participanteDao = new ParticipanteDAO(ctx);
         participanteDao.open();
@@ -194,6 +196,49 @@ public class DesejoRepositoryTest {
     // =========================================================
     // preços e campos extras
     // =========================================================
+
+    // =========================================================
+    // contarDesejosPorGrupo
+    // =========================================================
+
+    @Test
+    public void contarDesejosPorGrupo_grupoVazio_retornaMapaVazio() {
+        Map<Integer, Integer> mapa = repository.contarDesejosPorGrupo(grupoId);
+        assertNotNull(mapa);
+        assertTrue(mapa.isEmpty());
+    }
+
+    @Test
+    public void contarDesejosPorGrupo_multiplosPorParticipante_somaCorreta() {
+        repository.inserir(criarDesejo("A"));
+        repository.inserir(criarDesejo("B"));
+        repository.inserir(criarDesejo("C"));
+
+        Map<Integer, Integer> mapa = repository.contarDesejosPorGrupo(grupoId);
+        assertEquals(Integer.valueOf(3), mapa.get(participanteId));
+    }
+
+    // =========================================================
+    // listarDesejosPorGrupo
+    // =========================================================
+
+    @Test
+    public void listarDesejosPorGrupo_retornaTodosAgrupadosPorParticipante() {
+        repository.inserir(criarDesejo("X"));
+        repository.inserir(criarDesejo("Y"));
+
+        Map<Integer, List<Desejo>> mapa = repository.listarDesejosPorGrupo(grupoId);
+        assertNotNull(mapa);
+        assertTrue(mapa.containsKey(participanteId));
+        assertEquals(2, mapa.get(participanteId).size());
+    }
+
+    @Test
+    public void listarDesejosPorGrupo_participanteSemDesejos_naoAparece() {
+        // Sem inserir desejos — mapa deve estar vazio (participante sem desejos não aparece).
+        Map<Integer, List<Desejo>> mapa = repository.listarDesejosPorGrupo(grupoId);
+        assertFalse(mapa.containsKey(participanteId));
+    }
 
     @Test
     public void inserir_comPrecoECategoria_persistidosCorretamente() {

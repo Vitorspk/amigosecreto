@@ -88,6 +88,30 @@ public class ParticipanteDAO {
                 new String[]{String.valueOf(idParticipante), String.valueOf(idExcluido)});
     }
 
+    /**
+     * Aplica todas as alterações de exclusão de um participante em uma única transação atômica.
+     * Evita falha parcial e múltiplos open/close que ocorreriam num loop de chamadas individuais.
+     */
+    public void salvarExclusoes(int participanteId, List<Integer> adicionar, List<Integer> remover) {
+        database.beginTransaction();
+        try {
+            for (int id : adicionar) {
+                ContentValues values = new ContentValues();
+                values.put(MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID, participanteId);
+                values.put(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID, id);
+                database.insertWithOnConflict(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, values, SQLiteDatabase.CONFLICT_IGNORE);
+            }
+            for (int id : remover) {
+                database.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO,
+                        MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID + " = ? AND " + MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID + " = ?",
+                        new String[]{String.valueOf(participanteId), String.valueOf(id)});
+            }
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
+        }
+    }
+
     public boolean salvarSorteio(List<Participante> participantes, List<Participante> sorteados) {
         database.beginTransaction();
         try {
