@@ -116,7 +116,7 @@ public class DesejoModelTest {
     public void toString_containsIdAndProduto() {
         Desejo d = new Desejo(7, "Tablet");
         String s = d.toString();
-        assertTrue(s.contains("7"));
+        assertTrue(s.contains("id=7"));
         assertTrue(s.contains("Tablet"));
     }
 
@@ -136,5 +136,22 @@ public class DesejoModelTest {
         Desejo b = buildDesejo();
         b.setLojas(null);
         assertEquals(a, b);
+    }
+
+    @Test
+    public void nullProduto_equalsHandled() {
+        Desejo a = buildDesejo();
+        a.setProduto(null);
+        Desejo b = buildDesejo();
+        b.setProduto(null);
+        assertEquals(a, b);
+    }
+
+    @Test
+    public void hashCode_differentParticipanteId_differentHash() {
+        Desejo a = buildDesejo();
+        Desejo b = buildDesejo();
+        b.setParticipanteId(b.getParticipanteId() + 1);
+        assertNotEquals(a.hashCode(), b.hashCode());
     }
 }
