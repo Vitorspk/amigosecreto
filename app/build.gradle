@@ -122,6 +122,9 @@ android {
     }
 }
 
+// kapt uses the K2 compiler stub generation in Kotlin 2.x. If Hilt annotation processing
+// breaks after a Kotlin upgrade, migrate to KSP (kotlin-symbol-processing) as kapt
+// is in maintenance mode. See: https://kotlinlang.org/docs/ksp-overview.html
 kapt {
     correctErrorTypes = true
 }

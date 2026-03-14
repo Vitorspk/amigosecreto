@@ -6,8 +6,10 @@ import kotlinx.parcelize.Parcelize
 // var fields preserved intentionally: Java DAOs populate instances via setters
 // (e.g. GrupoDAO.cursorToDesejo sets each field after construction).
 // Switching to val would break all DAO call sites.
+// WARNING: Do NOT use Desejo instances as Map/Set keys. data class equals/hashCode
+// are based on field values; mutating fields after insertion corrupts collections.
 @Parcelize
-data class Desejo(
+data class Desejo @JvmOverloads constructor(
     var id: Int = 0,
     var produto: String? = null,
     var categoria: String? = null,
@@ -16,14 +18,6 @@ data class Desejo(
     var precoMaximo: Double = 0.0,
     var participanteId: Int = 0,
 ) : Parcelable, Comparable<Desejo> {
-
-    // Secondary constructor preserving the Java Desejo(int id, String produto) call site
-    constructor(id: Int, produto: String?) : this(
-        id = id, produto = produto,
-        categoria = null, lojas = null,
-        precoMinimo = 0.0, precoMaximo = 0.0,
-        participanteId = 0,
-    )
 
     override fun compareTo(other: Desejo): Int = id.compareTo(other.id)
 

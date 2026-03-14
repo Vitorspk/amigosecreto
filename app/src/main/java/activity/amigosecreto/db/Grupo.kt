@@ -4,6 +4,10 @@ import java.io.Serializable
 
 // var fields preserved intentionally: GrupoDAO populates instances via setters
 // after construction. Switching to val would break all DAO call sites.
+// WARNING: Do NOT use Grupo instances as Map/Set keys. data class equals/hashCode
+// are based on field values; mutating fields after insertion corrupts collections.
+// Serializable (not Parcelable): Grupo is passed between Activities via Intent extras
+// as Serializable — no Parcel dependency needed for a simple data holder.
 data class Grupo(
     var id: Int = 0,
     var nome: String? = null,
