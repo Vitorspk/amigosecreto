@@ -85,8 +85,8 @@
 
         <!-- Arrow Icon -->
         <ImageView
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:src="@drawable/ic_arrow_forward"
             android:layout_marginStart="8dp"
             android:contentDescription="@null"

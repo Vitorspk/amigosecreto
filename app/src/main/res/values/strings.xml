@@ -245,7 +245,6 @@
     <string name="empty_state_title">Nada aqui ainda</string>
     <string name="empty_state_subtitle">Adicione itens para começar</string>
     <string name="empty_state_button">Adicionar</string>
-    <string name="empty_state_no_wishes_simple">Sem desejos</string>
 
     <!-- Loading state -->
     <string name="loading_state_text">Carregando…</string>
