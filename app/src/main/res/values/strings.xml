@@ -220,6 +220,7 @@
     <string name="emoji_trash" translatable="false">🗑️</string>
 
     <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
+    <!-- cd_remove_group: set programmatically via view.setContentDescription() — lint cannot track this -->
     <string name="cd_remove_group" tools:ignore="UnusedResources">Remover Grupo</string>
     <string name="cd_remove_participant">Remover Participante</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
@@ -228,12 +229,12 @@
     <string name="cd_share">Compartilhar</string>
     <string name="cd_edit">Editar</string>
 
-    <!-- Empty state -->
+    <!-- Empty state — used by res/layout/empty_state.xml (reserved layout, inflated programmatically) -->
     <string name="empty_state_title" tools:ignore="UnusedResources">Nada aqui ainda</string>
     <string name="empty_state_subtitle" tools:ignore="UnusedResources">Adicione itens para começar</string>
     <string name="empty_state_button" tools:ignore="UnusedResources">Adicionar</string>
 
-    <!-- Loading state -->
+    <!-- Loading state — used by res/layout/loading_state.xml (reserved layout, inflated programmatically) -->
     <string name="loading_state_text" tools:ignore="UnusedResources">Carregando…</string>
 
     <!-- Dialog opções desejo -->
