@@ -217,7 +217,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                     wishCounts.setValue(finalCounts);
                     isLoading.setValue(false);
                 });
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> {
                     isLoading.setValue(false);
                     errorMessage.setValue(getApplication().getString(R.string.error_load_participants));
@@ -311,7 +311,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 }
                 final MensagensSmsResultado resultado = new MensagensSmsResultado(comTelefone, mensagens);
                 postMain(() -> mensagensSmsResult.setValue(resultado));
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_prepare_messages_failed)));
             }
         });
@@ -338,7 +338,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 String mensagem = MensagemSecretaBuilder.gerar(participante.getNome(), nomeAmigo, desejos);
                 postMain(() -> mensagemCompartilhamentoResult.setValue(
                         new MensagemCompartilhamentoResultado(participante, mensagem)));
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_load_share_data)));
             }
         });

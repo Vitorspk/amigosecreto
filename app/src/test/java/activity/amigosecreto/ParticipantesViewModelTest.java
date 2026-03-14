@@ -27,6 +27,7 @@ import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
+import activity.amigosecreto.repository.DesejoRepository;
 import activity.amigosecreto.repository.ParticipanteRepository;
 
 import static org.junit.Assert.*;
@@ -48,7 +49,7 @@ public class ParticipantesViewModelTest {
     private ParticipantesViewModel viewModel;
     private GrupoDAO grupoDao;
     private ParticipanteDAO participanteDao;
-    private activity.amigosecreto.repository.DesejoRepository desejoRepository;
+    private DesejoRepository desejoRepository;
     private int grupoId;
 
     /** Executor síncrono: executa Runnable diretamente na thread chamadora. */
@@ -82,7 +83,7 @@ public class ParticipantesViewModelTest {
         participanteDao = new ParticipanteDAO(ctx);
         participanteDao.open();
 
-        desejoRepository = new activity.amigosecreto.repository.DesejoRepository(
+        desejoRepository = new DesejoRepository(
                 (android.app.Application) ctx.getApplicationContext());
 
         viewModel = new ParticipantesViewModel((android.app.Application) ctx.getApplicationContext());
@@ -454,7 +455,7 @@ public class ParticipantesViewModelTest {
         // Aguarda o background thread completar (garante que Handler.post já foi chamado)
         realExecutor.shutdown();
         boolean terminated = realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS);
-        assertFalse("Executor não terminou: background task travou", !terminated);
+        assertTrue("Executor não terminou: background task travou", terminated);
 
         // Drena o main looper para que o Handler.post do errorMessage seja processado
         idleMainLooper();
@@ -641,5 +642,77 @@ public class ParticipantesViewModelTest {
                 .filter(p -> p.getId() == primeiro.getId()).findFirst().orElse(null);
         assertNotNull(primeirosApos);
         assertTrue(primeirosApos.isEnviado());
+    }
+
+    // =========================================================
+    // marcarComoEnviado — caminho de erro
+    // =========================================================
+
+    @Test
+    public void marcarComoEnviado_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public void marcarComoEnviado(int id) {
+                throw new android.database.sqlite.SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        viewModel.marcarComoEnviado(1);
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+    }
+
+    // =========================================================
+    // atualizarParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void atualizarParticipante_excecaoNoRepository_emiteFalse() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public boolean atualizar(Participante participante) {
+                throw new android.database.sqlite.SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        Participante p = new Participante();
+        p.setId(1);
+        p.setNome("Teste");
+        viewModel.atualizarParticipante(p);
+        idleMainLooper();
+
+        assertEquals(Boolean.FALSE, viewModel.getAtualizarSucesso().getValue());
     }
 }
