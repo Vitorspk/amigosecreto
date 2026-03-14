@@ -41,6 +41,7 @@ public class DesejoDAOTest {
 
     @After
     public void tearDown() {
+        grupoDao.limparTudo(); // limpa desejo, participante, exclusao e grupo em cascata
         dao.close();
         participanteDao.close();
         grupoDao.close();
@@ -226,6 +227,7 @@ public class DesejoDAOTest {
         assertEquals("Nuuvem", found.getLojas());
         assertEquals(50.0, found.getPrecoMinimo(), 0.001);
         assertEquals(150.0, found.getPrecoMaximo(), 0.001);
+        assertEquals(p.getId(), found.getParticipanteId());
     }
 
     // --- remover ---
