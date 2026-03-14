@@ -258,6 +258,42 @@ public class DesejoDAOTest {
         assertNotNull(dao.buscarPorId(d2.getId()));
     }
 
+    // --- alterar edge cases ---
+
+    @Test
+    public void alterar_nonExistentId_isNoOp() {
+        Participante p = criarParticipante("Paulo");
+        Desejo existing = buildDesejo("Livro", p.getId());
+        dao.inserir(existing);
+
+        Desejo ghost = buildDesejo("Fantasma", p.getId());
+        ghost.setId(99999);
+        Desejo updated = buildDesejo("Fantasma Atualizado", p.getId());
+        updated.setId(99999);
+        dao.alterar(ghost, updated); // no-op — ID não existe
+
+        // registro existente não deve ter sido alterado
+        Desejo found = dao.buscarPorId(existing.getId());
+        assertNotNull(found);
+        assertEquals("Livro", found.getProduto());
+    }
+
+    // --- remover edge cases ---
+
+    @Test
+    public void remover_nonExistentId_isNoOp() {
+        Participante p = criarParticipante("Quesia");
+        Desejo existing = buildDesejo("Caneta", p.getId());
+        dao.inserir(existing);
+
+        Desejo ghost = new Desejo();
+        ghost.setId(99999);
+        dao.remover(ghost); // no-op — ID não existe
+
+        // registro existente não deve ter sido removido
+        assertNotNull(dao.buscarPorId(existing.getId()));
+    }
+
     // --- proximoId ---
 
     @Test

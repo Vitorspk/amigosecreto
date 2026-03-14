@@ -148,6 +148,14 @@ public class DesejoModelTest {
     }
 
     @Test
+    public void toString_nullProduto_doesNotThrow() {
+        Desejo d = new Desejo(8, null);
+        String s = d.toString(); // não deve lançar NullPointerException
+        assertNotNull(s);
+        assertTrue(s.contains("id=8"));
+    }
+
+    @Test
     public void hashCode_differentParticipanteId_differentHash() {
         Desejo a = buildDesejo();
         Desejo b = buildDesejo();
