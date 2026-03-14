@@ -19,6 +19,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.lifecycle.HiltViewModel;
+
 import activity.amigosecreto.R;
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Participante;
@@ -27,6 +31,7 @@ import activity.amigosecreto.repository.ParticipanteRepository;
 import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.SorteioEngine;
 
+@HiltViewModel
 public class ParticipantesViewModel extends AndroidViewModel {
 
     private static final String TAG = "ParticipantesViewModel";
@@ -80,10 +85,13 @@ public class ParticipantesViewModel extends AndroidViewModel {
     private ParticipanteRepository participanteRepository;
     private DesejoRepository desejoRepository;
 
-    public ParticipantesViewModel(@NonNull Application application) {
+    @Inject
+    public ParticipantesViewModel(@NonNull Application application,
+                                  ParticipanteRepository participanteRepository,
+                                  DesejoRepository desejoRepository) {
         super(application);
-        participanteRepository = new ParticipanteRepository(application);
-        desejoRepository = new DesejoRepository(application);
+        this.participanteRepository = participanteRepository;
+        this.desejoRepository = desejoRepository;
     }
 
     /**

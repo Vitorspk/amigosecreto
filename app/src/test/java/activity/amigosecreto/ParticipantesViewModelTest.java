@@ -90,8 +90,9 @@ public class ParticipantesViewModelTest {
         participanteDao.open();
 
         desejoRepository = new DesejoRepository(app);
+        ParticipanteRepository participanteRepository = new ParticipanteRepository(app);
 
-        viewModel = new ParticipantesViewModel(app);
+        viewModel = new ParticipantesViewModel(app, participanteRepository, desejoRepository);
         viewModel.setExecutorService(syncExecutor);
     }
 
