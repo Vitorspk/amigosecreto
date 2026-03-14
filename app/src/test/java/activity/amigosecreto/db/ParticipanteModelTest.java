@@ -82,6 +82,12 @@ public class ParticipanteModelTest {
     }
 
     @Test
+    public void toString_com_nome_null_retorna_string_vazia() {
+        Participante p = new Participante();
+        assertEquals("", p.toString());
+    }
+
+    @Test
     public void serializable_round_trip_preserva_campos_principais() throws Exception {
         Participante original = new Participante();
         original.setId(10);

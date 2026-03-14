@@ -8,6 +8,8 @@ import java.io.Serializable
 // are based on field values; mutating fields after insertion corrupts collections.
 // Serializable (not Parcelable): Grupo is passed between Activities via Intent extras
 // as Serializable — no Parcel dependency needed for a simple data holder.
+// No-arg constructor: Kotlin generates one automatically because all parameters have defaults.
+// @JvmOverloads omitted — only the no-arg constructor is called from Java (GrupoDAO.java:88).
 data class Grupo(
     var id: Int = 0,
     var nome: String? = null,
