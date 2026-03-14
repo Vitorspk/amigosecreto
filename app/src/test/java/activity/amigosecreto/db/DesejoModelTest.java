@@ -64,6 +64,14 @@ public class DesejoModelTest {
     }
 
     @Test
+    public void equals_differentParticipanteId_notEqual() {
+        Desejo a = buildDesejo();
+        Desejo b = buildDesejo();
+        b.setParticipanteId(b.getParticipanteId() + 1);
+        assertNotEquals(a, b);
+    }
+
+    @Test
     public void equals_differentProduto_notEqual() {
         Desejo a = buildDesejo();
         Desejo b = buildDesejo();

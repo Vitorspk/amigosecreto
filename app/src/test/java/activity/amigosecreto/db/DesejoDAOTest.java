@@ -188,13 +188,18 @@ public class DesejoDAOTest {
         Desejo original = buildDesejo("Impressora", p.getId());
         dao.inserir(original);
 
-        Desejo updated = buildDesejo("Impressora 3D", p.getId());
-        updated.setId(original.getId());
-        dao.alterar(original, updated);
+        Desejo paraAtualizar = dao.buscarPorId(original.getId());
+        assertNotNull(paraAtualizar);
+        paraAtualizar.setProduto("Impressora 3D");
+        dao.alterar(original, paraAtualizar);
 
         Desejo found = dao.buscarPorId(original.getId());
         assertNotNull(found);
         assertEquals("Impressora 3D", found.getProduto());
+        assertEquals(original.getCategoria(), found.getCategoria());
+        assertEquals(original.getLojas(), found.getLojas());
+        assertEquals(original.getPrecoMinimo(), found.getPrecoMinimo(), 0.001);
+        assertEquals(original.getPrecoMaximo(), found.getPrecoMaximo(), 0.001);
     }
 
     @Test
