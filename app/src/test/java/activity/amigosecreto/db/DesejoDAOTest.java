@@ -97,6 +97,18 @@ public class DesejoDAOTest {
         assertEquals(3, lista.size());
     }
 
+    @Test
+    public void inserir_failurePath_idRemainsZero() {
+        // produto é NOT NULL no schema; inserir null força database.insert() a retornar -1
+        // DAO não deve lançar exceção e deve manter o ID do objeto em 0
+        Participante p = criarParticipante("Zara");
+        Desejo d = new Desejo();
+        d.setProduto(null); // viola NOT NULL constraint
+        d.setParticipanteId(p.getId());
+        dao.inserir(d);
+        assertEquals("ID deve permanecer 0 quando inserção falha", 0, d.getId());
+    }
+
     // --- listar ---
 
     @Test
@@ -112,6 +124,7 @@ public class DesejoDAOTest {
         dao.inserir(buildDesejo("Livro A", p.getId()));
         dao.inserir(buildDesejo("Livro B", p.getId()));
 
+        // tearDown chama limparTudo(), garantindo isolamento entre testes
         List<Desejo> lista = dao.listar();
         assertEquals(2, lista.size());
     }
@@ -298,6 +311,7 @@ public class DesejoDAOTest {
 
     @Test
     public void proximoId_emptyTable_returnsOne() {
+        // SQLite retorna 0 para getInt(0) quando max(id) é NULL em tabela vazia; DAO soma 1
         assertEquals(1, dao.proximoId());
     }
 
