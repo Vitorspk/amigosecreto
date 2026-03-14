@@ -48,6 +48,7 @@ public class ParticipantesViewModelTest {
     private ParticipantesViewModel viewModel;
     private GrupoDAO grupoDao;
     private ParticipanteDAO participanteDao;
+    private activity.amigosecreto.repository.DesejoRepository desejoRepository;
     private int grupoId;
 
     /** Executor síncrono: executa Runnable diretamente na thread chamadora. */
@@ -80,6 +81,9 @@ public class ParticipantesViewModelTest {
 
         participanteDao = new ParticipanteDAO(ctx);
         participanteDao.open();
+
+        desejoRepository = new activity.amigosecreto.repository.DesejoRepository(
+                (android.app.Application) ctx.getApplicationContext());
 
         viewModel = new ParticipantesViewModel((android.app.Application) ctx.getApplicationContext());
         viewModel.setExecutorService(syncExecutor);
@@ -423,7 +427,7 @@ public class ParticipantesViewModelTest {
                 (android.app.Application) ctx.getApplicationContext()) {
             @Override
             public void inserir(Participante participante, int grupoId) {
-                throw new RuntimeException("falha simulada");
+                throw new android.database.sqlite.SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
@@ -435,13 +439,8 @@ public class ParticipantesViewModelTest {
         // Handler ao main looper, onde getApplication().getString() funciona corretamente.
         ExecutorService realExecutor = Executors.newSingleThreadExecutor();
         viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, viewModel.getDesejoRepository());
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
         viewModel.init(grupoId);
-
-        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-        viewModel.getErrorMessage().observeForever(msg -> {
-            if (msg != null) latch.countDown();
-        });
 
         // Limpa qualquer errorMessage de carregarParticipantes antes de prosseguir
         idleMainLooper();
@@ -452,8 +451,12 @@ public class ParticipantesViewModelTest {
         p.setNome("Erro");
         viewModel.inserirParticipante(p, grupoId);
 
-        // Aguarda o executor real completar e o Handler postar no main looper
-        latch.await(3, java.util.concurrent.TimeUnit.SECONDS);
+        // Aguarda o background thread completar (garante que Handler.post já foi chamado)
+        realExecutor.shutdown();
+        boolean terminated = realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS);
+        assertFalse("Executor não terminou: background task travou", !terminated);
+
+        // Drena o main looper para que o Handler.post do errorMessage seja processado
         idleMainLooper();
 
         assertNotNull(viewModel.getErrorMessage().getValue());

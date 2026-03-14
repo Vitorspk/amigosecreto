@@ -1,6 +1,7 @@
 package activity.amigosecreto;
 
 import android.app.Application;
+import android.database.sqlite.SQLiteException;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -111,7 +112,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 participanteRepository.marcarComoEnviado(participanteId);
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -123,7 +124,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.remover(participanteId);
                 postMain(this::carregarParticipantes);
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -156,7 +157,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.inserir(participante, grupoId);
                 postMain(this::carregarParticipantes);
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -168,7 +169,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.deletarTodosDoGrupo(grupoId);
                 postMain(this::carregarParticipantes);
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -180,7 +181,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
                 postMain(this::carregarParticipantes);
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -216,7 +217,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                     wishCounts.setValue(finalCounts);
                     isLoading.setValue(false);
                 });
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> {
                     isLoading.setValue(false);
                     errorMessage.setValue(getApplication().getString(R.string.error_load_participants));
@@ -310,7 +311,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 }
                 final MensagensSmsResultado resultado = new MensagensSmsResultado(comTelefone, mensagens);
                 postMain(() -> mensagensSmsResult.setValue(resultado));
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_prepare_messages_failed)));
             }
         });
@@ -337,7 +338,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 String mensagem = MensagemSecretaBuilder.gerar(participante.getNome(), nomeAmigo, desejos);
                 postMain(() -> mensagemCompartilhamentoResult.setValue(
                         new MensagemCompartilhamentoResultado(participante, mensagem)));
-            } catch (Exception e) {
+            } catch (SQLiteException e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_load_share_data)));
             }
         });
@@ -358,9 +359,6 @@ public class ParticipantesViewModel extends AndroidViewModel {
         this.participanteRepository = participanteRepository;
         this.desejoRepository = desejoRepository;
     }
-
-    @VisibleForTesting
-    DesejoRepository getDesejoRepository() { return desejoRepository; }
 
     @Override
     protected void onCleared() {
