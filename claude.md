@@ -511,13 +511,13 @@ app/src/test/java/activity/amigosecreto/
 | Model | `DesejoModelTest` | 18 |
 | Model | `ParticipanteModelTest` | 11 |
 | Model | `GrupoModelTest` | 7 |
+| Model | `DesejoParcelableTest` | 6 |
+| Model | `ParticipanteKotlinMigrationTest` | 12 |
 | DAO | `ParticipanteDAOTest` | 21 |
 | DAO | `DesejoDAOTest` | 20 |
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `MySQLiteOpenHelperTest` | 8 |
 | DAO | `DesejoDAOBatchQueryTest` | 11 |
-| Model | `DesejoParcelableTest` | 6 |
-| Model | `ParticipanteKotlinMigrationTest` | 12 |
 | Repository | `ParticipanteRepositoryTest` | 17 |
 | Repository | `DesejoRepositoryTest` | 16 |
 | Repository | `ParticipanteRepositorySalvarExclusoesTest` | 7 |
