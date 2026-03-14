@@ -85,6 +85,7 @@ public class ParticipanteRepository {
         }
     }
 
+    @VisibleForTesting
     public void adicionarExclusao(int idParticipante, int idExcluido) {
         dao.open();
         try {
@@ -94,6 +95,7 @@ public class ParticipanteRepository {
         }
     }
 
+    @VisibleForTesting
     public void removerExclusao(int idParticipante, int idExcluido) {
         dao.open();
         try {

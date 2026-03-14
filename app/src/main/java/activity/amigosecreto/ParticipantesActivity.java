@@ -39,12 +39,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
-import activity.amigosecreto.repository.ParticipanteRepository;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -62,8 +58,15 @@ public class ParticipantesActivity extends AppCompatActivity {
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
     // Índice de retomada após rotação quando ViewModel reconstrói mensagens em background.
-    // volatile garante visibilidade entre a thread do executor do ViewModel e a main thread.
-    private volatile int pendingSmsResumeIndex = -1;
+    private int pendingSmsResumeIndex = -1;
+
+    // Estado do dialog de edição em andamento; usado pelo observer de atualizarSucesso.
+    private AlertDialog pendingEditDialog = null;
+    private View pendingEditButton = null;
+    private Participante pendingEditParticipante = null;
+    private String pendingEditNomeOriginal = null;
+    private String pendingEditTelefoneOriginal = null;
+    private String pendingEditEmailOriginal = null;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -74,7 +77,6 @@ public class ParticipantesActivity extends AppCompatActivity {
     private MaterialButton fabAdd;
     private View btnSortear;
     private View btnLimpar;
-    private ParticipanteRepository participanteRepository;
     private List<Participante> listaParticipantes = new ArrayList<>();
     private ParticipantesAdapter adapter;
     private Grupo grupoAtual;
@@ -133,7 +135,6 @@ public class ParticipantesActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        participanteRepository = new ParticipanteRepository(this);
         lvParticipantes = findViewById(R.id.lv_participantes);
         tvCount = findViewById(R.id.tv_count);
         fabAdd = findViewById(R.id.fab_add_participante);
@@ -228,6 +229,26 @@ public class ParticipantesActivity extends AppCompatActivity {
             int startIndex = pendingSmsResumeIndex >= 0 ? pendingSmsResumeIndex : 0;
             pendingSmsResumeIndex = -1;
             enviarSmsSequencial(resultado.participantesComTelefone, resultado.mensagens, startIndex);
+        });
+
+        // Resultado de atualizar participante — fechar dialog se sucesso, restaurar estado se falha.
+        viewModel.getAtualizarSucesso().observe(this, sucesso -> {
+            if (sucesso == null) return;
+            viewModel.clearAtualizarSucesso();
+            if (pendingEditButton != null) pendingEditButton.setEnabled(true);
+            if (sucesso) {
+                if (pendingEditDialog != null) pendingEditDialog.dismiss();
+            } else {
+                if (pendingEditParticipante != null) {
+                    pendingEditParticipante.setNome(pendingEditNomeOriginal);
+                    pendingEditParticipante.setTelefone(pendingEditTelefoneOriginal);
+                    pendingEditParticipante.setEmail(pendingEditEmailOriginal);
+                }
+                Toast.makeText(this, R.string.error_save_failed, Toast.LENGTH_SHORT).show();
+            }
+            pendingEditDialog = null;
+            pendingEditButton = null;
+            pendingEditParticipante = null;
         });
 
         // Mensagem de compartilhamento pronta — abrir share sheet.
@@ -330,57 +351,20 @@ public class ParticipantesActivity extends AppCompatActivity {
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
-                // Captura valores editados e originais antes de entrar na thread
-                final String nomeFinal = nome;
-                final String telefoneFinal = telefone;
-                final String emailFinal = email;
-                final String nomeOriginal = participante.getNome();
-                final String telefoneOriginal = participante.getTelefone();
-                final String emailOriginal = participante.getEmail();
+                // Salva estado original e referências para o observer de atualizarSucesso.
+                pendingEditNomeOriginal = participante.getNome();
+                pendingEditTelefoneOriginal = participante.getTelefone();
+                pendingEditEmailOriginal = participante.getEmail();
+                pendingEditParticipante = participante;
+                pendingEditDialog = dialog;
+                pendingEditButton = v;
 
-                // Desabilita o botao para evitar duplo toque enquanto o banco salva
+                // Aplica valores e delega ao ViewModel (background, evita ANR).
+                participante.setNome(nome);
+                participante.setTelefone(telefone);
+                participante.setEmail(email);
                 v.setEnabled(false);
-
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                try {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            boolean ok = false;
-                            // Aplica valores no objeto antes de tentar salvar no banco
-                            participante.setNome(nomeFinal);
-                            participante.setTelefone(telefoneFinal);
-                            participante.setEmail(emailFinal);
-                            // DAO local evita conflito com o dao compartilhado da Activity.
-                            try {
-                                ok = participanteRepository.atualizar(participante);
-                            } catch (Exception e) {
-                                ok = false;
-                            }
-                            final boolean sucesso = ok;
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    v.setEnabled(true);
-                                    if (isFinishing() || isDestroyed()) return;
-                                    if (sucesso) {
-                                        atualizarLista();
-                                        dialog.dismiss();
-                                    } else {
-                                        // Restaura estado original para manter objeto em sincronia com o banco
-                                        participante.setNome(nomeOriginal);
-                                        participante.setTelefone(telefoneOriginal);
-                                        participante.setEmail(emailOriginal);
-                                        Toast.makeText(ParticipantesActivity.this,
-                                                R.string.error_save_failed, Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                } finally {
-                    executor.shutdown();
-                }
+                viewModel.atualizarParticipante(participante);
             }
         });
     }

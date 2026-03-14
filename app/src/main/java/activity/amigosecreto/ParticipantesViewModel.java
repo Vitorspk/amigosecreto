@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import activity.amigosecreto.R;
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.repository.DesejoRepository;
@@ -113,6 +114,31 @@ public class ParticipantesViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Atualiza participante em background (evita ANR).
+     * Posta true em atualizarSucesso se a operação foi bem-sucedida, false caso contrário.
+     * A Activity observa para fechar o dialog ou restaurar o estado original.
+     */
+    private final MutableLiveData<Boolean> atualizarSucesso = new MutableLiveData<>(null);
+    public LiveData<Boolean> getAtualizarSucesso() { return atualizarSucesso; }
+    public void clearAtualizarSucesso() { atualizarSucesso.setValue(null); }
+
+    public void atualizarParticipante(Participante participante) {
+        executor.execute(() -> {
+            boolean ok;
+            try {
+                ok = participanteRepository.atualizar(participante);
+            } catch (Exception e) {
+                ok = false;
+            }
+            final boolean sucesso = ok;
+            postMain(() -> {
+                atualizarSucesso.setValue(sucesso);
+                if (sucesso) carregarParticipantes();
+            });
+        });
+    }
+
     /** Insere participante em background (evita ANR). */
     public void inserirParticipante(Participante participante, int grupoId) {
         executor.execute(() -> {
@@ -170,7 +196,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             } catch (Exception e) {
                 postMain(() -> {
                     isLoading.setValue(false);
-                    errorMessage.setValue("Erro ao carregar participantes.");
+                    errorMessage.setValue(getApplication().getString(R.string.error_load_participants));
                 });
             }
         });
@@ -220,7 +246,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                     carregarParticipantes();
                     sorteioResult.setValue(new SorteioResultado(SorteioResultado.Status.SUCCESS));
                 } else {
-                    errorMessage.setValue("Erro ao salvar sorteio. Tente novamente.");
+                    errorMessage.setValue(getApplication().getString(R.string.error_save_draw));
                 }
             });
         });
@@ -235,9 +261,11 @@ public class ParticipantesViewModel extends AndroidViewModel {
     public void prepararMensagensSms(final List<Participante> snapshot) {
         executor.execute(() -> {
             try {
-                // Mapa id → nome construído a partir do snapshot (sem acesso ao banco).
+                // Nomes frescos do banco — evita dados desatualizados se alguém editou um
+                // participante em outra tela após o snapshot ter sido capturado.
+                List<Participante> participantesAtuais = participanteRepository.listarPorGrupo(grupoId);
                 Map<Integer, String> nomeMap = new HashMap<>();
-                for (Participante p : snapshot) nomeMap.put(p.getId(), p.getNome());
+                for (Participante p : participantesAtuais) nomeMap.put(p.getId(), p.getNome());
 
                 // Uma única query traz todos os desejos do grupo de uma vez.
                 Map<Integer, List<Desejo>> desejosMap =
@@ -260,7 +288,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 final MensagensSmsResultado resultado = new MensagensSmsResultado(comTelefone, mensagens);
                 postMain(() -> mensagensSmsResult.setValue(resultado));
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue("Erro ao preparar mensagens. Tente novamente."));
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_prepare_messages_failed)));
             }
         });
     }
@@ -287,7 +315,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 postMain(() -> mensagemCompartilhamentoResult.setValue(
                         new MensagemCompartilhamentoResultado(participante, mensagem)));
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue("Erro ao carregar dados. Tente novamente."));
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_load_share_data)));
             }
         });
     }

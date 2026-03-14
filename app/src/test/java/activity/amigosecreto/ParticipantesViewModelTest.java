@@ -27,6 +27,7 @@ import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
+import activity.amigosecreto.repository.ParticipanteRepository;
 
 import static org.junit.Assert.*;
 
@@ -320,5 +321,180 @@ public class ParticipantesViewModelTest {
         // errorMessage começa null — clearErrorMessage deve mantê-lo null (não lançar exceção)
         viewModel.clearErrorMessage();
         assertNull(viewModel.getErrorMessage().getValue());
+    }
+
+    // =========================================================
+    // atualizarParticipante
+    // =========================================================
+
+    @Test
+    public void atualizarParticipante_sucesso_emiteTrue() {
+        inserirParticipante("Vera");
+        List<Participante> lista = participanteDao.listarPorGrupo(grupoId);
+        Participante p = lista.get(0);
+        p.setNome("Vera Atualizada");
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.atualizarParticipante(p);
+        idleMainLooper();
+
+        assertEquals(Boolean.TRUE, viewModel.getAtualizarSucesso().getValue());
+    }
+
+    @Test
+    public void atualizarParticipante_idInvalido_emiteFalse() {
+        Participante p = new Participante();
+        p.setId(0);
+        p.setNome("Fantasma");
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.atualizarParticipante(p);
+        idleMainLooper();
+
+        assertEquals(Boolean.FALSE, viewModel.getAtualizarSucesso().getValue());
+    }
+
+    // =========================================================
+    // marcarComoEnviado
+    // =========================================================
+
+    @Test
+    public void marcarComoEnviado_setaFlagNoParticipante() {
+        inserirParticipante("Xavier");
+        List<Participante> antes = participanteDao.listarPorGrupo(grupoId);
+        int id = antes.get(0).getId();
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.marcarComoEnviado(id);
+        idleMainLooper();
+
+        List<Participante> apos = participanteDao.listarPorGrupo(grupoId);
+        assertTrue(apos.get(0).isEnviado());
+    }
+
+    // =========================================================
+    // salvarExclusoes
+    // =========================================================
+
+    @Test
+    public void salvarExclusoes_adicionaERemoveCorretamente() {
+        inserirParticipante("Yara");
+        inserirParticipante("Zico");
+        List<Participante> lista = participanteDao.listarPorGrupo(grupoId);
+        int id1 = lista.get(0).getId();
+        int id2 = lista.get(1).getId();
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        // Adicionar exclusão
+        viewModel.salvarExclusoes(id1, java.util.Arrays.asList(id2), java.util.Collections.emptyList());
+        idleMainLooper();
+
+        List<Participante> aposAdicionar = participanteDao.listarPorGrupo(grupoId);
+        Participante p1 = aposAdicionar.stream().filter(p -> p.getId() == id1).findFirst().orElse(null);
+        assertNotNull(p1);
+        assertTrue(p1.getIdsExcluidos().contains(id2));
+
+        // Remover exclusão
+        viewModel.salvarExclusoes(id1, java.util.Collections.emptyList(), java.util.Arrays.asList(id2));
+        idleMainLooper();
+
+        List<Participante> aposRemover = participanteDao.listarPorGrupo(grupoId);
+        Participante p1apos = aposRemover.stream().filter(p -> p.getId() == id1).findFirst().orElse(null);
+        assertNotNull(p1apos);
+        assertFalse(p1apos.getIdsExcluidos().contains(id2));
+    }
+
+    // =========================================================
+    // prepararMensagensSms
+    // =========================================================
+
+    @Test
+    public void prepararMensagensSms_participanteComTelefone_emiteResultadoComMensagem() {
+        inserirParticipante("Alice");
+        inserirParticipante("Bob");
+        inserirParticipante("Carol");
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+
+        viewModel.prepararMensagensSms(lista);
+        idleMainLooper();
+
+        ParticipantesViewModel.MensagensSmsResultado resultado =
+                viewModel.getMensagensSmsResult().getValue();
+        assertNotNull(resultado);
+        // Todos têm telefone cadastrado
+        assertEquals(lista.size(), resultado.participantesComTelefone.size());
+        for (Participante p : resultado.participantesComTelefone) {
+            assertNotNull(resultado.mensagens.get(p.getId()));
+            assertFalse(resultado.mensagens.get(p.getId()).isEmpty());
+        }
+    }
+
+    @Test
+    public void prepararMensagensSms_nenhumComTelefone_emiteListaVazia() {
+        // Participante sem telefone
+        Participante p = new Participante();
+        p.setNome("SemFone");
+        participanteDao.inserir(p, grupoId);
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+
+        viewModel.prepararMensagensSms(lista);
+        idleMainLooper();
+
+        ParticipantesViewModel.MensagensSmsResultado resultado =
+                viewModel.getMensagensSmsResult().getValue();
+        assertNotNull(resultado);
+        assertTrue(resultado.participantesComTelefone.isEmpty());
+    }
+
+    // =========================================================
+    // prepararMensagemCompartilhamento
+    // =========================================================
+
+    @Test
+    public void prepararMensagemCompartilhamento_emiteMensagemEMarcaEnviado() {
+        inserirParticipante("David");
+        inserirParticipante("Elena");
+        inserirParticipante("Fred");
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+        Participante primeiro = lista.get(0);
+
+        viewModel.prepararMensagemCompartilhamento(primeiro);
+        idleMainLooper();
+
+        ParticipantesViewModel.MensagemCompartilhamentoResultado resultado =
+                viewModel.getMensagemCompartilhamentoResult().getValue();
+        assertNotNull(resultado);
+        assertEquals(primeiro.getId(), resultado.participante.getId());
+        assertNotNull(resultado.mensagem);
+        assertFalse(resultado.mensagem.isEmpty());
+
+        // Deve ter marcado como enviado
+        List<Participante> apos = participanteDao.listarPorGrupo(grupoId);
+        Participante primeirosApos = apos.stream()
+                .filter(p -> p.getId() == primeiro.getId()).findFirst().orElse(null);
+        assertNotNull(primeirosApos);
+        assertTrue(primeirosApos.isEnviado());
     }
 }

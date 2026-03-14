@@ -106,6 +106,9 @@
     <string name="toast_wish_deleted">Desejo excluído</string>
     <string name="toast_wish_added">Desejo adicionado!</string>
     <string name="toast_wish_removed">Desejo removido</string>
+    <string name="error_load_participants">Erro ao carregar participantes.</string>
+    <string name="error_load_share_data">Erro ao carregar dados. Tente novamente.</string>
+    <string name="error_save_draw">Erro ao salvar sorteio. Tente novamente.</string>
     <string name="error_load_wish">Erro ao carregar desejo</string>
     <string name="error_save_wish_format">Erro ao salvar desejo: %1$s</string>
     <string name="error_update_wish_format">Erro ao atualizar desejo: %1$s</string>
