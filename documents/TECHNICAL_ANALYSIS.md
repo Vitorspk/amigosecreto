@@ -93,7 +93,7 @@ PR #22 removeu 5 arquivos genuinamente orphans (`bounce.xml`, `button_press.xml`
 **Adicionados no PR #19–#20:**
 - `ParticipanteRepository` / `DesejoRepository` desacoplando ViewModel dos DAOs
 - `ParticipanteRepositoryTest` — 17 casos, `DesejoRepositoryTest` — 16 casos
-- Cobertura de caminhos de erro no ViewModel (total: 224 testes)
+- Cobertura de caminhos de erro no ViewModel (subtotal PR #18–#20: 224 testes)
 
 **Adicionados no PR #31 — Testes de contrato pré-migração Kotlin:**
 - `DesejoParcelableTest` — 6 casos: serialização/desserialização via Parcel, campos nulos, round-trip
