@@ -112,7 +112,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_gift"
                 app:tint="@color/colorAccent"
-                android:contentDescription="@string/button_my_wishes"/>
+                android:contentDescription="@string/cd_my_wishes"/>
 
             <ImageButton
                 android:id="@+id/btn_regras"
@@ -124,7 +124,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_rules"
                 app:tint="@color/colorPrimary"
-                android:contentDescription="@string/button_restrictions"/>
+                android:contentDescription="@string/cd_restrictions"/>
 
             <ImageButton
                 android:id="@+id/btn_share"
@@ -136,7 +136,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_share"
                 app:tint="@color/colorSecondary"
-                android:contentDescription="@string/button_share"
+                android:contentDescription="@string/cd_share"
                 android:visibility="gone"/>
 
             <ImageButton
@@ -149,7 +149,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
                 app:tint="@color/colorPrimary"
-                android:contentDescription="@string/button_edit"/>
+                android:contentDescription="@string/cd_edit"/>
 
             <ImageButton
                 android:id="@+id/btn_remover"

@@ -231,18 +231,15 @@
     <string name="emoji_edit" translatable="false">✏️</string>
     <string name="emoji_trash" translatable="false">🗑️</string>
 
-    <!-- Content descriptions -->
+    <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
     <string name="cd_remove_group">Remover Grupo</string>
     <string name="cd_remove_participant">Remover Participante</string>
     <string name="cd_group_icon">Ícone do grupo</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
-
-    <!-- Botões de ação de participante -->
-    <string name="button_my_wishes">Meus Desejos</string>
-    <string name="button_restrictions">Restrições</string>
-    <string name="button_share">Compartilhar</string>
-    <string name="button_edit">Editar</string>
-    <string name="button_remove">Remover</string>
+    <string name="cd_my_wishes">Meus Desejos</string>
+    <string name="cd_restrictions">Restrições</string>
+    <string name="cd_share">Compartilhar</string>
+    <string name="cd_edit">Editar</string>
 
     <!-- Empty state -->
     <string name="empty_state_title">Nada aqui ainda</string>

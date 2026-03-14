@@ -88,7 +88,7 @@
                     android:src="@drawable/ic_gift"
                     android:alpha="0.3"
                     app:tint="@color/text_secondary"
-                    android:contentDescription="@string/empty_state_no_wishes_simple" />
+                    android:importantForAccessibility="no" />
 
                 <TextView
                     android:layout_width="wrap_content"
