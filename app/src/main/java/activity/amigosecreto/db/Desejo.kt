@@ -8,6 +8,8 @@ import kotlinx.parcelize.Parcelize
 // Switching to val would break all DAO call sites.
 // WARNING: Do NOT use Desejo instances as Map/Set keys. data class equals/hashCode
 // are based on field values; mutating fields after insertion corrupts collections.
+// TODO(fase10-dao): switch to val fields once DesejoDAO is migrated to Kotlin/Room —
+// at that point, constructor injection replaces setter-based population.
 @Parcelize
 data class Desejo @JvmOverloads constructor(
     var id: Int = 0,
