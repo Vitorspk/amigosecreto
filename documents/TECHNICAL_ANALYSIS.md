@@ -8,9 +8,9 @@
 
 ## Veredicto Geral
 
-O app **está se aproximando do nível profissional** com progresso significativo desde a análise inicial.
+O app **atingiu nível profissional** com progresso consistente desde a análise inicial.
 
-É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern implementados. As Fases 1, 2, 3, 4 e 5 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade.
+É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt.
 
 O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. PR #28 introduziu Dependency Injection com Hilt. O próximo passo é a migração para Kotlin.
 
@@ -22,7 +22,7 @@ O app está em nível profissional. O `lintDebug` está zerado — PR #22 elimin
 |------|-----------|
 | CI/CD (GitHub Actions → Play Store) | Excelente |
 | Segurança (HTTPS, SQL injection, keystore) | Sólido |
-| Testes unitários e de DAO (Robolectric) | **172 casos — PR #18** |
+| Testes unitários e de DAO (Robolectric) | **224 casos — PR #18–#20** |
 | `MensagemSecretaBuilder` — lógica de mensagem extraída | **PR #17** |
 | `ParticipantesViewModel` — sorteio e carregamento em background | **PR #18** |
 | Feedback visual e haptico | Bom |
@@ -38,17 +38,15 @@ O app está em nível profissional. O `lintDebug` está zerado — PR #22 elimin
 
 ## O que Precisa Melhorar
 
-### 1. Arquitetura — Crítico
+### 1. Arquitetura — ✅ CONCLUÍDO (PR #17–#20 + PR #28/#29)
 
-**Problema:** Activity-based com lógica de negócio misturada na camada de UI.
+**Resolvido:** MVVM com ViewModel + LiveData + Repository pattern + Dependency Injection implementados.
 
-- `ParticipantesActivity` tem mais de 500 linhas combinando: UI, sorteio, SMS, formatação de mensagem, navegação.
-- Sem ViewModel → rotação de tela reinicia operações pesadas.
-- Sem Repository → Activities acessam DAO diretamente.
-
-**Impacto:** Dificulta testes, manutenção e evolução do código.
-
-**Solução:** Migrar para MVVM + ViewModel + LiveData/Flow. Ver Roadmap §1.
+- `MensagemSecretaBuilder` extraído como classe pura testável (PR #17)
+- `ParticipantesViewModel` com LiveData — sorteio e carregamento em background (PR #18)
+- `ParticipanteRepository` / `DesejoRepository` desacoplando ViewModel dos DAOs (PR #19)
+- Hilt DI — `@HiltViewModel`, `@AndroidEntryPoint`, `DatabaseModule` como `@Singleton` (PR #28/#29)
+- Rotação de tela não reinicia mais operações; Activity apenas observa LiveData
 
 ---
 
