@@ -481,22 +481,26 @@ app/src/test/java/activity/amigosecreto/
 ├── FormatarPrecoTest.java               # formatação de preço pt-BR
 ├── ParticipantesViewModelTest.java      # ViewModel — Robolectric + InstantTaskExecutorRule
 ├── db/
+│   ├── DesejoDAOBatchQueryTest.java     # contarDesejosPorGrupo / listarDesejosPorGrupo (Robolectric)
 │   ├── DesejoModelTest.java             # model Desejo — Serializable
+│   ├── DesejoParcelableTest.java        # Parcelable round-trip — contrato pré-migração @Parcelize
 │   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
 │   ├── GrupoModelTest.java              # model Grupo — Serializable
 │   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
 │   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
+│   ├── ParticipanteKotlinMigrationTest.java  # contratos equals/hashCode/mutabilidade pré-migração
 │   └── ParticipanteModelTest.java       # model Participante — Serializable
 ├── repository/
 │   ├── DesejoRepositoryTest.java        # DesejoRepository — integração real SQLite
-│   └── ParticipanteRepositoryTest.java  # ParticipanteRepository — integração real SQLite
+│   ├── ParticipanteRepositoryTest.java  # ParticipanteRepository — integração real SQLite
+│   └── ParticipanteRepositorySalvarExclusoesTest.java  # salvarExclusoes() transação atômica
 └── util/
     ├── MensagemSecretaBuilderTest.java  # formatação de mensagem de compartilhamento
     ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (224 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (260 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -511,8 +515,12 @@ app/src/test/java/activity/amigosecreto/
 | DAO | `DesejoDAOTest` | 20 |
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `MySQLiteOpenHelperTest` | 8 |
+| DAO | `DesejoDAOBatchQueryTest` | 11 |
+| DAO | `DesejoParcelableTest` | 6 |
+| Model | `ParticipanteKotlinMigrationTest` | 12 |
 | Repository | `ParticipanteRepositoryTest` | 17 |
 | Repository | `DesejoRepositoryTest` | 16 |
+| Repository | `ParticipanteRepositorySalvarExclusoesTest` | 7 |
 | ViewModel | `ParticipantesViewModelTest` | 31 |
 
 **Configuração Robolectric:** `testOptions.unitTests.includeAndroidResources = true` habilitado em `build.gradle` para permitir acesso a recursos compilados (`getString()`) nos testes unitários.
