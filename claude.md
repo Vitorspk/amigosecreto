@@ -516,7 +516,7 @@ app/src/test/java/activity/amigosecreto/
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `MySQLiteOpenHelperTest` | 8 |
 | DAO | `DesejoDAOBatchQueryTest` | 11 |
-| DAO | `DesejoParcelableTest` | 6 |
+| Model | `DesejoParcelableTest` | 6 |
 | Model | `ParticipanteKotlinMigrationTest` | 12 |
 | Repository | `ParticipanteRepositoryTest` | 17 |
 | Repository | `DesejoRepositoryTest` | 16 |
