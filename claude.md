@@ -281,7 +281,8 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - `ParticipanteRepository` / `DesejoRepository` desacoplam ViewModel dos DAOs
 - Cada método abre e fecha o DAO via try/finally (sem estado aberto entre chamadas)
 - Métodos síncronos — chamados sempre de thread de background
-- `@VisibleForTesting` para injeção de dependências nos testes
+- `@VisibleForTesting(otherwise = PACKAGE_PRIVATE)` em métodos package-private expostos só para testes
+- Erros de banco tratados via `handleDbError()` no ViewModel: loga com `Log.e` + posta `errorMessage` via `Handler.post` — nunca relança de dentro do executor (relançar de `Runnable` vai para `UncaughtExceptionHandler` sem feedback ao usuário)
 
 ### DAO Pattern
 - `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`
@@ -465,24 +466,9 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 ```
 app/src/test/java/activity/amigosecreto/
 ├── FormatarPrecoTest.java               # formatação de preço pt-BR
-├── db/
-│   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
-│   ├── GrupoModelTest.java              # model Grupo — Serializable
-│   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
-│   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
-│   └── ParticipanteModelTest.java       # model Participante — Serializable
-└── util/
-    ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
-    └── ValidationUtilsTest.java         # validações de input e regex
-```
-
-### Estrutura completa
-
-```
-app/src/test/java/activity/amigosecreto/
-├── FormatarPrecoTest.java               # formatação de preço pt-BR
 ├── ParticipantesViewModelTest.java      # ViewModel — Robolectric + InstantTaskExecutorRule
 ├── db/
+│   ├── DesejoModelTest.java             # model Desejo — Serializable
 │   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
 │   ├── GrupoModelTest.java              # model Grupo — Serializable
 │   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
@@ -492,25 +478,29 @@ app/src/test/java/activity/amigosecreto/
 │   ├── DesejoRepositoryTest.java        # DesejoRepository — integração real SQLite
 │   └── ParticipanteRepositoryTest.java  # ParticipanteRepository — integração real SQLite
 └── util/
+    ├── MensagemSecretaBuilderTest.java  # formatação de mensagem de compartilhamento
     ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (221 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (224 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
-| Util | `ValidationUtilsTest` | 14 |
+| Util | `MensagemSecretaBuilderTest` | 21 |
+| Util | `ValidationUtilsTest` | 19 |
 | Util | `SorteioEngineTest` | 11 |
-| Util | `FormatarPrecoTest` | 9 |
-| Model | `GrupoModelTest` | 7 |
+| Util | `FormatarPrecoTest` | 12 |
+| Model | `DesejoModelTest` | 18 |
 | Model | `ParticipanteModelTest` | 11 |
+| Model | `GrupoModelTest` | 7 |
+| DAO | `ParticipanteDAOTest` | 21 |
+| DAO | `DesejoDAOTest` | 20 |
 | DAO | `GrupoDAOTest` | 12 |
-| DAO | `ParticipanteDAOTest` | 20 |
-| DAO | `MySQLiteOpenHelperTest` | 7 |
-| Repository | `ParticipanteRepositoryTest` | 19 |
-| Repository | `DesejoRepositoryTest` | ~16 |
-| ViewModel | `ParticipantesViewModelTest` | ~30 |
+| DAO | `MySQLiteOpenHelperTest` | 8 |
+| Repository | `ParticipanteRepositoryTest` | 17 |
+| Repository | `DesejoRepositoryTest` | 16 |
+| ViewModel | `ParticipantesViewModelTest` | 31 |
 
 **Configuração Robolectric:** `testOptions.unitTests.includeAndroidResources = true` habilitado em `build.gradle` para permitir acesso a recursos compilados (`getString()`) nos testes unitários.
 
@@ -526,6 +516,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
 - [x] Migrar para MVVM com ViewModel e LiveData (PR #18)
 - [x] Implementar Repository pattern (PR #19)
+- [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [ ] Adicionar Dependency Injection (Hilt)
 - [ ] Migrar para Kotlin
 
