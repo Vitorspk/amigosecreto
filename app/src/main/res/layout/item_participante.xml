@@ -161,7 +161,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_delete"
                 app:tint="@color/colorError"
-                android:contentDescription="@string/button_remove"/>
+                android:contentDescription="@string/cd_remove_participant"/>
 
         </LinearLayout>
 

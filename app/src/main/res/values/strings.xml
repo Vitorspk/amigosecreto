@@ -222,16 +222,18 @@
         <item quantity="other">%d restrições</item>
     </plurals>
 
-    <!-- Emojis / ícones decorativos (usados em runtime em android:text) -->
-    <string name="emoji_gift">🎁</string>
-    <string name="emoji_diamond">💎</string>
-    <string name="emoji_santa">🎅</string>
-    <string name="emoji_person">👤</string>
-    <string name="emoji_edit">✏️</string>
-    <string name="emoji_trash">🗑️</string>
+    <!-- Emojis / ícones decorativos (usados em runtime em android:text).
+         translatable="false": emojis são símbolos universais, não devem ser traduzidos. -->
+    <string name="emoji_gift" translatable="false">🎁</string>
+    <string name="emoji_diamond" translatable="false">💎</string>
+    <string name="emoji_santa" translatable="false">🎅</string>
+    <string name="emoji_person" translatable="false">👤</string>
+    <string name="emoji_edit" translatable="false">✏️</string>
+    <string name="emoji_trash" translatable="false">🗑️</string>
 
     <!-- Content descriptions -->
     <string name="cd_remove_group">Remover Grupo</string>
+    <string name="cd_remove_participant">Remover Participante</string>
     <string name="cd_group_icon">Ícone do grupo</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
 
@@ -254,7 +256,10 @@
     <!-- Dialog opções desejo -->
     <string name="label_product_name">Nome do Produto</string>
 
-    <!-- Dialog add participante -->
+    <!-- Dialog add participante.
+         Nota: dialog_add_participant_title e button_add_participant têm o mesmo valor
+         intencionalmente — um é contentDescription do ícone do dialog, o outro é o
+         label do botão. Contextos distintos; não consolidar. -->
     <string name="dialog_add_participant_title">Adicionar Participante</string>
 
     <!-- Tela listar participantes -->
