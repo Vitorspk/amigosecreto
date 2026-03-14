@@ -50,6 +50,7 @@ public class DesejoDAOTest {
         Participante p = new Participante();
         p.setNome(nome);
         participanteDao.inserir(p, grupoId);
+        assertTrue("ParticipanteDAO.inserir deve atribuir ID > 0", p.getId() > 0);
         return p;
     }
 
@@ -196,10 +197,10 @@ public class DesejoDAOTest {
         Desejo found = dao.buscarPorId(original.getId());
         assertNotNull(found);
         assertEquals("Impressora 3D", found.getProduto());
-        assertEquals(original.getCategoria(), found.getCategoria());
-        assertEquals(original.getLojas(), found.getLojas());
-        assertEquals(original.getPrecoMinimo(), found.getPrecoMinimo(), 0.001);
-        assertEquals(original.getPrecoMaximo(), found.getPrecoMaximo(), 0.001);
+        assertEquals(paraAtualizar.getCategoria(), found.getCategoria());
+        assertEquals(paraAtualizar.getLojas(), found.getLojas());
+        assertEquals(paraAtualizar.getPrecoMinimo(), found.getPrecoMinimo(), 0.001);
+        assertEquals(paraAtualizar.getPrecoMaximo(), found.getPrecoMaximo(), 0.001);
     }
 
     @Test
