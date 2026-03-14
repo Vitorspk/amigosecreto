@@ -10,6 +10,8 @@ import java.io.Serializable
 // as Serializable — no Parcel dependency needed for a simple data holder.
 // No-arg constructor: Kotlin generates one automatically because all parameters have defaults.
 // @JvmOverloads omitted — only the no-arg constructor is called from Java (GrupoDAO.java:88).
+// TODO(fase10-dao): switch to val fields once GrupoDAO is migrated to Kotlin/Room —
+// at that point, constructor injection replaces setter-based population.
 data class Grupo(
     var id: Int = 0,
     var nome: String? = null,

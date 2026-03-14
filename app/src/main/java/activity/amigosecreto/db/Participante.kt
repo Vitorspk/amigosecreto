@@ -10,6 +10,8 @@ import java.io.Serializable
 // calls, so Java callers using Arrays.asList can safely mutate the list afterward.
 // No-arg constructor: Kotlin generates one automatically because all parameters have defaults.
 // @JvmOverloads omitted — plain class with only the no-arg constructor needed by Java call sites.
+// TODO(fase10-dao): switch to val fields once ParticipanteDAO is migrated to Kotlin/Room —
+// at that point, constructor injection replaces setter-based population.
 class Participante(
     var id: Int = 0,
     var nome: String? = null,
