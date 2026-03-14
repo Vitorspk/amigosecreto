@@ -118,7 +118,12 @@ dependencies {
     // Splash Screen API (Android 12+)
     implementation 'androidx.core:core-splashscreen:1.0.1'
 
+    // ViewModel + LiveData (MVVM, sem Kotlin/Hilt)
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.8.7'
+
     // Unit testing
+    testImplementation 'androidx.arch.core:core-testing:2.2.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.11.0'
     testImplementation 'org.robolectric:robolectric:4.13'

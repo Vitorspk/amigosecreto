@@ -31,11 +31,11 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +48,6 @@ import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
 import activity.amigosecreto.db.DesejoDAO;
 import activity.amigosecreto.util.MensagemSecretaBuilder;
-import activity.amigosecreto.util.SorteioEngine;
-import activity.amigosecreto.util.WindowInsetsUtils;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -68,6 +66,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     private int pendingSmsNextIndex = -1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private ParticipantesViewModel viewModel;
 
     private ListView lvParticipantes;
     private TextView tvCount;
@@ -163,36 +163,61 @@ public class ParticipantesActivity extends AppCompatActivity {
             }
         });
 
-        atualizarLista();
+        // Inicializar ViewModel e observar LiveData.
+        // init() dispara o primeiro carregamento; rotação reutiliza o ViewModel existente.
+        viewModel = new ViewModelProvider(this).get(ParticipantesViewModel.class);
+        viewModel.init(grupoAtual.getId());
+
+        viewModel.getParticipants().observe(this, participantes -> {
+            listaParticipantes.clear();
+            listaParticipantes.addAll(participantes);
+            adapter.notifyDataSetChanged();
+            if (listaParticipantes.isEmpty()) {
+                tvCount.setText(R.string.label_no_participants);
+            } else {
+                tvCount.setText(getResources().getQuantityString(
+                        R.plurals.label_participants_in_group,
+                        listaParticipantes.size(),
+                        listaParticipantes.size(),
+                        grupoAtual.getNome()));
+            }
+        });
+
+        viewModel.getWishCounts().observe(this, counts -> {
+            adapter.setDesejosCountMap(counts);
+            adapter.notifyDataSetChanged();
+        });
+
+        viewModel.getSorteioResult().observe(this, resultado -> {
+            if (resultado == null) return;
+            viewModel.clearSorteioResult();
+            switch (resultado.status) {
+                case FAILURE_NOT_ENOUGH:
+                    Toast.makeText(this, getString(R.string.participante_sorteio_minimo), Toast.LENGTH_LONG).show();
+                    break;
+                case FAILURE_IMPOSSIBLE:
+                    Toast.makeText(this, getString(R.string.participante_sorteio_impossivel), Toast.LENGTH_LONG).show();
+                    break;
+                case SUCCESS:
+                    new AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.participante_sorteio_titulo))
+                            .setMessage(getString(R.string.participante_sorteio_msg_sms))
+                            .setPositiveButton(getString(R.string.participante_sorteio_btn_sms), (dialog, which) -> enviarSmsViaIntent())
+                            .setNegativeButton("Não", null)
+                            .show();
+                    break;
+            }
+        });
+
+        viewModel.getErrorMessage().observe(this, msg -> {
+            if (msg == null) return;
+            viewModel.clearErrorMessage();
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        });
     }
 
     private void atualizarLista() {
-        dao.open();
-        listaParticipantes.clear();
-        listaParticipantes.addAll(dao.listarPorGrupo(grupoAtual.getId()));
-        dao.close();
-
-        // Pré-carregar counts de desejos para evitar criar DAO a cada item do adapter
-        Map<Integer, Integer> desejosCountMap = new HashMap<>();
-        DesejoDAO desejoDAO = new DesejoDAO(this);
-        try {
-            desejoDAO.open();
-            for (Participante p : listaParticipantes) {
-                int count = desejoDAO.contarDesejosPorParticipante(p.getId());
-                desejosCountMap.put(p.getId(), count);
-            }
-        } finally {
-            desejoDAO.close();
-        }
-
-        adapter.setDesejosCountMap(desejosCountMap);
-        adapter.notifyDataSetChanged();
-
-        if (listaParticipantes.isEmpty()) {
-            tvCount.setText(R.string.label_no_participants);
-        } else {
-            tvCount.setText(getResources().getQuantityString(R.plurals.label_participants_in_group, listaParticipantes.size(), listaParticipantes.size(), grupoAtual.getNome()));
-        }
+        viewModel.carregarParticipantes();
     }
 
     private void exibirDialogAdd() {
@@ -505,40 +530,7 @@ public class ParticipantesActivity extends AppCompatActivity {
     }
 
     private void realizarSorteio() {
-        if (listaParticipantes.size() < 3) {
-            Toast.makeText(this, getString(R.string.participante_sorteio_minimo), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        List<Participante> sorteados = null;
-        int tentativas = 0;
-        while (sorteados == null && tentativas < 100) {
-            tentativas++;
-            sorteados = SorteioEngine.tentarSorteio(new ArrayList<>(listaParticipantes));
-        }
-
-        if (sorteados != null) {
-            dao.open();
-            boolean sucesso = dao.salvarSorteio(listaParticipantes, sorteados);
-            dao.close();
-            
-            if (sucesso) {
-                atualizarLista();
-                new AlertDialog.Builder(this)
-                        .setTitle(getString(R.string.participante_sorteio_titulo))
-                        .setMessage(getString(R.string.participante_sorteio_msg_sms))
-                        .setPositiveButton(getString(R.string.participante_sorteio_btn_sms), new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                enviarSmsViaIntent();
-                            }
-                        })
-                        .setNegativeButton("Não", null)
-                        .show();
-            }
-        } else {
-            Toast.makeText(this, getString(R.string.participante_sorteio_impossivel), Toast.LENGTH_LONG).show();
-        }
+        viewModel.realizarSorteio();
     }
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).

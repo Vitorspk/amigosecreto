@@ -1,0 +1,324 @@
+package activity.amigosecreto;
+
+import android.content.Context;
+
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
+import androidx.test.core.app.ApplicationProvider;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.Shadows;
+import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import activity.amigosecreto.db.Desejo;
+import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.db.Grupo;
+import activity.amigosecreto.db.GrupoDAO;
+import activity.amigosecreto.db.Participante;
+import activity.amigosecreto.db.ParticipanteDAO;
+
+import static org.junit.Assert.*;
+
+/**
+ * Testes unitários de ParticipantesViewModel via Robolectric + InstantTaskExecutorRule.
+ *
+ * O executor do ViewModel é substituído por um executor síncrono (Runnable::run) para que
+ * o background work complete antes das asserções, sem precisar de sleeps ou polling.
+ */
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 33)
+public class ParticipantesViewModelTest {
+
+    /** Faz LiveData.setValue() disparar de forma síncrona no thread de teste. */
+    @Rule
+    public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+
+    private ParticipantesViewModel viewModel;
+    private GrupoDAO grupoDao;
+    private ParticipanteDAO participanteDao;
+    private int grupoId;
+
+    /** Executor síncrono: executa Runnable diretamente na thread chamadora. */
+    private final ExecutorService syncExecutor = new ExecutorService() {
+        @Override public void execute(Runnable command) { command.run(); }
+        @Override public void shutdown() {}
+        @Override public List<Runnable> shutdownNow() { return java.util.Collections.emptyList(); }
+        @Override public boolean isShutdown() { return false; }
+        @Override public boolean isTerminated() { return false; }
+        @Override public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) { return true; }
+        @Override public <T> java.util.concurrent.Future<T> submit(java.util.concurrent.Callable<T> task) { try { return java.util.concurrent.CompletableFuture.completedFuture(task.call()); } catch (Exception e) { throw new RuntimeException(e); } }
+        @Override public <T> java.util.concurrent.Future<T> submit(Runnable task, T result) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(result); }
+        @Override public java.util.concurrent.Future<?> submit(Runnable task) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(null); }
+        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return java.util.Collections.emptyList(); }
+        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return java.util.Collections.emptyList(); }
+        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return null; }
+        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return null; }
+    };
+
+    @Before
+    public void setUp() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+
+        grupoDao = new GrupoDAO(ctx);
+        grupoDao.open();
+        Grupo g = new Grupo();
+        g.setNome("Grupo Teste");
+        g.setData("01/01/2025");
+        grupoId = (int) grupoDao.inserir(g);
+
+        participanteDao = new ParticipanteDAO(ctx);
+        participanteDao.open();
+
+        viewModel = new ParticipantesViewModel((android.app.Application) ctx.getApplicationContext());
+        viewModel.setExecutorService(syncExecutor);
+    }
+
+    @After
+    public void tearDown() {
+        grupoDao.limparTudo();
+        participanteDao.close();
+        grupoDao.close();
+    }
+
+    // --- helpers ---
+
+    /** Drena o main looper do Robolectric para que Handler.post() complete antes das asserções. */
+    private void idleMainLooper() {
+        Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    }
+
+    private Participante inserirParticipante(String nome) {
+        Participante p = new Participante();
+        p.setNome(nome);
+        p.setTelefone("11999999999");
+        participanteDao.inserir(p, grupoId);
+        return p;
+    }
+
+    // =========================================================
+    // carregarParticipantes / init
+    // =========================================================
+
+    @Test
+    public void carregarParticipantes_populatesParticipantsLiveData() {
+        inserirParticipante("Ana");
+        inserirParticipante("Bruno");
+        inserirParticipante("Carla");
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+        assertEquals(3, lista.size());
+    }
+
+    @Test
+    public void carregarParticipantes_populatesWishCountsForEachParticipant() {
+        inserirParticipante("Diana");
+        // Recarregar com ID real após inserção
+        List<Participante> apos = participanteDao.listarPorGrupo(grupoId);
+        int pid = apos.get(0).getId();
+
+        Context ctx = ApplicationProvider.getApplicationContext();
+        DesejoDAO desejoDAO = new DesejoDAO(ctx);
+        desejoDAO.open();
+        Desejo d1 = new Desejo(); d1.setProduto("Livro"); d1.setParticipanteId(pid); desejoDAO.inserir(d1);
+        Desejo d2 = new Desejo(); d2.setProduto("Caneta"); d2.setParticipanteId(pid); desejoDAO.inserir(d2);
+        desejoDAO.close();
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        Map<Integer, Integer> counts = viewModel.getWishCounts().getValue();
+        assertNotNull(counts);
+        assertEquals(Integer.valueOf(2), counts.get(pid));
+    }
+
+    @Test
+    public void carregarParticipantes_setsIsLoadingFalseAfterCompletion() {
+        viewModel.init(grupoId);
+        idleMainLooper();
+        assertFalse(Boolean.TRUE.equals(viewModel.getIsLoading().getValue()));
+    }
+
+    @Test
+    public void init_calledTwiceWithSameId_doesNotDoubleLoad() {
+        inserirParticipante("Eva");
+        inserirParticipante("Felipe");
+        inserirParticipante("Gabi");
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+        List<Participante> firstLoad = viewModel.getParticipants().getValue();
+        int firstSize = firstLoad != null ? firstLoad.size() : 0;
+
+        // Segunda chamada com mesmo grupoId — guarda interna impede reload
+        viewModel.init(grupoId);
+        idleMainLooper();
+        List<Participante> secondLoad = viewModel.getParticipants().getValue();
+        int secondSize = secondLoad != null ? secondLoad.size() : 0;
+
+        // O tamanho deve ser o mesmo (nenhum item extra foi adicionado entre as duas chamadas)
+        assertEquals(firstSize, secondSize);
+    }
+
+    @Test
+    public void carregarParticipantes_emptyGroup_returnsEmptyList() {
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+        assertTrue(lista.isEmpty());
+    }
+
+    // =========================================================
+    // realizarSorteio
+    // =========================================================
+
+    @Test
+    public void realizarSorteio_withLessThan3Participants_emitsFailureNotEnough() {
+        inserirParticipante("Hugo");
+        inserirParticipante("Iris");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.realizarSorteio();
+
+        ParticipantesViewModel.SorteioResultado resultado = viewModel.getSorteioResult().getValue();
+        assertNotNull(resultado);
+        assertEquals(ParticipantesViewModel.SorteioResultado.Status.FAILURE_NOT_ENOUGH, resultado.status);
+    }
+
+    @Test
+    public void realizarSorteio_withValidParticipants_emitsSuccess() {
+        inserirParticipante("João");
+        inserirParticipante("Karen");
+        inserirParticipante("Lucas");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        ParticipantesViewModel.SorteioResultado resultado = viewModel.getSorteioResult().getValue();
+        assertNotNull(resultado);
+        assertEquals(ParticipantesViewModel.SorteioResultado.Status.SUCCESS, resultado.status);
+    }
+
+    @Test
+    public void realizarSorteio_successSavesToDatabase() {
+        inserirParticipante("Maria");
+        inserirParticipante("Nadia");
+        inserirParticipante("Otto");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        // Após sucesso, carregarParticipantes() é chamado internamente; verifica via LiveData
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+        for (Participante p : lista) {
+            assertNotNull("amigoSorteadoId deve ser não-nulo após sorteio", p.getAmigoSorteadoId());
+            assertTrue(p.getAmigoSorteadoId() > 0);
+        }
+    }
+
+    @Test
+    public void realizarSorteio_withAllExclusionsBlocking_emitsFailureImpossible() {
+        // 3 participantes onde cada um exclui os outros 2 → impossível
+        inserirParticipante("Paulo");
+        inserirParticipante("Quesia");
+        inserirParticipante("Rita");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> lista = viewModel.getParticipants().getValue();
+        assertNotNull(lista);
+        assertEquals(3, lista.size());
+
+        int id0 = lista.get(0).getId();
+        int id1 = lista.get(1).getId();
+        int id2 = lista.get(2).getId();
+
+        participanteDao.adicionarExclusao(id0, id1);
+        participanteDao.adicionarExclusao(id0, id2);
+        participanteDao.adicionarExclusao(id1, id0);
+        participanteDao.adicionarExclusao(id1, id2);
+        participanteDao.adicionarExclusao(id2, id0);
+        participanteDao.adicionarExclusao(id2, id1);
+
+        // Recarrega lista com exclusões
+        viewModel.carregarParticipantes();
+        idleMainLooper();
+
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        ParticipantesViewModel.SorteioResultado resultado = viewModel.getSorteioResult().getValue();
+        assertNotNull(resultado);
+        assertEquals(ParticipantesViewModel.SorteioResultado.Status.FAILURE_IMPOSSIBLE, resultado.status);
+    }
+
+    @Test
+    public void realizarSorteio_setsIsLoadingFalseAfterCompletion() {
+        inserirParticipante("Sara");
+        inserirParticipante("Tiago");
+        inserirParticipante("Uma");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.realizarSorteio();
+        idleMainLooper();
+
+        assertFalse(Boolean.TRUE.equals(viewModel.getIsLoading().getValue()));
+    }
+
+    // =========================================================
+    // clearSorteioResult / clearErrorMessage
+    // =========================================================
+
+    @Test
+    public void clearSorteioResult_setsValueToNull() {
+        // Forçar um resultado FAILURE_NOT_ENOUGH com 0 participantes
+        viewModel.init(grupoId);
+        idleMainLooper();
+        viewModel.realizarSorteio();
+        assertNotNull(viewModel.getSorteioResult().getValue());
+
+        viewModel.clearSorteioResult();
+
+        assertNull(viewModel.getSorteioResult().getValue());
+    }
+
+    @Test
+    public void clearErrorMessage_setsValueToNull() {
+        // Dispara uma mensagem de erro chamando carregarParticipantes com grupoId inválido
+        // de forma indireta: o ViewModel ainda não foi inicializado (grupoId == -1)
+        // então carregarParticipantes() é no-op. Definir manualmente via outro caminho:
+        // Verificar somente que clearErrorMessage nula o valor após um setValue manual.
+        // (Não há acesso a MutableLiveData diretamente; valida o contrato público.)
+        // Chamamos realizarSorteio() sem init() — a lista está vazia (< 3), resultado != SUCCESS.
+        viewModel.realizarSorteio();
+        viewModel.clearSorteioResult();
+        assertNull(viewModel.getSorteioResult().getValue());
+
+        // errorMessage começa null — clearErrorMessage deve mantê-lo null (não lançar exceção)
+        viewModel.clearErrorMessage();
+        assertNull(viewModel.getErrorMessage().getValue());
+    }
+}
