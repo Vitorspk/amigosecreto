@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #22 merged)
+**Data:** Março/2026 (última atualização: 14/03/2026 — PR #27 merged)
 **Versão Analisada:** 2.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -12,7 +12,7 @@ O app **está se aproximando do nível profissional** com progresso significativ
 
 É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern implementados. As Fases 1, 2, 3, 4 e 5 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade.
 
-O app está em nível profissional. O PR #22 zerou os 47 `UnusedResources` do `lintDebug`. Os próximos passos são lint residual (9 `Overdraw`) e Dependency Injection (Hilt).
+O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. O próximo passo é Dependency Injection (Hilt).
 
 ---
 
@@ -110,7 +110,7 @@ Itens corrigidos no PR #14:
 
 Warnings residuais em `lintDebug` (não bloqueadores — `lintRelease` zerado):
 - ~~47 `UnusedResources`~~ — ✅ zerado no PR #22
-- 9 `Overdraw` — a investigar
+- ~~9 `Overdraw`~~ — ✅ zerado no PR #27
 - Outros menores (`GradleDependency`, `UseCompoundDrawables`, etc.)
 
 ---
@@ -136,7 +136,8 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | Fase 1 | Arquitetura MVVM + Repository pattern | ✅ Concluído | #17–#20 |
 | Fase 6 | Strings XML layouts/menus + Acessibilidade | ✅ Concluído | #21 |
 | **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **✅ Concluído** | **#22** |
-| **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **⏳ Próximo** | — |
+| **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **✅ Concluído** | **#27** |
+| **Fase 9** | **Dependency Injection (Hilt)** | **⏳ Próximo** | — |
 
 ---
 
@@ -208,17 +209,27 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### Fase 8 — Overdraw Residual (Próximo)
+### Fase 8 — Overdraw Residual — ✅ Concluído (PR #27)
 
-**Objetivo:** Investigar e reduzir os 9 warnings `Overdraw` no `lintDebug`.
+**Objetivo:** Zerar os 9 warnings `Overdraw` no `lintDebug`. ✅
 
-**Escopo:** Backgrounds redundantes em views aninhadas. Identificar via Android Studio GPU Overdraw ou `lintDebug`.
+**Causa:** Todos os 9 eram `android:background="@color/background"` no root element de layouts de Activity. O tema `Theme.AmigoSecreto` já define `android:windowBackground` com a mesma cor — double paint desnecessário.
 
-**Como executar:**
-```bash
-./gradlew :app:lintDebug
-# ver app/build/reports/lint-results-debug.xml → issue id="Overdraw"
-```
+**Solução:** Remover o atributo redundante dos 9 layouts afetados. `lintDebug Overdraw`: 9 → 0.
+
+---
+
+### Fase 9 — Dependency Injection com Hilt (Próximo)
+
+**Objetivo:** Introduzir Hilt para injeção de dependências, eliminando acoplamento manual entre ViewModel, Repository e DAO.
+
+**Escopo:**
+- Adicionar dependências `hilt-android` e `hilt-compiler` ao `build.gradle`
+- Anotar `Application`, Activities e ViewModels com `@HiltAndroidApp` / `@AndroidEntryPoint` / `@HiltViewModel`
+- Criar módulos `@Module` para prover `MySQLiteOpenHelper`, DAOs e Repositories
+- Remover instanciação manual em `ParticipantesViewModel`
+
+**Pré-requisito:** Migração para Kotlin (Hilt é mais ergonômico com Kotlin; funciona em Java mas com mais boilerplate).
 
 ---
 
@@ -307,6 +318,16 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 | `lintDebug UnusedResources` | 47 → 0 |
 | Testes | 224 (sem regressão) |
 
+### PR #27 — Overdraw Cleanup (Fase 8)
+
+| Item | Situação |
+|------|---------|
+| `android:background="@color/background"` redundante removido | 9 layouts de Activity e helper |
+| Causa raiz | `@color/background → @color/md_theme_background`; tema já define `android:windowBackground` com o mesmo valor |
+| Arquivos corrigidos | `activity_alterar_desejo.xml`, `activity_detalhe_desejo.xml`, `activity_inserir_desejo.xml`, `activity_listar_desejos.xml`, `activity_listar_participantes.xml`, `activity_participante_desejos.xml`, `activity_revelar_amigo.xml`, `activity_visualizar_desejos.xml`, `loading_state.xml` |
+| `lintDebug Overdraw` | 9 → 0 |
+| Testes | 224 (sem regressão) |
+
 ---
 
 ## Conclusão
@@ -315,8 +336,8 @@ O app atingiu nível profissional. Todas as fases principais foram concluídas:
 - 224 testes cobrindo DAOs, models, repositories, ViewModel e utilitários
 - MVVM com Repository pattern implementado
 - `lintRelease` sem erros bloqueadores
-- `lintDebug UnusedResources` zerado (PR #22)
+- `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
 
-**Próximo passo:** Fase 8 — investigar e reduzir 9 warnings `Overdraw` no `lintDebug`.
+**Próximo passo:** Fase 9 — Dependency Injection com Hilt.
