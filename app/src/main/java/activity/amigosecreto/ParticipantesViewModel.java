@@ -18,8 +18,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import activity.amigosecreto.db.Participante;
-import activity.amigosecreto.db.ParticipanteDAO;
-import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.repository.DesejoRepository;
+import activity.amigosecreto.repository.ParticipanteRepository;
 import activity.amigosecreto.util.SorteioEngine;
 
 public class ParticipantesViewModel extends AndroidViewModel {
@@ -42,8 +42,13 @@ public class ParticipantesViewModel extends AndroidViewModel {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private int grupoId = -1;
 
+    private ParticipanteRepository participanteRepository;
+    private DesejoRepository desejoRepository;
+
     public ParticipantesViewModel(@NonNull Application application) {
         super(application);
+        participanteRepository = new ParticipanteRepository(application);
+        desejoRepository = new DesejoRepository(application);
     }
 
     /**
@@ -76,34 +81,25 @@ public class ParticipantesViewModel extends AndroidViewModel {
         if (grupoId == -1) return;
         isLoading.setValue(true);
         executor.execute(() -> {
-            List<Participante> lista = new ArrayList<>();
-            Map<Integer, Integer> counts = new HashMap<>();
-            ParticipanteDAO pDao = new ParticipanteDAO(getApplication());
-            DesejoDAO dDao = new DesejoDAO(getApplication());
             try {
-                pDao.open();
-                lista = pDao.listarPorGrupo(grupoId);
-                dDao.open();
+                List<Participante> lista = participanteRepository.listarPorGrupo(grupoId);
+                Map<Integer, Integer> counts = new HashMap<>();
                 for (Participante p : lista) {
-                    counts.put(p.getId(), dDao.contarDesejosPorParticipante(p.getId()));
+                    counts.put(p.getId(), desejoRepository.contarDesejosPorParticipante(p.getId()));
                 }
+                final List<Participante> finalLista = lista;
+                final Map<Integer, Integer> finalCounts = counts;
+                postMain(() -> {
+                    participants.setValue(finalLista);
+                    wishCounts.setValue(finalCounts);
+                    isLoading.setValue(false);
+                });
             } catch (Exception e) {
                 postMain(() -> {
                     isLoading.setValue(false);
                     errorMessage.setValue("Erro ao carregar participantes.");
                 });
-                return;
-            } finally {
-                pDao.close();
-                dDao.close();
             }
-            final List<Participante> finalLista = lista;
-            final Map<Integer, Integer> finalCounts = counts;
-            postMain(() -> {
-                participants.setValue(finalLista);
-                wishCounts.setValue(finalCounts);
-                isLoading.setValue(false);
-            });
         });
     }
 
@@ -137,15 +133,11 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 return;
             }
 
-            ParticipanteDAO pDao = new ParticipanteDAO(getApplication());
             boolean sucesso;
             try {
-                pDao.open();
-                sucesso = pDao.salvarSorteio(sortableSnapshot, sorteados);
+                sucesso = participanteRepository.salvarSorteio(sortableSnapshot, sorteados);
             } catch (Exception e) {
                 sucesso = false;
-            } finally {
-                pDao.close();
             }
 
             final boolean salvo = sucesso;
@@ -168,6 +160,12 @@ public class ParticipantesViewModel extends AndroidViewModel {
     /** Visível para testes — permite substituir executor síncrono em testes unitários. */
     void setExecutorService(ExecutorService executor) {
         this.executor = executor;
+    }
+
+    /** Visível para testes — permite injetar repositories substitutos. */
+    void setRepositories(ParticipanteRepository participanteRepository, DesejoRepository desejoRepository) {
+        this.participanteRepository = participanteRepository;
+        this.desejoRepository = desejoRepository;
     }
 
     @Override

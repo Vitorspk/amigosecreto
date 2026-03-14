@@ -45,8 +45,8 @@ import java.util.concurrent.Executors;
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
-import activity.amigosecreto.db.ParticipanteDAO;
-import activity.amigosecreto.db.DesejoDAO;
+import activity.amigosecreto.repository.DesejoRepository;
+import activity.amigosecreto.repository.ParticipanteRepository;
 import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.ValidationUtils;
 
@@ -74,7 +74,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     private MaterialButton fabAdd;
     private View btnSortear;
     private View btnLimpar;
-    private ParticipanteDAO dao;
+    private ParticipanteRepository participanteRepository;
+    private DesejoRepository desejoRepository;
     private List<Participante> listaParticipantes = new ArrayList<>();
     private ParticipantesAdapter adapter;
     private Grupo grupoAtual;
@@ -132,7 +133,8 @@ public class ParticipantesActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        dao = new ParticipanteDAO(this);
+        participanteRepository = new ParticipanteRepository(this);
+        desejoRepository = new DesejoRepository(this);
         lvParticipantes = findViewById(R.id.lv_participantes);
         tvCount = findViewById(R.id.tv_count);
         fabAdd = findViewById(R.id.fab_add_participante);
@@ -262,9 +264,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 p.setNome(nome);
                 p.setTelefone(telefone);
                 p.setEmail(email);
-                dao.open();
-                dao.inserir(p, grupoAtual.getId());
-                dao.close();
+                participanteRepository.inserir(p, grupoAtual.getId());
                 atualizarLista();
                 dialog.dismiss();
             }
@@ -328,14 +328,10 @@ public class ParticipantesActivity extends AppCompatActivity {
                             participante.setTelefone(telefoneFinal);
                             participante.setEmail(emailFinal);
                             // DAO local evita conflito com o dao compartilhado da Activity.
-                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
                             try {
-                                daoLocal.open();
-                                ok = daoLocal.atualizar(participante);
+                                ok = participanteRepository.atualizar(participante);
                             } catch (Exception e) {
                                 ok = false;
-                            } finally {
-                                daoLocal.close();
                             }
                             final boolean sucesso = ok;
                             mainHandler.post(new Runnable() {
@@ -384,9 +380,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     Participante p = new Participante();
                     p.setNome(name);
                     p.setTelefone(number);
-                    dao.open();
-                    dao.inserir(p, grupoAtual.getId());
-                    dao.close();
+                    participanteRepository.inserir(p, grupoAtual.getId());
                     atualizarLista();
                     Toast.makeText(this, getString(R.string.toast_contact_added_format, name), Toast.LENGTH_SHORT).show();
                 }
@@ -403,9 +397,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         // smsLaunched evita marcacao incorreta apos rotacao (pendingSmsParticipanteId e
         // restaurado do bundle mas o app de SMS nunca foi aberto).
         if (smsLaunched && pendingSmsParticipanteId != -1) {
-            dao.open();
-            dao.marcarComoEnviado(pendingSmsParticipanteId);
-            dao.close();
+            participanteRepository.marcarComoEnviado(pendingSmsParticipanteId);
             pendingSmsParticipanteId = -1;
             smsLaunched = false;
         }
@@ -432,18 +424,14 @@ public class ParticipantesActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             final Map<Integer, String> mensagensReconstruidas = new HashMap<>();
-                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                            DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
                             try {
-                                daoLocal.open();
-                                desejoDAO.open();
                                 for (Participante p : lista) {
                                     Integer amigoId = p.getAmigoSorteadoId();
                                     String nomeAmigo = (amigoId != null && amigoId > 0)
-                                            ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                                            ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
                                     List<Desejo> desejos = new ArrayList<>();
                                     if (amigoId != null && amigoId > 0) {
-                                        desejos = desejoDAO.listarPorParticipante(amigoId);
+                                        desejos = desejoRepository.listarPorParticipante(amigoId);
                                     }
                                     mensagensReconstruidas.put(p.getId(),
                                             MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
@@ -458,9 +446,6 @@ public class ParticipantesActivity extends AppCompatActivity {
                                     }
                                 });
                                 return;
-                            } finally {
-                                daoLocal.close();
-                                desejoDAO.close();
                             }
                             mainHandler.post(new Runnable() {
                                 @Override
@@ -519,9 +504,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(getString(R.string.participante_limpar_btn_sim), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        dao.open();
-                        dao.deletarTodosDoGrupo(grupoAtual.getId());
-                        dao.close();
+                        participanteRepository.deletarTodosDoGrupo(grupoAtual.getId());
                         atualizarLista();
                     }
                 })
@@ -547,24 +530,16 @@ public class ParticipantesActivity extends AppCompatActivity {
                 public void run() {
                     final List<Participante> comTelefone = new ArrayList<>();
                     final Map<Integer, String> mensagensParticipantes = new HashMap<>();
-                    // DAOs locais evitam race condition com o dao compartilhado da Activity
-                    // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
-                    // close() chama helper.close() — nao acessa database diretamente,
-                    // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
-                    ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                    DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
                     try {
-                        daoLocal.open();
-                        desejoDAO.open();
                         for (Participante p : snapshot) {
                             if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
                                 comTelefone.add(p);
                                 Integer amigoId = p.getAmigoSorteadoId();
                                 String nomeAmigo = (amigoId != null && amigoId > 0)
-                                        ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                                        ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
                                 List<Desejo> desejos = new ArrayList<>();
                                 if (amigoId != null && amigoId > 0) {
-                                    desejos = desejoDAO.listarPorParticipante(amigoId);
+                                    desejos = desejoRepository.listarPorParticipante(amigoId);
                                 }
                                 mensagensParticipantes.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
                             }
@@ -579,9 +554,6 @@ public class ParticipantesActivity extends AppCompatActivity {
                             }
                         });
                         return;
-                    } finally {
-                        daoLocal.close();
-                        desejoDAO.close();
                     }
 
                     mainHandler.post(new Runnable() {
@@ -750,12 +722,10 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.button_save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        dao.open();
                         for (int i = 0; i < outros.size(); i++) {
-                            if (selecionados[i]) dao.adicionarExclusao(p.getId(), outros.get(i).getId());
-                            else dao.removerExclusao(p.getId(), outros.get(i).getId());
+                            if (selecionados[i]) participanteRepository.adicionarExclusao(p.getId(), outros.get(i).getId());
+                            else participanteRepository.removerExclusao(p.getId(), outros.get(i).getId());
                         }
-                        dao.close();
                         atualizarLista();
                     }
                 })
@@ -871,9 +841,7 @@ public class ParticipantesActivity extends AppCompatActivity {
             btnRemover.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    dao.open();
-                    dao.remover(p.getId());
-                    dao.close();
+                    participanteRepository.remover(p.getId());
                     atualizarLista();
                 }
             });
@@ -889,26 +857,19 @@ public class ParticipantesActivity extends AppCompatActivity {
                 executor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        // DAOs locais evitam conflito com o dao compartilhado da Activity.
-                        // close() chama helper.close() — nao acessa database diretamente,
-                        // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
                         final String[] nomeAmigoHolder = {null};
                         final List<Desejo> desejosHolder = new ArrayList<>();
-                        ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
-                        DesejoDAO desejoDAO = new DesejoDAO(ctx);
                         try {
-                            daoLocal.open();
-                            desejoDAO.open();
                             Integer amigoId = p.getAmigoSorteadoId();
                             nomeAmigoHolder[0] = (amigoId != null && amigoId > 0)
-                                    ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
+                                    ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
                             if (amigoId != null && amigoId > 0) {
-                                desejosHolder.addAll(desejoDAO.listarPorParticipante(amigoId));
+                                desejosHolder.addAll(desejoRepository.listarPorParticipante(amigoId));
                             }
                             // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
-                            // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
-                            //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
-                            daoLocal.marcarComoEnviado(p.getId());
+                            // Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
+                            // o share sheet (a API do ACTION_SEND não oferece callback de confirmação).
+                            participanteRepository.marcarComoEnviado(p.getId());
                         } catch (final Exception e) {
                             mainHandler.post(new Runnable() {
                                 @Override
@@ -920,9 +881,6 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 }
                             });
                             return;
-                        } finally {
-                            daoLocal.close();
-                            desejoDAO.close();
                         }
 
                         final String mensagem = MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigoHolder[0], desejosHolder);
