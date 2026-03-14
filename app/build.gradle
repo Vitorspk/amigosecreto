@@ -1,6 +1,9 @@
 plugins {
     id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
     id 'com.google.dagger.hilt.android'
+    id 'kotlin-kapt'
 }
 
 // Load keystore credentials from keystore.properties (never commit this file)
@@ -94,6 +97,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
     // Configura Robolectric para carregar recursos binários compilados (necessário para getString)
     testOptions {
         unitTests {
@@ -115,10 +122,17 @@ android {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
 dependencies {
     // Dependency Injection — Hilt
     implementation 'com.google.dagger:hilt-android:2.51.1'
-    annotationProcessor 'com.google.dagger:hilt-compiler:2.51.1'
+    kapt 'com.google.dagger:hilt-compiler:2.51.1'
+
+    // Kotlin stdlib
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
 
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
