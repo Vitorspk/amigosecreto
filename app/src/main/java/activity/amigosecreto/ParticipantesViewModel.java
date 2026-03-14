@@ -1,7 +1,6 @@
 package activity.amigosecreto;
 
 import android.app.Application;
-import android.database.sqlite.SQLiteException;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -112,7 +111,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 participanteRepository.marcarComoEnviado(participanteId);
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -124,7 +123,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.remover(participanteId);
                 postMain(this::carregarParticipantes);
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -157,7 +156,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.inserir(participante, grupoId);
                 postMain(this::carregarParticipantes);
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -169,7 +168,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.deletarTodosDoGrupo(grupoId);
                 postMain(this::carregarParticipantes);
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });
@@ -181,7 +180,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
                 postMain(this::carregarParticipantes);
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
             }
         });

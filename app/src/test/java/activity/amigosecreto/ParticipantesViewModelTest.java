@@ -457,6 +457,9 @@ public class ParticipantesViewModelTest {
         boolean terminated = realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS);
         assertTrue("Executor não terminou: background task travou", terminated);
 
+        // Restaura executor seguro antes de continuar (evita RejectedExecutionException em tearDown)
+        viewModel.setExecutorService(syncExecutor);
+
         // Drena o main looper para que o Handler.post do errorMessage seja processado
         idleMainLooper();
 
@@ -678,6 +681,10 @@ public class ParticipantesViewModelTest {
         realExecutor.shutdown();
         assertTrue("Executor não terminou: background task travou",
                 realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+
+        // Restaura executor seguro antes de continuar (evita RejectedExecutionException em tearDown)
+        viewModel.setExecutorService(syncExecutor);
+
         idleMainLooper();
 
         assertNotNull(viewModel.getErrorMessage().getValue());
@@ -714,5 +721,129 @@ public class ParticipantesViewModelTest {
         idleMainLooper();
 
         assertEquals(Boolean.FALSE, viewModel.getAtualizarSucesso().getValue());
+    }
+
+    // =========================================================
+    // removerParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void removerParticipante_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public void remover(int id) {
+                throw new android.database.sqlite.SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        viewModel.removerParticipante(1);
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+        viewModel.setExecutorService(syncExecutor);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+    }
+
+    // =========================================================
+    // deletarTodosDoGrupo — caminho de erro
+    // =========================================================
+
+    @Test
+    public void deletarTodosDoGrupo_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public void deletarTodosDoGrupo(int grupoId) {
+                throw new android.database.sqlite.SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        viewModel.deletarTodosDoGrupo(grupoId);
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+        viewModel.setExecutorService(syncExecutor);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+    }
+
+    // =========================================================
+    // salvarExclusoes — caminho de erro
+    // =========================================================
+
+    @Test
+    public void salvarExclusoes_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public void salvarExclusoes(int participanteId, List<Integer> adicionar,
+                    List<Integer> remover) {
+                throw new android.database.sqlite.SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        viewModel.salvarExclusoes(1, java.util.Arrays.asList(2), java.util.Collections.emptyList());
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+        viewModel.setExecutorService(syncExecutor);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
     }
 }
