@@ -232,7 +232,7 @@
 
     <!-- Content descriptions -->
     <string name="cd_remove_group">Remover Grupo</string>
-    <string name="cd_gift_icon">Ícone do grupo</string>
+    <string name="cd_group_icon">Ícone do grupo</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
 
     <!-- Botões de ação de participante -->

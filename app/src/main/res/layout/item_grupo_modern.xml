@@ -90,6 +90,7 @@
             android:src="@drawable/ic_arrow_forward"
             android:layout_marginStart="8dp"
             android:contentDescription="@null"
+            app:tint="@color/white"
             tools:ignore="ContentDescription" />
 
     </LinearLayout>
