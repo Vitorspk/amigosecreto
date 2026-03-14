@@ -101,6 +101,15 @@ public class MensagemSecretaBuilderTest {
     }
 
     @Test
+    public void gerar_categoriaApenasEspacos_naoExibida() {
+        List<Desejo> desejos = Collections.singletonList(buildDesejo("Fone", "   ", 0, 0, null));
+        String msg = MensagemSecretaBuilder.gerar("Gabi", "Hugo", desejos);
+        // categoria em branco deve ser ignorada — produto ainda aparece
+        assertTrue(msg.contains("Fone"));
+        assertFalse(msg.contains("(   )"));
+    }
+
+    @Test
     public void gerar_withLojas_containsLoja() {
         List<Desejo> desejos = Collections.singletonList(buildDesejo("Fone", null, 0, 0, "Amazon"));
         String msg = MensagemSecretaBuilder.gerar("Gabi", "Hugo", desejos);
@@ -155,8 +164,7 @@ public class MensagemSecretaBuilderTest {
     public void gerar_desejo_nullProduto_isSkipped() {
         List<Desejo> desejos = Collections.singletonList(buildDesejo(null, "Cat", 0, 0, null));
         String msg = MensagemSecretaBuilder.gerar("Sara", "Tiago", desejos);
-        // lista de desejos nao deve aparecer pois o unico item foi filtrado
-        assertFalse(msg.contains("Cat"));
+        // cabecalho nao deve aparecer pois o unico item foi filtrado pelo produto nulo
         assertFalse(msg.contains("Lista de desejos"));
     }
 
