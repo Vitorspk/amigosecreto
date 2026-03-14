@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base fallback for values-w820dp/dimens.xml override — lint false positive -->
-    <dimen name="activity_horizontal_margin" tools:ignore="UnusedResources" xmlns:tools="http://schemas.android.com/tools">16dp</dimen>
+    <dimen name="activity_horizontal_margin" tools:ignore="UnusedResources">16dp</dimen>
 </resources>
