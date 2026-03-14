@@ -35,6 +35,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +45,7 @@ import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.util.ValidationUtils;
 
+@AndroidEntryPoint
 public class ParticipantesActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;

@@ -30,9 +30,10 @@
 
 ```
 app/src/main/java/activity/amigosecreto/
+├── AmigoSecretoApplication.java           # @HiltAndroidApp — ponto de entrada do Hilt
 ├── GruposActivity.java                    # LAUNCHER — tela principal, gerenciar grupos
-├── ParticipantesActivity.java             # gerenciar participantes de um grupo
-├── ParticipantesViewModel.java            # MVVM ViewModel — lógica de negócio + LiveData
+├── ParticipantesActivity.java             # @AndroidEntryPoint — gerenciar participantes de um grupo
+├── ParticipantesViewModel.java            # @HiltViewModel — lógica de negócio + LiveData
 ├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
 ├── ParticipanteDesejosActivity.java       # ver desejos de um participante
 ├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
@@ -52,6 +53,9 @@ app/src/main/java/activity/amigosecreto/
 │   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
 │   ├── Desejo.java                        # model de desejo (Serializable)
 │   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
+│
+├── di/
+│   └── DatabaseModule.java                # @Module @InstallIn(SingletonComponent) — provê Repositories
 │
 ├── repository/
 │   ├── ParticipanteRepository.java        # encapsula ParticipanteDAO; síncrono, thread de BG
@@ -242,6 +246,9 @@ CREATE TABLE desejo (
 
 ### Dependências
 ```gradle
+implementation 'com.google.dagger:hilt-android:2.51.1'
+annotationProcessor 'com.google.dagger:hilt-compiler:2.51.1'
+
 implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
 implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -252,7 +259,6 @@ testImplementation 'org.mockito:mockito-core:5.11.0'
 testImplementation 'org.robolectric:robolectric:4.13'
 testImplementation 'androidx.test:core:1.6.1'
 testImplementation 'androidx.test.ext:junit:1.2.1'
-
 androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 androidTestImplementation 'androidx.test:runner:1.6.2'
@@ -268,6 +274,13 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 ---
 
 ## Padrões de Arquitetura
+
+### Dependency Injection (Hilt)
+- `@HiltAndroidApp` em `AmigoSecretoApplication` — ponto de geração de componentes
+- `@HiltViewModel` + `@Inject` em `ParticipantesViewModel` — recebe Repositories via DI
+- `@AndroidEntryPoint` em `ParticipantesActivity` — habilita injeção na Activity
+- `DatabaseModule` (`@Module @InstallIn(SingletonComponent)`) — provê `ParticipanteRepository` e `DesejoRepository` como singletons
+- Testes de ViewModel instanciam o ViewModel diretamente via construtor (sem Hilt no unit test)
 
 ### MVVM (ParticipantesActivity)
 - `ParticipantesViewModel extends AndroidViewModel` com `LiveData` para todos os estados
@@ -517,7 +530,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar para MVVM com ViewModel e LiveData (PR #18)
 - [x] Implementar Repository pattern (PR #19)
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
-- [ ] Adicionar Dependency Injection (Hilt)
+- [x] Adicionar Dependency Injection (Hilt) — PR #29
 - [ ] Migrar para Kotlin
 
 ### Qualidade
