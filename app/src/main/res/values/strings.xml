@@ -251,12 +251,6 @@
     <!-- Dialog opções desejo -->
     <string name="label_product_name">Nome do Produto</string>
 
-    <!-- Dialog add participante.
-         Nota: dialog_add_participant_title e button_add_participant têm o mesmo valor
-         intencionalmente — um é contentDescription do ícone do dialog, o outro é o
-         label do botão. Contextos distintos; não consolidar. -->
-    <string name="dialog_add_participant_title">Adicionar Participante</string>
-
     <!-- Tela listar participantes -->
     <string name="button_add_participant">Adicionar Participante</string>
     <string name="button_draw">Realizar Sorteio</string>
