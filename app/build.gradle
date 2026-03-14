@@ -122,9 +122,6 @@ dependencies {
     // RecyclerView
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
 
-    // Splash Screen API (Android 12+)
-    implementation 'androidx.core:core-splashscreen:1.0.1'
-
     // ViewModel + LiveData (MVVM, sem Kotlin/Hilt)
     implementation 'androidx.lifecycle:lifecycle-viewmodel:2.8.7'
     implementation 'androidx.lifecycle:lifecycle-livedata:2.8.7'

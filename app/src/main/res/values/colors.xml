@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="UnusedResources">
+<resources>
 
     <!-- Paleta Harmoniosa - Roxo Suave -->
     <color name="md_theme_primary">#6B4CE6</color>
@@ -16,7 +15,8 @@
 
     <!-- Background -->
     <color name="md_theme_background">#FAFAFA</color>
-    <color name="md_theme_onBackground">#1C1B1F</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="md_theme_onBackground" tools:ignore="UnusedResources" xmlns:tools="http://schemas.android.com/tools">#1C1B1F</color>
 
     <!-- Surface -->
     <color name="md_theme_surface">#FFFFFF</color>
@@ -32,14 +32,16 @@
 
     <!-- Legacy colors -->
     <color name="colorPrimary">@color/purple_primary</color>
-    <color name="colorPrimaryDark">#5339C9</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="colorPrimaryDark" tools:ignore="UnusedResources" xmlns:tools="http://schemas.android.com/tools">#5339C9</color>
     <color name="colorPrimaryContainer">@color/purple_background</color>
     <color name="colorSecondary">@color/accent_green</color>
     <color name="colorSecondaryContainer">#E8F5E9</color>
     <color name="colorAccent">@color/accent_green</color>
     <color name="colorError">#EF5350</color>
     <color name="background">@color/md_theme_background</color>
-    <color name="surface">@color/md_theme_surface</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="surface" tools:ignore="UnusedResources" xmlns:tools="http://schemas.android.com/tools">@color/md_theme_surface</color>
     <color name="text_primary">#1C1B1F</color>
     <color name="text_secondary">#6B6B6B</color>
     <color name="white">#FFFFFF</color>
