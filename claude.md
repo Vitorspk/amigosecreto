@@ -32,6 +32,7 @@
 app/src/main/java/activity/amigosecreto/
 ├── GruposActivity.java                    # LAUNCHER — tela principal, gerenciar grupos
 ├── ParticipantesActivity.java             # gerenciar participantes de um grupo
+├── ParticipantesViewModel.java            # MVVM ViewModel — lógica de negócio + LiveData
 ├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
 ├── ParticipanteDesejosActivity.java       # ver desejos de um participante
 ├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
@@ -48,14 +49,19 @@ app/src/main/java/activity/amigosecreto/
 │   ├── Grupo.java                         # model de grupo (Serializable)
 │   ├── GrupoDAO.java                      # CRUD de grupos
 │   ├── Participante.java                  # model de participante (Serializable)
-│   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio
+│   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
 │   ├── Desejo.java                        # model de desejo (Serializable)
-│   └── DesejoDAO.java                     # CRUD de desejos
+│   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
+│
+├── repository/
+│   ├── ParticipanteRepository.java        # encapsula ParticipanteDAO; síncrono, thread de BG
+│   └── DesejoRepository.java             # encapsula DesejoDAO; síncrono, thread de BG
 │
 └── util/
     ├── AnimationUtils.java                # animações reutilizáveis
     ├── AsyncDatabaseHelper.java           # operações assíncronas no banco
     ├── HapticFeedbackUtils.java           # feedback háptico (flags=0, respeita acessibilidade)
+    ├── MensagemSecretaBuilder.java        # formata mensagem de compartilhamento do sorteio
     ├── SnackbarHelper.java                # mensagens padronizadas
     ├── SorteioEngine.java                 # motor de sorteio (extraído para testabilidade)
     ├── ValidationUtils.java               # validação centralizada de inputs
@@ -264,11 +270,25 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 
 ## Padrões de Arquitetura
 
+### MVVM (ParticipantesActivity)
+- `ParticipantesViewModel extends AndroidViewModel` com `LiveData` para todos os estados
+- Todas as operações de banco executadas via `ExecutorService` (thread de background)
+- Resultados postados de volta ao main thread via `Handler(Looper.getMainLooper())`
+- Activity apenas observa LiveData e não toca diretamente nos repositórios
+- `InstantTaskExecutorRule` + `syncExecutor` para testes determinísticos
+
+### Repository Pattern (ParticipantesActivity)
+- `ParticipanteRepository` / `DesejoRepository` desacoplam ViewModel dos DAOs
+- Cada método abre e fecha o DAO via try/finally (sem estado aberto entre chamadas)
+- Métodos síncronos — chamados sempre de thread de background
+- `@VisibleForTesting` para injeção de dependências nos testes
+
 ### DAO Pattern
 - `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`
 - Queries parametrizadas (prevenção SQL injection)
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
-- Transações atômicas para sorteio
+- Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
+- Batch queries: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` com INNER JOIN + GROUP BY (elimina N+1)
 
 ### Utility Layer
 - `WindowInsetsUtils` — IME padding + locale `pt-BR` + formatação monetária (centralizado)
@@ -278,6 +298,7 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - `SnackbarHelper` — mensagens padronizadas
 - `AnimationUtils` — animações reutilizáveis
 - `SorteioEngine` — motor de sorteio extraído de `ParticipantesActivity` para testabilidade
+- `MensagemSecretaBuilder` — formata mensagem de compartilhamento do sorteio
 
 ### Adapter Pattern
 - `ParticipantesRecyclerAdapter` com `getBindingAdapterPosition()`
@@ -455,7 +476,27 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (91 testes — BUILD SUCCESSFUL)
+### Estrutura completa
+
+```
+app/src/test/java/activity/amigosecreto/
+├── FormatarPrecoTest.java               # formatação de preço pt-BR
+├── ParticipantesViewModelTest.java      # ViewModel — Robolectric + InstantTaskExecutorRule
+├── db/
+│   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
+│   ├── GrupoModelTest.java              # model Grupo — Serializable
+│   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
+│   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
+│   └── ParticipanteModelTest.java       # model Participante — Serializable
+├── repository/
+│   ├── DesejoRepositoryTest.java        # DesejoRepository — integração real SQLite
+│   └── ParticipanteRepositoryTest.java  # ParticipanteRepository — integração real SQLite
+└── util/
+    ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
+    └── ValidationUtilsTest.java         # validações de input e regex
+```
+
+### Cobertura Atual (221 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -467,6 +508,11 @@ app/src/test/java/activity/amigosecreto/
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `ParticipanteDAOTest` | 20 |
 | DAO | `MySQLiteOpenHelperTest` | 7 |
+| Repository | `ParticipanteRepositoryTest` | 19 |
+| Repository | `DesejoRepositoryTest` | ~16 |
+| ViewModel | `ParticipantesViewModelTest` | ~30 |
+
+**Configuração Robolectric:** `testOptions.unitTests.includeAndroidResources = true` habilitado em `build.gradle` para permitir acesso a recursos compilados (`getString()`) nos testes unitários.
 
 Ver `documents/TEST_PLAN.md` para descrição detalhada das Fases 1–3 e progresso.
 
@@ -477,9 +523,9 @@ Ver `documents/TEST_PLAN.md` para descrição detalhada das Fases 1–3 e progre
 Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizado.
 
 ### Arquitetura
-- [ ] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas
-- [ ] Migrar para MVVM com ViewModel e LiveData
-- [ ] Implementar Repository pattern
+- [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
+- [x] Migrar para MVVM com ViewModel e LiveData (PR #18)
+- [x] Implementar Repository pattern (PR #19)
 - [ ] Adicionar Dependency Injection (Hilt)
 - [ ] Migrar para Kotlin
 
