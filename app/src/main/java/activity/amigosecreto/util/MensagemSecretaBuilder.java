@@ -65,6 +65,9 @@ public class MensagemSecretaBuilder {
         return sb.toString();
     }
 
+    // Visivel para testes unitarios (FormatarPrecoTest). numberFormatPtBr() usa apenas
+    // java.text.NumberFormat + java.util.Locale — sem dependencia de Android/Context.
+    // TODO: mover LOCALE_PT_BR e numberFormatPtBr() para FormatUtils em refactor futuro.
     public static String formatarPreco(double valor) {
         return WindowInsetsUtils.numberFormatPtBr().format(valor);
     }

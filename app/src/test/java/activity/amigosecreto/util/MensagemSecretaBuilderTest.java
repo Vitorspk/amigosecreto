@@ -58,6 +58,17 @@ public class MensagemSecretaBuilderTest {
         assertFalse(msg.contains("null"));
     }
 
+    @Test
+    public void gerar_nullParticipanteEAmigo_bothUsePlaceholder() {
+        String msg = MensagemSecretaBuilder.gerar(null, null, null);
+        // ambos os placeholders devem aparecer (dois "???" na mensagem)
+        int count = 0;
+        int idx = 0;
+        while ((idx = msg.indexOf("???", idx)) != -1) { count++; idx += 3; }
+        assertTrue(count >= 2);
+        assertFalse(msg.contains("null"));
+    }
+
     // --- sem desejos ---
 
     @Test
