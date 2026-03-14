@@ -10,7 +10,7 @@
 
 O app **atingiu nível profissional** com progresso consistente desde a análise inicial.
 
-É um app funcional, com pipeline de CI/CD real, testes unitários (260 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt; PR #31 adicionou testes de segurança pré-migração.
+É um app funcional, com pipeline de CI/CD real, testes unitários (260 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt; PR #31 adicionou testes de contrato pré-migração.
 
 O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. PR #28 introduziu Dependency Injection com Hilt. O próximo passo é a migração para Kotlin.
 
@@ -95,7 +95,7 @@ PR #22 removeu 5 arquivos genuinamente orphans (`bounce.xml`, `button_press.xml`
 - `ParticipanteRepositoryTest` — 17 casos, `DesejoRepositoryTest` — 16 casos
 - Cobertura de caminhos de erro no ViewModel (total: 224 testes)
 
-**Adicionados no PR #31 — Testes de segurança pré-migração Kotlin:**
+**Adicionados no PR #31 — Testes de contrato pré-migração Kotlin:**
 - `DesejoParcelableTest` — 6 casos: serialização/desserialização via Parcel, campos nulos, round-trip
 - `DesejoDAOBatchQueryTest` — 11 casos: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` (INNER JOIN + GROUP BY)
 - `ParticipanteRepositorySalvarExclusoesTest` — 7 casos: `salvarExclusoes()` transação atômica
@@ -181,7 +181,7 @@ Recursos críticos removidos no PR #14/#15. PR #22 zerou os 47 `UnusedResources`
 
 ### Fase 4 — Cobertura de Testes — ✅ Concluído (PR #16–#20 + PR #31)
 
-260 testes. Todas as camadas cobertas: DAO, model, repository, ViewModel, utilitários. PR #31 adicionou testes de segurança pré-migração Kotlin. Ver seção §4 acima.
+260 testes. Todas as camadas cobertas: DAO, model, repository, ViewModel, utilitários. PR #31 adicionou testes de contrato pré-migração Kotlin. Ver seção §4 acima.
 
 ---
 
@@ -241,7 +241,7 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### PR #31 — Testes de Segurança Pré-migração Kotlin
+### PR #31 — Testes de Contrato Pré-migração Kotlin
 
 | Item | Situação |
 |------|---------|
