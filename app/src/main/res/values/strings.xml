@@ -222,30 +222,17 @@
         <item quantity="other">%d restrições</item>
     </plurals>
 
-    <!-- Emojis / ícones decorativos -->
+    <!-- Emojis / ícones decorativos (usados em runtime em android:text) -->
     <string name="emoji_gift">🎁</string>
     <string name="emoji_diamond">💎</string>
     <string name="emoji_santa">🎅</string>
     <string name="emoji_person">👤</string>
     <string name="emoji_edit">✏️</string>
     <string name="emoji_trash">🗑️</string>
-    <string name="icon_arrow_right">›</string>
 
-    <!-- Layouts de item (preview/placeholder) -->
-    <string name="item_preview_number">1</string>
-    <string name="item_preview_initial">A</string>
-    <string name="item_preview_name">Nome</string>
-    <string name="item_preview_status">Status</string>
-    <string name="item_preview_wishes_count">0 desejos</string>
-    <string name="item_preview_group_icon">Grupo Icon</string>
-    <string name="item_preview_group_name">Nome do Grupo</string>
-    <string name="item_preview_group_date">01/01/2024</string>
-    <string name="item_preview_group_modern_name">Festa de Natal</string>
-    <string name="item_preview_participants_count">6 Participantes</string>
-    <string name="item_preview_regalo">Presente</string>
-
-    <!-- Botões / content descriptions de grupo -->
+    <!-- Content descriptions -->
     <string name="cd_remove_group">Remover Grupo</string>
+    <string name="cd_gift_icon">Ícone do grupo</string>
 
     <!-- Botões de ação de participante -->
     <string name="button_my_wishes">Meus Desejos</string>
@@ -258,6 +245,7 @@
     <string name="empty_state_title">Nada aqui ainda</string>
     <string name="empty_state_subtitle">Adicione itens para começar</string>
     <string name="empty_state_button">Adicionar</string>
+    <string name="empty_state_no_wishes_simple">Sem desejos</string>
 
     <!-- Loading state -->
     <string name="loading_state_text">Carregando…</string>
@@ -265,20 +253,10 @@
     <!-- Dialog opções desejo -->
     <string name="label_product_name">Nome do Produto</string>
 
-    <!-- Dialog add participante (título hardcoded) -->
+    <!-- Dialog add participante -->
     <string name="dialog_add_participant_title">Adicionar Participante</string>
 
-    <!-- Dialog regras -->
-    <string name="label_restrictions_title">Restrições</string>
-
-    <!-- item_regra_checkbox placeholder -->
-    <string name="item_regra_preview_name">Nome do Participante</string>
-
-    <!-- Participante desejos -->
-    <string name="cd_gift_icon">Ícone presente</string>
-    <string name="empty_state_no_wishes_simple">Sem desejos</string>
-
-    <!-- Tela listar participantes -->
+    <!-- Tela listar participantes (emojis decorativos mantidos intencionalmente — não traduzíveis) -->
     <string name="button_add_participant">➕ Adicionar Participante</string>
     <string name="button_draw">🎲 Realizar Sorteio</string>
 

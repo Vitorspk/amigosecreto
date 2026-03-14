@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_grupo"
     android:layout_width="match_parent"
     android:layout_height="80dp"
@@ -41,7 +42,7 @@
                 android:id="@+id/tv_grupo_nome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/item_preview_group_modern_name"
+                tools:text="Festa de Natal"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -68,7 +69,7 @@
                     android:id="@+id/tv_grupo_participantes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/item_preview_participants_count"
+                    tools:text="6 Participantes"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:shadowColor="#40000000"
@@ -81,14 +82,13 @@
         </LinearLayout>
 
         <!-- Arrow Icon -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/icon_arrow_right"
-            android:textColor="@color/white"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp" />
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_arrow_forward"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@null"
+            tools:ignore="ContentDescription" />
 
     </LinearLayout>
 
