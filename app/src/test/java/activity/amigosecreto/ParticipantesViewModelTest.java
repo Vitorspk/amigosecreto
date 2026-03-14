@@ -1,7 +1,5 @@
 package activity.amigosecreto;
 
-import android.content.Context;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 
@@ -46,6 +44,7 @@ public class ParticipantesViewModelTest {
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
+    private android.app.Application app;
     private ParticipantesViewModel viewModel;
     private GrupoDAO grupoDao;
     private ParticipanteDAO participanteDao;
@@ -71,22 +70,21 @@ public class ParticipantesViewModelTest {
 
     @Before
     public void setUp() {
-        Context ctx = ApplicationProvider.getApplicationContext();
+        app = (android.app.Application) ApplicationProvider.getApplicationContext();
 
-        grupoDao = new GrupoDAO(ctx);
+        grupoDao = new GrupoDAO(app);
         grupoDao.open();
         Grupo g = new Grupo();
         g.setNome("Grupo Teste");
         g.setData("01/01/2025");
         grupoId = (int) grupoDao.inserir(g);
 
-        participanteDao = new ParticipanteDAO(ctx);
+        participanteDao = new ParticipanteDAO(app);
         participanteDao.open();
 
-        desejoRepository = new DesejoRepository(
-                (android.app.Application) ctx.getApplicationContext());
+        desejoRepository = new DesejoRepository(app);
 
-        viewModel = new ParticipantesViewModel((android.app.Application) ctx.getApplicationContext());
+        viewModel = new ParticipantesViewModel(app);
         viewModel.setExecutorService(syncExecutor);
     }
 
@@ -102,6 +100,37 @@ public class ParticipantesViewModelTest {
     /** Drena o main looper do Robolectric para que Handler.post() complete antes das asserções. */
     private void idleMainLooper() {
         Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    }
+
+    /**
+     * Configura o ViewModel com {@code repoQueLanca}, executa {@code acao} via um executor real
+     * (necessário para que getApplication().getString() rode no main looper) e verifica que
+     * {@code errorMessage} foi postado com um valor não-nulo e não-vazio.
+     *
+     * <p>Restaura {@code syncExecutor} antes das asserções para evitar
+     * {@link java.util.concurrent.RejectedExecutionException} em tearDown.
+     */
+    private void assertaErroComRealExecutor(ParticipanteRepository repoQueLanca, Runnable acao)
+            throws InterruptedException {
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        acao.run();
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+        viewModel.setExecutorService(syncExecutor);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
     }
 
     private Participante inserirParticipante(String nome) {
@@ -137,8 +166,7 @@ public class ParticipantesViewModelTest {
         List<Participante> apos = participanteDao.listarPorGrupo(grupoId);
         int pid = apos.get(0).getId();
 
-        Context ctx = ApplicationProvider.getApplicationContext();
-        DesejoDAO desejoDAO = new DesejoDAO(ctx);
+        DesejoDAO desejoDAO = new DesejoDAO(app);
         desejoDAO.open();
         Desejo d1 = new Desejo(); d1.setProduto("Livro"); d1.setParticipanteId(pid); desejoDAO.inserir(d1);
         Desejo d2 = new Desejo(); d2.setProduto("Caneta"); d2.setParticipanteId(pid); desejoDAO.inserir(d2);
@@ -421,11 +449,8 @@ public class ParticipantesViewModelTest {
     @Test
     public void inserirParticipante_erroNoRepository_postaErrorMessage()
             throws InterruptedException {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        // Subclasse que força exceção em inserir(); listarPorGrupo retorna lista vazia
-        // para que carregarParticipantes() não falhe e polua errorMessage antes do assert.
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        // listarPorGrupo retorna lista vazia para que carregarParticipantes() não polua errorMessage
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void inserir(Participante participante, int grupoId) {
                 throw new android.database.sqlite.SQLiteException("falha simulada");
@@ -435,36 +460,9 @@ public class ParticipantesViewModelTest {
                 return java.util.Collections.emptyList();
             }
         };
-
-        // Usa executor real (não síncrono) para que o postMain da lambda de erro chegue via
-        // Handler ao main looper, onde getApplication().getString() funciona corretamente.
-        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
-        viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, desejoRepository);
-        viewModel.init(grupoId);
-
-        // Limpa qualquer errorMessage de carregarParticipantes antes de prosseguir
-        idleMainLooper();
-        viewModel.clearErrorMessage();
-        idleMainLooper();
-
         Participante p = new Participante();
         p.setNome("Erro");
-        viewModel.inserirParticipante(p, grupoId);
-
-        // Aguarda o background thread completar (garante que Handler.post já foi chamado)
-        realExecutor.shutdown();
-        boolean terminated = realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS);
-        assertTrue("Executor não terminou: background task travou", terminated);
-
-        // Restaura executor seguro antes de continuar (evita RejectedExecutionException em tearDown)
-        viewModel.setExecutorService(syncExecutor);
-
-        // Drena o main looper para que o Handler.post do errorMessage seja processado
-        idleMainLooper();
-
-        assertNotNull(viewModel.getErrorMessage().getValue());
-        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.inserirParticipante(p, grupoId));
     }
 
     // =========================================================
@@ -654,9 +652,7 @@ public class ParticipantesViewModelTest {
     @Test
     public void marcarComoEnviado_erroNoRepository_postaErrorMessage()
             throws InterruptedException {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void marcarComoEnviado(int id) {
                 throw new android.database.sqlite.SQLiteException("falha simulada");
@@ -666,29 +662,7 @@ public class ParticipantesViewModelTest {
                 return java.util.Collections.emptyList();
             }
         };
-
-        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
-        viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, desejoRepository);
-        viewModel.init(grupoId);
-
-        idleMainLooper();
-        viewModel.clearErrorMessage();
-        idleMainLooper();
-
-        viewModel.marcarComoEnviado(1);
-
-        realExecutor.shutdown();
-        assertTrue("Executor não terminou: background task travou",
-                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
-
-        // Restaura executor seguro antes de continuar (evita RejectedExecutionException em tearDown)
-        viewModel.setExecutorService(syncExecutor);
-
-        idleMainLooper();
-
-        assertNotNull(viewModel.getErrorMessage().getValue());
-        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.marcarComoEnviado(1));
     }
 
     // =========================================================
@@ -697,9 +671,7 @@ public class ParticipantesViewModelTest {
 
     @Test
     public void atualizarParticipante_excecaoNoRepository_emiteFalse() {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public boolean atualizar(Participante participante) {
                 throw new android.database.sqlite.SQLiteException("falha simulada");
@@ -730,9 +702,7 @@ public class ParticipantesViewModelTest {
     @Test
     public void removerParticipante_erroNoRepository_postaErrorMessage()
             throws InterruptedException {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void remover(int id) {
                 throw new android.database.sqlite.SQLiteException("falha simulada");
@@ -742,26 +712,7 @@ public class ParticipantesViewModelTest {
                 return java.util.Collections.emptyList();
             }
         };
-
-        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
-        viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, desejoRepository);
-        viewModel.init(grupoId);
-
-        idleMainLooper();
-        viewModel.clearErrorMessage();
-        idleMainLooper();
-
-        viewModel.removerParticipante(1);
-
-        realExecutor.shutdown();
-        assertTrue("Executor não terminou: background task travou",
-                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
-        viewModel.setExecutorService(syncExecutor);
-        idleMainLooper();
-
-        assertNotNull(viewModel.getErrorMessage().getValue());
-        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.removerParticipante(1));
     }
 
     // =========================================================
@@ -771,9 +722,7 @@ public class ParticipantesViewModelTest {
     @Test
     public void deletarTodosDoGrupo_erroNoRepository_postaErrorMessage()
             throws InterruptedException {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void deletarTodosDoGrupo(int grupoId) {
                 throw new android.database.sqlite.SQLiteException("falha simulada");
@@ -783,26 +732,7 @@ public class ParticipantesViewModelTest {
                 return java.util.Collections.emptyList();
             }
         };
-
-        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
-        viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, desejoRepository);
-        viewModel.init(grupoId);
-
-        idleMainLooper();
-        viewModel.clearErrorMessage();
-        idleMainLooper();
-
-        viewModel.deletarTodosDoGrupo(grupoId);
-
-        realExecutor.shutdown();
-        assertTrue("Executor não terminou: background task travou",
-                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
-        viewModel.setExecutorService(syncExecutor);
-        idleMainLooper();
-
-        assertNotNull(viewModel.getErrorMessage().getValue());
-        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.deletarTodosDoGrupo(grupoId));
     }
 
     // =========================================================
@@ -812,9 +742,7 @@ public class ParticipantesViewModelTest {
     @Test
     public void salvarExclusoes_erroNoRepository_postaErrorMessage()
             throws InterruptedException {
-        Context ctx = ApplicationProvider.getApplicationContext();
-        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
-                (android.app.Application) ctx.getApplicationContext()) {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void salvarExclusoes(int participanteId, List<Integer> adicionar,
                     List<Integer> remover) {
@@ -825,25 +753,7 @@ public class ParticipantesViewModelTest {
                 return java.util.Collections.emptyList();
             }
         };
-
-        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
-        viewModel.setExecutorService(realExecutor);
-        viewModel.setRepositories(repoQueLanca, desejoRepository);
-        viewModel.init(grupoId);
-
-        idleMainLooper();
-        viewModel.clearErrorMessage();
-        idleMainLooper();
-
-        viewModel.salvarExclusoes(1, java.util.Arrays.asList(2), java.util.Collections.emptyList());
-
-        realExecutor.shutdown();
-        assertTrue("Executor não terminou: background task travou",
-                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
-        viewModel.setExecutorService(syncExecutor);
-        idleMainLooper();
-
-        assertNotNull(viewModel.getErrorMessage().getValue());
-        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.salvarExclusoes(1, java.util.Arrays.asList(2), java.util.Collections.emptyList()));
     }
 }

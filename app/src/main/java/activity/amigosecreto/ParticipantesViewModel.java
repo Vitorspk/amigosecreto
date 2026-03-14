@@ -1,8 +1,10 @@
 package activity.amigosecreto;
 
 import android.app.Application;
+import android.database.sqlite.SQLiteException;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -27,6 +29,8 @@ import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.SorteioEngine;
 
 public class ParticipantesViewModel extends AndroidViewModel {
+
+    private static final String TAG = "ParticipantesViewModel";
 
     /** Resultado do sorteio — substitui sealed class (Java puro). */
     public static class SorteioResultado {
@@ -112,7 +116,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
             try {
                 participanteRepository.marcarComoEnviado(participanteId);
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+                handleDbError(e, "Erro ao marcar como enviado id=" + participanteId, R.string.error_save_failed);
             }
         });
     }
@@ -124,15 +128,19 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 participanteRepository.remover(participanteId);
                 postMain(this::carregarParticipantes);
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+                handleDbError(e, "Erro ao remover participante id=" + participanteId, R.string.error_save_failed);
             }
         });
     }
 
     /**
      * Atualiza participante em background (evita ANR).
-     * Posta true em atualizarSucesso se bem-sucedido, false caso contrário.
-     * A Activity observa para fechar o dialog ou restaurar o estado original.
+     * Posta {@code true} em {@link #atualizarSucesso} se bem-sucedido, {@code false} caso contrário.
+     *
+     * <p><b>Canal de erro diferente dos demais métodos:</b> usa {@code atualizarSucesso=false}
+     * em vez de {@code errorMessage}, porque a Activity precisa saber se deve fechar o dialog de
+     * edição ou manter os campos preenchidos para o usuário corrigir. Os demais métodos de escrita
+     * não têm dialog de edição — eles apenas mostram um toast de erro genérico via {@code errorMessage}.
      */
     public void atualizarParticipante(Participante participante) {
         executor.execute(() -> {
@@ -157,7 +165,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 participanteRepository.inserir(participante, grupoId);
                 postMain(this::carregarParticipantes);
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+                handleDbError(e, "Erro ao inserir participante grupoId=" + grupoId, R.string.error_save_failed);
             }
         });
     }
@@ -169,7 +177,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 participanteRepository.deletarTodosDoGrupo(grupoId);
                 postMain(this::carregarParticipantes);
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+                handleDbError(e, "Erro ao deletar todos do grupo id=" + grupoId, R.string.error_save_failed);
             }
         });
     }
@@ -181,7 +189,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
                 participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
                 postMain(this::carregarParticipantes);
             } catch (Exception e) {
-                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+                handleDbError(e, "Erro ao salvar exclusões participanteId=" + participanteId, R.string.error_save_failed);
             }
         });
     }
@@ -345,6 +353,21 @@ public class ParticipantesViewModel extends AndroidViewModel {
 
     private void postMain(Runnable r) {
         mainHandler.post(r);
+    }
+
+    /**
+     * Trata exceções de operações de banco:
+     * - Loga sempre (visível no adb logcat mesmo em release)
+     * - Em builds de debug, relança exceções que não são SQLiteException para não
+     *   engolir bugs de programação (ex: NullPointerException por falha de injeção)
+     * - Posta a mensagem de erro informada para o main thread
+     */
+    private void handleDbError(Exception e, String logMsg, int errorStringRes) {
+        Log.e(TAG, logMsg, e);
+        if (BuildConfig.DEBUG && !(e instanceof SQLiteException)) {
+            throw new RuntimeException(logMsg, e);
+        }
+        postMain(() -> errorMessage.setValue(getApplication().getString(errorStringRes)));
     }
 
     @VisibleForTesting
