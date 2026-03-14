@@ -98,14 +98,17 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginBottom="8dp"
-            android:text="➕ Adicionar Participante"
+            android:text="@string/button_add_participant"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/white"
             app:backgroundTint="@color/colorPrimary"
             app:cornerRadius="12dp"
-            app:elevation="2dp" />
+            app:elevation="2dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white" />
 
         <!-- Botão Realizar Sorteio -->
         <com.google.android.material.button.MaterialButton
@@ -113,14 +116,17 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginBottom="4dp"
-            android:text="🎲 Realizar Sorteio"
+            android:text="@string/button_draw"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
             android:background="@drawable/gradient_green"
             android:textColor="@color/white"
             app:cornerRadius="12dp"
-            app:elevation="0dp" />
+            app:elevation="0dp"
+            app:icon="@drawable/ic_dice"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white" />
 
         <!-- Botão Limpar -->
         <com.google.android.material.button.MaterialButton

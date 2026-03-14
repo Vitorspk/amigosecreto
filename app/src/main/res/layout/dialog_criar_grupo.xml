@@ -18,7 +18,8 @@
         <TextView
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:text="🎁"
+            android:text="@string/emoji_gift"
+            android:importantForAccessibility="no"
             android:textSize="32sp"
             android:gravity="center"
             android:background="@drawable/bg_gradient_red"

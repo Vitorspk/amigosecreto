@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_grupo"
     android:layout_width="match_parent"
     android:layout_height="80dp"
@@ -25,7 +26,8 @@
             android:id="@+id/tv_grupo_emoji"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:text="🎅"
+            android:text="@string/emoji_santa"
+            android:importantForAccessibility="no"
             android:textSize="32sp"
             android:gravity="center"
             android:layout_marginEnd="12dp" />
@@ -41,7 +43,7 @@
                 android:id="@+id/tv_grupo_nome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Festa de Natal"
+                tools:text="Festa de Natal"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -60,7 +62,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="👤"
+                    android:text="@string/emoji_person"
+                    android:importantForAccessibility="no"
                     android:textSize="14sp"
                     android:layout_marginEnd="4dp" />
 
@@ -68,7 +71,7 @@
                     android:id="@+id/tv_grupo_participantes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="6 Participantes"
+                    tools:text="6 Participantes"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:shadowColor="#40000000"
@@ -81,14 +84,13 @@
         </LinearLayout>
 
         <!-- Arrow Icon -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="›"
-            android:textColor="@color/white"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp" />
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_arrow_forward"
+            android:layout_marginStart="8dp"
+            app:tint="@color/white"
+            android:importantForAccessibility="no" />
 
     </LinearLayout>
 

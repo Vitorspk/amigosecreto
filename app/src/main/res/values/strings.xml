@@ -225,4 +225,44 @@
         <item quantity="other">%d restrições</item>
     </plurals>
 
+    <!-- Emojis / ícones decorativos (usados em runtime em android:text).
+         translatable="false": emojis são símbolos universais, não devem ser traduzidos. -->
+    <string name="emoji_gift" translatable="false">🎁</string>
+    <string name="emoji_diamond" translatable="false">💎</string>
+    <string name="emoji_santa" translatable="false">🎅</string>
+    <string name="emoji_person" translatable="false">👤</string>
+    <string name="emoji_edit" translatable="false">✏️</string>
+    <string name="emoji_trash" translatable="false">🗑️</string>
+
+    <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
+    <string name="cd_remove_group">Remover Grupo</string>
+    <string name="cd_remove_participant">Remover Participante</string>
+    <string name="cd_wish_icon">Ícone do desejo</string>
+    <string name="cd_my_wishes">Meus Desejos</string>
+    <string name="cd_restrictions">Restrições</string>
+    <string name="cd_share">Compartilhar</string>
+    <string name="cd_edit">Editar</string>
+
+    <!-- Empty state -->
+    <string name="empty_state_title">Nada aqui ainda</string>
+    <string name="empty_state_subtitle">Adicione itens para começar</string>
+    <string name="empty_state_button">Adicionar</string>
+
+    <!-- Loading state -->
+    <string name="loading_state_text">Carregando…</string>
+
+    <!-- Dialog opções desejo -->
+    <string name="label_product_name">Nome do Produto</string>
+
+    <!-- Tela listar participantes -->
+    <string name="button_add_participant">Adicionar Participante</string>
+    <string name="button_draw">Realizar Sorteio</string>
+
+    <!-- Menu -->
+    <string name="menu_more">Mais</string>
+    <string name="menu_about">Sobre o App</string>
+    <string name="menu_share_app">Compartilhar App</string>
+    <string name="menu_rate_app">Avaliar na Play Store</string>
+    <string name="menu_clear_all_data">Limpar Todos os Dados</string>
+
 </resources>

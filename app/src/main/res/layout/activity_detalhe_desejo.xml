@@ -58,7 +58,8 @@
                     <TextView
                         android:layout_width="64dp"
                         android:layout_height="64dp"
-                        android:text="🎁"
+                        android:text="@string/emoji_gift"
+                        android:importantForAccessibility="no"
                         android:textSize="48sp"
                         android:gravity="center"
                         android:background="@drawable/btn_white_rounded"
@@ -95,7 +96,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="💰 Faixa de Preço"
+                android:text="@string/label_price_range_detail"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -128,7 +129,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mínimo"
+                            android:text="@string/label_minimum_price"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:layout_marginBottom="4dp" />
@@ -167,7 +168,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Máximo"
+                            android:text="@string/label_maximum_price"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:layout_marginBottom="4dp" />
@@ -191,7 +192,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📍 Onde Encontrar"
+                android:text="@string/label_where_to_find"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -223,7 +224,7 @@
                 android:id="@+id/btn_pesquisar_buscape"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Pesquisar no Buscapé"
+                android:text="@string/button_search_buscape"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"

@@ -51,7 +51,7 @@
                     android:layout_height="32dp"
                     android:src="@drawable/ic_gift"
                     app:tint="@color/purple_primary"
-                    android:contentDescription="Ícone presente" />
+                    android:contentDescription="@string/cd_wish_icon" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -132,7 +132,7 @@
                     android:src="@drawable/ic_gift"
                     android:alpha="0.3"
                     app:tint="@color/text_secondary"
-                    android:contentDescription="Sem desejos" />
+                    android:importantForAccessibility="no" />
 
                 <TextView
                     android:layout_width="wrap_content"

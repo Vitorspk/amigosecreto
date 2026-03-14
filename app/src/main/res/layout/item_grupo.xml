@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_grupo_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -29,7 +30,7 @@
             android:layout_marginStart="-42dp"
             android:src="@drawable/ic_gift"
             app:tint="@color/colorPrimary"
-            android:contentDescription="Grupo Icon" />
+            android:importantForAccessibility="no" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -45,7 +46,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
-                android:text="Nome do Grupo"/>
+                tools:text="Nome do Grupo"/>
 
             <TextView
                 android:id="@+id/tv_grupo_data"
@@ -54,7 +55,7 @@
                 android:textSize="14sp"
                 android:textColor="@color/colorSecondary"
                 android:layout_marginTop="2dp"
-                android:text="01/01/2024"/>
+                tools:text="01/01/2024"/>
         </LinearLayout>
 
         <ImageButton
@@ -64,7 +65,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_delete"
             app:tint="@color/colorError"
-            android:contentDescription="Remover Grupo"/>
+            android:contentDescription="@string/cd_remove_group"/>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
