@@ -68,7 +68,9 @@ public class ParticipantesViewModel extends AndroidViewModel {
     private final MutableLiveData<MensagensSmsResultado> mensagensSmsResult = new MutableLiveData<>(null);
     private final MutableLiveData<MensagemCompartilhamentoResultado> mensagemCompartilhamentoResult =
             new MutableLiveData<>(null);
+    private final MutableLiveData<Boolean> atualizarSucesso = new MutableLiveData<>(null);
 
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private int grupoId = -1;
 
@@ -101,28 +103,37 @@ public class ParticipantesViewModel extends AndroidViewModel {
         return mensagemCompartilhamentoResult;
     }
 
+    public LiveData<Boolean> getAtualizarSucesso() { return atualizarSucesso; }
+    public void clearAtualizarSucesso() { atualizarSucesso.setValue(null); }
+
     /** Marca participante como enviado em background (evita ANR). */
     public void marcarComoEnviado(int participanteId) {
-        executor.execute(() -> participanteRepository.marcarComoEnviado(participanteId));
+        executor.execute(() -> {
+            try {
+                participanteRepository.marcarComoEnviado(participanteId);
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+            }
+        });
     }
 
     /** Remove participante em background (evita ANR). */
     public void removerParticipante(int participanteId) {
         executor.execute(() -> {
-            participanteRepository.remover(participanteId);
-            postMain(this::carregarParticipantes);
+            try {
+                participanteRepository.remover(participanteId);
+                postMain(this::carregarParticipantes);
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+            }
         });
     }
 
     /**
      * Atualiza participante em background (evita ANR).
-     * Posta true em atualizarSucesso se a operação foi bem-sucedida, false caso contrário.
+     * Posta true em atualizarSucesso se bem-sucedido, false caso contrário.
      * A Activity observa para fechar o dialog ou restaurar o estado original.
      */
-    private final MutableLiveData<Boolean> atualizarSucesso = new MutableLiveData<>(null);
-    public LiveData<Boolean> getAtualizarSucesso() { return atualizarSucesso; }
-    public void clearAtualizarSucesso() { atualizarSucesso.setValue(null); }
-
     public void atualizarParticipante(Participante participante) {
         executor.execute(() -> {
             boolean ok;
@@ -142,24 +153,36 @@ public class ParticipantesViewModel extends AndroidViewModel {
     /** Insere participante em background (evita ANR). */
     public void inserirParticipante(Participante participante, int grupoId) {
         executor.execute(() -> {
-            participanteRepository.inserir(participante, grupoId);
-            postMain(this::carregarParticipantes);
+            try {
+                participanteRepository.inserir(participante, grupoId);
+                postMain(this::carregarParticipantes);
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+            }
         });
     }
 
     /** Deleta todos os participantes de um grupo em background (evita ANR). */
     public void deletarTodosDoGrupo(int grupoId) {
         executor.execute(() -> {
-            participanteRepository.deletarTodosDoGrupo(grupoId);
-            postMain(this::carregarParticipantes);
+            try {
+                participanteRepository.deletarTodosDoGrupo(grupoId);
+                postMain(this::carregarParticipantes);
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+            }
         });
     }
 
     /** Salva exclusões de um participante em background em transação atômica (evita ANR e falha parcial). */
     public void salvarExclusoes(int participanteId, List<Integer> adicionar, List<Integer> remover) {
         executor.execute(() -> {
-            participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
-            postMain(this::carregarParticipantes);
+            try {
+                participanteRepository.salvarExclusoes(participanteId, adicionar, remover);
+                postMain(this::carregarParticipantes);
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue(getApplication().getString(R.string.error_save_failed)));
+            }
         });
     }
 
@@ -321,7 +344,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
     }
 
     private void postMain(Runnable r) {
-        new Handler(Looper.getMainLooper()).post(r);
+        mainHandler.post(r);
     }
 
     @VisibleForTesting
@@ -335,6 +358,9 @@ public class ParticipantesViewModel extends AndroidViewModel {
         this.participanteRepository = participanteRepository;
         this.desejoRepository = desejoRepository;
     }
+
+    @VisibleForTesting
+    DesejoRepository getDesejoRepository() { return desejoRepository; }
 
     @Override
     protected void onCleared() {

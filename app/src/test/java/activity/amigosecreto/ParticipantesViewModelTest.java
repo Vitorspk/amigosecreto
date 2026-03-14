@@ -410,6 +410,148 @@ public class ParticipantesViewModelTest {
     }
 
     // =========================================================
+    // inserirParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void inserirParticipante_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        // Subclasse que força exceção em inserir(); listarPorGrupo retorna lista vazia
+        // para que carregarParticipantes() não falhe e polua errorMessage antes do assert.
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(
+                (android.app.Application) ctx.getApplicationContext()) {
+            @Override
+            public void inserir(Participante participante, int grupoId) {
+                throw new RuntimeException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return java.util.Collections.emptyList();
+            }
+        };
+
+        // Usa executor real (não síncrono) para que o postMain da lambda de erro chegue via
+        // Handler ao main looper, onde getApplication().getString() funciona corretamente.
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, viewModel.getDesejoRepository());
+        viewModel.init(grupoId);
+
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        viewModel.getErrorMessage().observeForever(msg -> {
+            if (msg != null) latch.countDown();
+        });
+
+        // Limpa qualquer errorMessage de carregarParticipantes antes de prosseguir
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        Participante p = new Participante();
+        p.setNome("Erro");
+        viewModel.inserirParticipante(p, grupoId);
+
+        // Aguarda o executor real completar e o Handler postar no main looper
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
+    }
+
+    // =========================================================
+    // participants LiveData updates after mutations
+    // =========================================================
+
+    @Test
+    public void removerParticipante_atualizaParticipantsLiveData() {
+        inserirParticipante("Ana");
+        inserirParticipante("Bruno");
+        inserirParticipante("Carla");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertEquals(3, antes.size());
+        int idRemover = antes.get(0).getId();
+
+        viewModel.removerParticipante(idRemover);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(2, apos.size());
+        assertFalse(apos.stream().anyMatch(p -> p.getId() == idRemover));
+    }
+
+    @Test
+    public void inserirParticipante_atualizaParticipantsLiveData() {
+        inserirParticipante("Diana");
+        inserirParticipante("Eduardo");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertEquals(2, antes.size());
+
+        Participante novo = new Participante();
+        novo.setNome("Fernanda");
+        novo.setTelefone("11988887777");
+        viewModel.inserirParticipante(novo, grupoId);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(3, apos.size());
+        assertTrue(apos.stream().anyMatch(p -> "Fernanda".equals(p.getNome())));
+    }
+
+    @Test
+    public void deletarTodosDoGrupo_atualizaParticipantsLiveData() {
+        inserirParticipante("Gabi");
+        inserirParticipante("Hugo");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertFalse(antes.isEmpty());
+
+        viewModel.deletarTodosDoGrupo(grupoId);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertTrue(apos.isEmpty());
+    }
+
+    @Test
+    public void salvarExclusoes_atualizaParticipantsLiveData() {
+        inserirParticipante("Ines");
+        inserirParticipante("Jorge");
+        List<Participante> lista = participanteDao.listarPorGrupo(grupoId);
+        int id1 = lista.get(0).getId();
+        int id2 = lista.get(1).getId();
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.salvarExclusoes(id1, java.util.Arrays.asList(id2), java.util.Collections.emptyList());
+        idleMainLooper();
+
+        // LiveData foi atualizado após a mutação
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(2, apos.size());
+        Participante p1 = apos.stream().filter(p -> p.getId() == id1).findFirst().orElse(null);
+        assertNotNull(p1);
+        assertTrue(p1.getIdsExcluidos().contains(id2));
+    }
+
+    // =========================================================
     // prepararMensagensSms
     // =========================================================
 
