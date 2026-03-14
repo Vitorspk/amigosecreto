@@ -25,7 +25,7 @@
             android:id="@+id/tv_grupo_emoji"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:text="🎅"
+            android:text="@string/emoji_santa"
             android:textSize="32sp"
             android:gravity="center"
             android:layout_marginEnd="12dp" />
@@ -41,7 +41,7 @@
                 android:id="@+id/tv_grupo_nome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Festa de Natal"
+                android:text="@string/item_preview_group_modern_name"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -60,7 +60,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="👤"
+                    android:text="@string/emoji_person"
                     android:textSize="14sp"
                     android:layout_marginEnd="4dp" />
 
@@ -68,7 +68,7 @@
                     android:id="@+id/tv_grupo_participantes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="6 Participantes"
+                    android:text="@string/item_preview_participants_count"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:shadowColor="#40000000"
@@ -84,7 +84,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="›"
+            android:text="@string/icon_arrow_right"
             android:textColor="@color/white"
             android:textSize="40sp"
             android:textStyle="bold"

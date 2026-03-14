@@ -28,7 +28,7 @@
                 android:id="@+id/tv_numero"
                 android:layout_width="20dp"
                 android:layout_height="wrap_content"
-                android:text="1"
+                android:text="@string/item_preview_number"
                 android:textSize="11sp"
                 android:textColor="@color/text_secondary"
                 android:textStyle="bold"
@@ -43,7 +43,7 @@
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:text="A"/>
+                android:text="@string/item_preview_initial"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -61,7 +61,7 @@
                     android:textColor="@color/text_primary"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="Nome"/>
+                    android:text="@string/item_preview_name"/>
 
                 <TextView
                     android:id="@+id/tv_email"
@@ -71,14 +71,14 @@
                     android:textColor="@color/text_secondary"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="Status"/>
+                    android:text="@string/item_preview_status"/>
 
                 <TextView
                     android:id="@+id/tv_desejos_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="0 desejos"
+                    android:text="@string/item_preview_wishes_count"
                     android:textSize="11sp"
                     android:textColor="@color/colorAccent"
                     android:textStyle="bold"
@@ -111,7 +111,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_gift"
                 app:tint="@color/colorAccent"
-                android:contentDescription="Meus Desejos"/>
+                android:contentDescription="@string/button_my_wishes"/>
 
             <ImageButton
                 android:id="@+id/btn_regras"
@@ -123,7 +123,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_rules"
                 app:tint="@color/colorPrimary"
-                android:contentDescription="Restrições"/>
+                android:contentDescription="@string/button_restrictions"/>
 
             <ImageButton
                 android:id="@+id/btn_share"
@@ -135,7 +135,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_share"
                 app:tint="@color/colorSecondary"
-                android:contentDescription="Compartilhar"
+                android:contentDescription="@string/button_share"
                 android:visibility="gone"/>
 
             <ImageButton
@@ -148,7 +148,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
                 app:tint="@color/colorPrimary"
-                android:contentDescription="Editar"/>
+                android:contentDescription="@string/button_edit"/>
 
             <ImageButton
                 android:id="@+id/btn_remover"
@@ -160,7 +160,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_delete"
                 app:tint="@color/colorError"
-                android:contentDescription="Remover"/>
+                android:contentDescription="@string/button_remove"/>
 
         </LinearLayout>
 

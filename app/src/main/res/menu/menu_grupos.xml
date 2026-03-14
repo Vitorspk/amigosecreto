@@ -5,7 +5,7 @@
     <item
         android:id="@+id/action_more"
         android:icon="@drawable/ic_menu_dots"
-        android:title="Mais"
+        android:title="@string/menu_more"
         app:showAsAction="always"
         app:iconTint="@color/white" />
 

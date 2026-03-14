@@ -4,21 +4,21 @@
     <item
         android:id="@+id/action_sobre"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:title="Sobre o App" />
+        android:title="@string/menu_about" />
 
     <item
         android:id="@+id/action_compartilhar"
         android:icon="@android:drawable/ic_menu_share"
-        android:title="Compartilhar App" />
+        android:title="@string/menu_share_app" />
 
     <item
         android:id="@+id/action_avaliar"
         android:icon="@android:drawable/btn_star_big_on"
-        android:title="Avaliar na Play Store" />
+        android:title="@string/menu_rate_app" />
 
     <item
         android:id="@+id/action_limpar_dados"
         android:icon="@android:drawable/ic_menu_delete"
-        android:title="Limpar Todos os Dados" />
+        android:title="@string/menu_clear_all_data" />
 
 </menu>

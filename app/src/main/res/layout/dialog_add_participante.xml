@@ -24,7 +24,7 @@
                 android:layout_height="64dp"
                 android:src="@drawable/ic_person_add"
                 app:tint="@color/white"
-                android:contentDescription="Adicionar Participante" />
+                android:contentDescription="@string/dialog_add_participant_title" />
 
             <TextView
                 android:layout_width="wrap_content"

@@ -29,7 +29,7 @@
             android:layout_marginStart="-42dp"
             android:src="@drawable/ic_gift"
             app:tint="@color/colorPrimary"
-            android:contentDescription="Grupo Icon" />
+            android:contentDescription="@string/item_preview_group_icon" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -45,7 +45,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
-                android:text="Nome do Grupo"/>
+                android:text="@string/item_preview_group_name"/>
 
             <TextView
                 android:id="@+id/tv_grupo_data"
@@ -54,7 +54,7 @@
                 android:textSize="14sp"
                 android:textColor="@color/colorSecondary"
                 android:layout_marginTop="2dp"
-                android:text="01/01/2024"/>
+                android:text="@string/item_preview_group_date"/>
         </LinearLayout>
 
         <ImageButton
@@ -64,7 +64,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_delete"
             app:tint="@color/colorError"
-            android:contentDescription="Remover Grupo"/>
+            android:contentDescription="@string/cd_remove_group"/>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
