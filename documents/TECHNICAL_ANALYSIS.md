@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #21 merged)
+**Data:** Março/2026 (última atualização: 14/03/2026 — PR #22 merged)
 **Versão Analisada:** 2.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -12,7 +12,7 @@ O app **está se aproximando do nível profissional** com progresso significativ
 
 É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern implementados. As Fases 1, 2, 3, 4 e 5 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade.
 
-O app está em nível profissional. Os próximos passos são qualidade de lint residual (47 `UnusedResources`, 9 `Overdraw`) e Dependency Injection (Hilt).
+O app está em nível profissional. O PR #22 zerou os 47 `UnusedResources` do `lintDebug`. Os próximos passos são lint residual (9 `Overdraw`) e Dependency Injection (Hilt).
 
 ---
 
@@ -64,14 +64,11 @@ PR #21 adicionou também:
 
 ---
 
-### 3. Recursos Não Utilizados — Médio
+### 3. Recursos Não Utilizados — ✅ CONCLUÍDO (PR #22)
 
-**Problema atual:** 47 warnings `UnusedResources` no lint debug (release usa R8/shrink, então não aparecem em lintRelease).
+**Resolvido:** 47 → 0 warnings `UnusedResources` no `lintDebug`.
 
-- Aumenta o tamanho do APK/AAB desnecessariamente.
-- Cria ruído no projeto.
-
-**Solução:** Remover via identificação manual + `lintDebug --fix`. Ver Roadmap §3.
+PR #22 removeu 5 arquivos genuinamente orphans (`bounce.xml`, `button_press.xml`, `icon.png`, `inicial_icon.png`, `splash.xml`) e dezenas de cores, strings, estilos e dimens não utilizados. False positives (valores de `values-night/` e `values-w820dp/`) suprimidos com `tools:ignore="UnusedResources"` granular + comentários explicativos. Dependência `core-splashscreen:1.0.1` removida do `build.gradle`.
 
 ---
 
@@ -112,7 +109,7 @@ Itens corrigidos no PR #14:
 - Overdraw — backgrounds duplicados removidos
 
 Warnings residuais em `lintDebug` (não bloqueadores — `lintRelease` zerado):
-- 47 `UnusedResources` — próxima tarefa (PR #22)
+- ~~47 `UnusedResources`~~ — ✅ zerado no PR #22
 - 9 `Overdraw` — a investigar
 - Outros menores (`GradleDependency`, `UseCompoundDrawables`, etc.)
 
@@ -134,11 +131,12 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 |------|-----------|--------|----|
 | Fase 5 | Fixes de Lint Críticos | ✅ Concluído | #14 |
 | Fase 2 | Strings Hardcoded → strings.xml (Java) | ✅ Concluído | #15 |
-| Fase 3 | Limpeza de Recursos Não Utilizados | 🔄 Parcial | #14/#15 |
+| Fase 3 | Limpeza de Recursos Não Utilizados | ✅ Concluído | #14/#15/#22 |
 | Fase 4 | Cobertura de Testes (DAOs, Models, Repos, ViewModel) | ✅ Concluído | #16–#20 |
 | Fase 1 | Arquitetura MVVM + Repository pattern | ✅ Concluído | #17–#20 |
-| **Fase 6** | **Strings XML layouts/menus + Acessibilidade** | **✅ Concluído** | **#21** |
-| **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **⏳ Próximo** | — |
+| Fase 6 | Strings XML layouts/menus + Acessibilidade | ✅ Concluído | #21 |
+| **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **✅ Concluído** | **#22** |
+| **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **⏳ Próximo** | — |
 
 ---
 
@@ -168,9 +166,9 @@ LiveData → Activity observa e atualiza UI ← ✅ PR #18
 
 ---
 
-### Fase 3 — Limpeza de Recursos — 🔄 Parcial
+### Fase 3 — Limpeza de Recursos — ✅ Concluído (PR #14/#15/#22)
 
-Recursos críticos removidos no PR #14/#15. Restam 47 `UnusedResources` no `lintDebug` — próxima Fase 7.
+Recursos críticos removidos no PR #14/#15. PR #22 zerou os 47 `UnusedResources` restantes no `lintDebug`.
 
 ---
 
@@ -197,16 +195,29 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### Fase 7 — UnusedResources (Próxima)
+### Fase 7 — UnusedResources — ✅ Concluído (PR #22)
 
-**Objetivo:** Zerar os 47 warnings `UnusedResources` no `lintDebug`.
+**Objetivo:** Zerar os 47 warnings `UnusedResources` no `lintDebug`. ✅
 
-**Escopo:** Identificar e remover drawables, layouts, strings e outros recursos declarados mas nunca referenciados no código. R8/shrink já remove automaticamente no release, mas a presença polui o projeto e aumenta o tempo de build incremental.
+**Resultado:**
+- 5 arquivos genuinamente orphans deletados: `bounce.xml`, `button_press.xml`, `icon.png`, `inicial_icon.png`, `splash.xml`
+- Dezenas de cores (`purple_medium/light`, gradientes), strings, estilos (`AppTheme.Button.*`, `AppTheme.Card`) e dimens removidos
+- False positives de `values-night/` e `values-w820dp/` suprimidos com `tools:ignore="UnusedResources"` granular
+- Dependência `core-splashscreen:1.0.1` removida do `build.gradle`
+- 3 layouts reservados mantidos com `tools:ignore` + issues #23/#24/#25 para rastreamento
+
+---
+
+### Fase 8 — Overdraw Residual (Próximo)
+
+**Objetivo:** Investigar e reduzir os 9 warnings `Overdraw` no `lintDebug`.
+
+**Escopo:** Backgrounds redundantes em views aninhadas. Identificar via Android Studio GPU Overdraw ou `lintDebug`.
 
 **Como executar:**
 ```bash
 ./gradlew :app:lintDebug
-# ver app/build/reports/lint-results-debug.xml → issue id="UnusedResources"
+# ver app/build/reports/lint-results-debug.xml → issue id="Overdraw"
 ```
 
 ---
@@ -282,6 +293,20 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 | Setas `›` → `ic_arrow_forward` (RTL-safe) | 4 substituições |
 | `lintRelease` `HardcodedText` | Zerado |
 
+### PR #22 — UnusedResources Cleanup (Fase 7)
+
+| Item | Situação |
+|------|---------|
+| Arquivos orphans deletados | `bounce.xml`, `button_press.xml`, `icon.png`, `inicial_icon.png`, `splash.xml` |
+| Cores removidas | `purple_medium/light/ultra_light`, gradientes de card, legacy orphans |
+| Strings removidas | ~15 strings orphans (labels, helpers, títulos) |
+| Estilos removidos | `AppTheme.Button.Primary/Secondary`, `AppTheme.Card` |
+| False positives suprimidos | `tools:ignore` granular com comentários em `colors.xml`, `dimens.xml`, `strings.xml`, 3 layouts |
+| Dependência removida | `core-splashscreen:1.0.1` |
+| Issues abertas | #23 (`empty_state.xml`), #24 (`loading_state.xml`), #25 (`item_grupo.xml`) |
+| `lintDebug UnusedResources` | 47 → 0 |
+| Testes | 224 (sem regressão) |
+
 ---
 
 ## Conclusão
@@ -290,11 +315,8 @@ O app atingiu nível profissional. Todas as fases principais foram concluídas:
 - 224 testes cobrindo DAOs, models, repositories, ViewModel e utilitários
 - MVVM com Repository pattern implementado
 - `lintRelease` sem erros bloqueadores
+- `lintDebug UnusedResources` zerado (PR #22)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
 
-**Próximo passo:** Fase 7 — remover 47 recursos não utilizados (`lintDebug UnusedResources`).
-
-Resta a conclusão da **Fase 1 (Arquitetura)** — criar `ParticipantesViewModel` + Repository pattern. Com isso o app estará em nível profissional completo.
-
-**Próximo passo:** Criar `ParticipantesViewModel` extraindo a lógica de sorteio e estado de UI de `ParticipantesActivity` — segundo item incremental da Fase 1.
+**Próximo passo:** Fase 8 — investigar e reduzir 9 warnings `Overdraw` no `lintDebug`.
