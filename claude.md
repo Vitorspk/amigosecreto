@@ -446,7 +446,7 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 ## Recursos de UI
 
 ### Animações (`res/anim/`)
-`bounce.xml`, `button_press.xml`, `card_appear.xml`, `fade_in.xml`, `fade_out.xml`, `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
+`card_appear.xml`, `fade_in.xml`, `fade_out.xml`, `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
 
 ### Layouts (`res/layout/`) — 21 arquivos
 - 9 layouts de Activity
@@ -524,7 +524,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
 - [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
-- [ ] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — **próximo (PR #22)**
+- [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
 - [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
