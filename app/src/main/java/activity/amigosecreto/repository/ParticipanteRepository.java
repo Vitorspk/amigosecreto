@@ -2,6 +2,8 @@ package activity.amigosecreto.repository;
 
 import android.content.Context;
 
+import androidx.annotation.VisibleForTesting;
+
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,7 @@ public class ParticipanteRepository {
         this.dao = new ParticipanteDAO(context);
     }
 
-    // Construtor para testes — permite injetar um DAO substituível.
+    @VisibleForTesting
     ParticipanteRepository(ParticipanteDAO dao) {
         this.dao = dao;
     }

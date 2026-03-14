@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -17,9 +18,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.repository.DesejoRepository;
 import activity.amigosecreto.repository.ParticipanteRepository;
+import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.SorteioEngine;
 
 public class ParticipantesViewModel extends AndroidViewModel {
@@ -31,6 +34,29 @@ public class ParticipantesViewModel extends AndroidViewModel {
         public SorteioResultado(Status status) { this.status = status; }
     }
 
+    /** Resultado de prepararMensagensSms — lista de participantes com telefone + mapa de mensagens. */
+    public static class MensagensSmsResultado {
+        public final List<Participante> participantesComTelefone;
+        public final Map<Integer, String> mensagens;
+
+        public MensagensSmsResultado(List<Participante> participantesComTelefone,
+                                     Map<Integer, String> mensagens) {
+            this.participantesComTelefone = participantesComTelefone;
+            this.mensagens = mensagens;
+        }
+    }
+
+    /** Resultado de prepararMensagemCompartilhamento — mensagem formatada para um participante. */
+    public static class MensagemCompartilhamentoResultado {
+        public final Participante participante;
+        public final String mensagem;
+
+        public MensagemCompartilhamentoResultado(Participante participante, String mensagem) {
+            this.participante = participante;
+            this.mensagem = mensagem;
+        }
+    }
+
     private final MutableLiveData<List<Participante>> participants =
             new MutableLiveData<>(Collections.emptyList());
     private final MutableLiveData<Map<Integer, Integer>> wishCounts =
@@ -38,6 +64,9 @@ public class ParticipantesViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<SorteioResultado> sorteioResult = new MutableLiveData<>(null);
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>(null);
+    private final MutableLiveData<MensagensSmsResultado> mensagensSmsResult = new MutableLiveData<>(null);
+    private final MutableLiveData<MensagemCompartilhamentoResultado> mensagemCompartilhamentoResult =
+            new MutableLiveData<>(null);
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private int grupoId = -1;
@@ -66,12 +95,22 @@ public class ParticipantesViewModel extends AndroidViewModel {
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<SorteioResultado> getSorteioResult() { return sorteioResult; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
+    public LiveData<MensagensSmsResultado> getMensagensSmsResult() { return mensagensSmsResult; }
+    public LiveData<MensagemCompartilhamentoResultado> getMensagemCompartilhamentoResult() {
+        return mensagemCompartilhamentoResult;
+    }
 
     /** Limpa o resultado do sorteio após consumo pela Activity. */
     public void clearSorteioResult() { sorteioResult.setValue(null); }
 
     /** Limpa a mensagem de erro após exibição pela Activity. */
     public void clearErrorMessage() { errorMessage.setValue(null); }
+
+    /** Limpa o resultado de mensagens SMS após consumo pela Activity. */
+    public void clearMensagensSmsResult() { mensagensSmsResult.setValue(null); }
+
+    /** Limpa o resultado de compartilhamento após consumo pela Activity. */
+    public void clearMensagemCompartilhamentoResult() { mensagemCompartilhamentoResult.setValue(null); }
 
     /**
      * Carrega participantes e contagens de desejos do banco em background.
@@ -83,10 +122,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 List<Participante> lista = participanteRepository.listarPorGrupo(grupoId);
-                Map<Integer, Integer> counts = new HashMap<>();
-                for (Participante p : lista) {
-                    counts.put(p.getId(), desejoRepository.contarDesejosPorParticipante(p.getId()));
-                }
+                Map<Integer, Integer> counts = desejoRepository.contarDesejosPorGrupo(grupoId);
                 final List<Participante> finalLista = lista;
                 final Map<Integer, Integer> finalCounts = counts;
                 postMain(() -> {
@@ -153,16 +189,74 @@ public class ParticipantesViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Prepara as mensagens SMS para todos os participantes com telefone.
+     * Acessa o banco em background; posta o resultado em mensagensSmsResult.
+     * Aceita uma lista de participantes para suportar tanto o fluxo normal (snapshot da lista)
+     * quanto a reconstrução após rotação (lista restaurada do bundle).
+     */
+    public void prepararMensagensSms(final List<Participante> snapshot) {
+        executor.execute(() -> {
+            try {
+                List<Participante> comTelefone = new ArrayList<>();
+                Map<Integer, String> mensagens = new HashMap<>();
+                for (Participante p : snapshot) {
+                    if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
+                        comTelefone.add(p);
+                        Integer amigoId = p.getAmigoSorteadoId();
+                        String nomeAmigo = (amigoId != null && amigoId > 0)
+                                ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
+                        List<Desejo> desejos = (amigoId != null && amigoId > 0)
+                                ? desejoRepository.listarPorParticipante(amigoId)
+                                : new ArrayList<>();
+                        mensagens.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
+                    }
+                }
+                final MensagensSmsResultado resultado = new MensagensSmsResultado(comTelefone, mensagens);
+                postMain(() -> mensagensSmsResult.setValue(resultado));
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue("Erro ao preparar mensagens. Tente novamente."));
+            }
+        });
+    }
+
+    /**
+     * Prepara a mensagem de compartilhamento (WhatsApp/share sheet) para um participante.
+     * Acessa o banco em background, marca como enviado e posta o resultado em
+     * mensagemCompartilhamentoResult.
+     *
+     * Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
+     * o share sheet (a API do ACTION_SEND não oferece callback de confirmação).
+     */
+    public void prepararMensagemCompartilhamento(final Participante participante) {
+        executor.execute(() -> {
+            try {
+                Integer amigoId = participante.getAmigoSorteadoId();
+                String nomeAmigo = (amigoId != null && amigoId > 0)
+                        ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
+                List<Desejo> desejos = (amigoId != null && amigoId > 0)
+                        ? desejoRepository.listarPorParticipante(amigoId)
+                        : new ArrayList<>();
+                participanteRepository.marcarComoEnviado(participante.getId());
+                String mensagem = MensagemSecretaBuilder.gerar(participante.getNome(), nomeAmigo, desejos);
+                postMain(() -> mensagemCompartilhamentoResult.setValue(
+                        new MensagemCompartilhamentoResultado(participante, mensagem)));
+            } catch (Exception e) {
+                postMain(() -> errorMessage.setValue("Erro ao carregar dados. Tente novamente."));
+            }
+        });
+    }
+
     private void postMain(Runnable r) {
         new Handler(Looper.getMainLooper()).post(r);
     }
 
-    /** Visível para testes — permite substituir executor síncrono em testes unitários. */
+    @VisibleForTesting
     void setExecutorService(ExecutorService executor) {
         this.executor = executor;
     }
 
-    /** Visível para testes — permite injetar repositories substitutos. */
+    @VisibleForTesting
     void setRepositories(ParticipanteRepository participanteRepository, DesejoRepository desejoRepository) {
         this.participanteRepository = participanteRepository;
         this.desejoRepository = desejoRepository;

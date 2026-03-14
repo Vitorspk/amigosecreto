@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by HP on 21/06/2015.
@@ -107,6 +109,35 @@ public class DesejoDAO {
         int count = cursor.getInt(0);
         cursor.close();
         return count;
+    }
+
+    /**
+     * Retorna um mapa participante_id → quantidade de desejos para todos os participantes
+     * de um grupo, usando uma única query com GROUP BY. Evita o problema N+1 de chamar
+     * contarDesejosPorParticipante() individualmente para cada participante.
+     */
+    public final Map<Integer, Integer> contarDesejosPorGrupo(int grupoId) {
+        Map<Integer, Integer> mapa = new HashMap<>();
+        // JOIN com participante para filtrar pelo grupo sem subquery complexa.
+        String sql = "SELECT d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + ", COUNT(*) AS cnt"
+                + " FROM " + helper.TABLE_DESEJO + " d"
+                + " INNER JOIN " + helper.TABLE_PARTICIPANTE + " p"
+                + " ON d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + " = p." + helper.COLUMN_ID
+                + " WHERE p." + helper.COLUMN_FK_GRUPO_ID + " = ?"
+                + " GROUP BY d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID;
+        Cursor cursor = database.rawQuery(sql, new String[]{String.valueOf(grupoId)});
+        try {
+            if (cursor.moveToFirst()) {
+                int pidIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_DESEJO_PARTICIPANTE_ID);
+                int cntIdx = cursor.getColumnIndexOrThrow("cnt");
+                do {
+                    mapa.put(cursor.getInt(pidIdx), cursor.getInt(cntIdx));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return mapa;
     }
 
     public final int proximoId(){

@@ -243,13 +243,26 @@ public class ParticipanteRepositoryTest {
     // =========================================================
 
     @Test
-    public void getNomeAmigoSorteado_retornaNomedoAmigo() {
+    public void getNomeAmigoSorteado_retornaNomedoAmigoSorteado() {
+        // Cenário real: sorteio realizado; buscar o nome do amigo secreto pelo amigoSorteadoId.
         inserir("Tiago");
+        inserir("Vanessa");
         List<Participante> lista = repository.listarPorGrupo(grupoId);
-        int id = lista.get(0).getId();
+        int idTiago = lista.stream().filter(p -> p.getNome().equals("Tiago")).findFirst().get().getId();
+        int idVanessa = lista.stream().filter(p -> p.getNome().equals("Vanessa")).findFirst().get().getId();
 
-        String nome = repository.getNomeAmigoSorteado(id);
-        assertEquals("Tiago", nome);
+        // Simular que Tiago tirou Vanessa: salvar sorteio com Tiago→Vanessa e Vanessa→Tiago.
+        List<Participante> participantes = java.util.Arrays.asList(
+                lista.stream().filter(p -> p.getId() == idTiago).findFirst().get(),
+                lista.stream().filter(p -> p.getId() == idVanessa).findFirst().get());
+        List<Participante> sorteados = java.util.Arrays.asList(
+                lista.stream().filter(p -> p.getId() == idVanessa).findFirst().get(),
+                lista.stream().filter(p -> p.getId() == idTiago).findFirst().get());
+        repository.salvarSorteio(participantes, sorteados);
+
+        // getNomeAmigoSorteado(idVanessa) deve retornar "Vanessa" — ela é o amigo de Tiago.
+        String nome = repository.getNomeAmigoSorteado(idVanessa);
+        assertEquals("Vanessa", nome);
     }
 
     @Test

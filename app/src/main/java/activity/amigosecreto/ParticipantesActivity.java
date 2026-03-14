@@ -42,12 +42,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
-import activity.amigosecreto.repository.DesejoRepository;
 import activity.amigosecreto.repository.ParticipanteRepository;
-import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -64,6 +61,8 @@ public class ParticipantesActivity extends AppCompatActivity {
     // Mensagens SMS já formatadas, mapeadas por participante ID.
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
+    // Índice de retomada após rotação quando ViewModel reconstrói mensagens em background.
+    private int pendingSmsResumeIndex = -1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -75,7 +74,6 @@ public class ParticipantesActivity extends AppCompatActivity {
     private View btnSortear;
     private View btnLimpar;
     private ParticipanteRepository participanteRepository;
-    private DesejoRepository desejoRepository;
     private List<Participante> listaParticipantes = new ArrayList<>();
     private ParticipantesAdapter adapter;
     private Grupo grupoAtual;
@@ -134,7 +132,6 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
 
         participanteRepository = new ParticipanteRepository(this);
-        desejoRepository = new DesejoRepository(this);
         lvParticipantes = findViewById(R.id.lv_participantes);
         tvCount = findViewById(R.id.tv_count);
         fabAdd = findViewById(R.id.fab_add_participante);
@@ -215,6 +212,32 @@ public class ParticipantesActivity extends AppCompatActivity {
             if (msg == null) return;
             viewModel.clearErrorMessage();
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        });
+
+        // Mensagens SMS prontas — iniciar (ou retomar) sequência de envio.
+        // pendingSmsResumeIndex é >= 0 quando estamos retomando após rotação de tela.
+        viewModel.getMensagensSmsResult().observe(this, resultado -> {
+            if (resultado == null) return;
+            viewModel.clearMensagensSmsResult();
+            if (resultado.participantesComTelefone.isEmpty()) {
+                Toast.makeText(this, R.string.error_no_phone_participants, Toast.LENGTH_LONG).show();
+                return;
+            }
+            int startIndex = pendingSmsResumeIndex >= 0 ? pendingSmsResumeIndex : 0;
+            pendingSmsResumeIndex = -1;
+            enviarSmsSequencial(resultado.participantesComTelefone, resultado.mensagens, startIndex);
+        });
+
+        // Mensagem de compartilhamento pronta — abrir share sheet.
+        viewModel.getMensagemCompartilhamentoResult().observe(this, resultado -> {
+            if (resultado == null) return;
+            viewModel.clearMensagemCompartilhamentoResult();
+            atualizarLista();
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, resultado.mensagem);
+            startActivity(Intent.createChooser(intent,
+                    getString(R.string.share_with_person, resultado.participante.getNome())));
         });
     }
 
@@ -417,48 +440,10 @@ public class ParticipantesActivity extends AppCompatActivity {
                 pendingSmsMensagens = null;
                 enviarSmsSequencial(lista, mensagens, nextIndex);
             } else {
-                // Mensagens perdidas por rotacao: reconstroi a partir do banco em background
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                try {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            final Map<Integer, String> mensagensReconstruidas = new HashMap<>();
-                            try {
-                                for (Participante p : lista) {
-                                    Integer amigoId = p.getAmigoSorteadoId();
-                                    String nomeAmigo = (amigoId != null && amigoId > 0)
-                                            ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
-                                    List<Desejo> desejos = new ArrayList<>();
-                                    if (amigoId != null && amigoId > 0) {
-                                        desejos = desejoRepository.listarPorParticipante(amigoId);
-                                    }
-                                    mensagensReconstruidas.put(p.getId(),
-                                            MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
-                                }
-                            } catch (Exception e) {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if (isFinishing() || isDestroyed()) return;
-                                        Toast.makeText(ParticipantesActivity.this,
-                                                R.string.error_resume_sms_failed, Toast.LENGTH_LONG).show();
-                                    }
-                                });
-                                return;
-                            }
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (isFinishing() || isDestroyed()) return;
-                                    enviarSmsSequencial(lista, mensagensReconstruidas, nextIndex);
-                                }
-                            });
-                        }
-                    });
-                } finally {
-                    executor.shutdown();
-                }
+                // Mensagens perdidas por rotacao: ViewModel reconstroi a partir do banco.
+                // O observer de mensagensSmsResult retoma a partir de pendingSmsResumeIndex.
+                pendingSmsResumeIndex = nextIndex;
+                viewModel.prepararMensagensSms(lista);
             }
         }
     }
@@ -518,61 +503,9 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
-    // O acesso ao banco e feito em thread de fundo para evitar ANR em grupos grandes.
+    // O acesso ao banco e feito pelo ViewModel em background; o resultado chega via LiveData.
     private void enviarSmsViaIntent() {
-        final List<Participante> snapshot = new ArrayList<>(listaParticipantes);
-        // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
-        // RejectedExecutionException (ex: executor ja foi encerrado).
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    final List<Participante> comTelefone = new ArrayList<>();
-                    final Map<Integer, String> mensagensParticipantes = new HashMap<>();
-                    try {
-                        for (Participante p : snapshot) {
-                            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                                comTelefone.add(p);
-                                Integer amigoId = p.getAmigoSorteadoId();
-                                String nomeAmigo = (amigoId != null && amigoId > 0)
-                                        ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
-                                List<Desejo> desejos = new ArrayList<>();
-                                if (amigoId != null && amigoId > 0) {
-                                    desejos = desejoRepository.listarPorParticipante(amigoId);
-                                }
-                                mensagensParticipantes.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
-                            }
-                        }
-                    } catch (final Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (isFinishing() || isDestroyed()) return;
-                                Toast.makeText(ParticipantesActivity.this,
-                                        R.string.error_prepare_messages_failed, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        return;
-                    }
-
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isFinishing() || isDestroyed()) return;
-                            if (comTelefone.isEmpty()) {
-                                Toast.makeText(ParticipantesActivity.this,
-                                        R.string.error_no_phone_participants, Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
-                        }
-                    });
-                }
-            });
-        } finally {
-            executor.shutdown();
-        }
+        viewModel.prepararMensagensSms(new ArrayList<>(listaParticipantes));
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
@@ -850,59 +783,20 @@ public class ParticipantesActivity extends AppCompatActivity {
         }
 
         private void compartilharResultado(final Participante p, final View btnShare) {
-            // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
-            // RejectedExecutionException (ex: executor ja foi encerrado).
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            try {
-                executor.execute(new Runnable() {
+            // ViewModel prepara mensagem em background; resultado chega via observer de
+            // mensagemCompartilhamentoResult em onCreate(). O botão é reabilitado no observer.
+            // Se a preparação falhar, errorMessage é emitido pelo ViewModel.
+            if (btnShare != null) {
+                // Observer em onCreate() reaabilita ao receber o resultado.
+                viewModel.getMensagemCompartilhamentoResult().observeForever(new androidx.lifecycle.Observer<ParticipantesViewModel.MensagemCompartilhamentoResultado>() {
                     @Override
-                    public void run() {
-                        final String[] nomeAmigoHolder = {null};
-                        final List<Desejo> desejosHolder = new ArrayList<>();
-                        try {
-                            Integer amigoId = p.getAmigoSorteadoId();
-                            nomeAmigoHolder[0] = (amigoId != null && amigoId > 0)
-                                    ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
-                            if (amigoId != null && amigoId > 0) {
-                                desejosHolder.addAll(desejoRepository.listarPorParticipante(amigoId));
-                            }
-                            // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
-                            // Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
-                            // o share sheet (a API do ACTION_SEND não oferece callback de confirmação).
-                            participanteRepository.marcarComoEnviado(p.getId());
-                        } catch (final Exception e) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (btnShare != null) btnShare.setEnabled(true);
-                                    if (isFinishing() || isDestroyed()) return;
-                                    Toast.makeText(ctx,
-                                            "Erro ao carregar dados. Tente novamente.", Toast.LENGTH_LONG).show();
-                                }
-                            });
-                            return;
-                        }
-
-                        final String mensagem = MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigoHolder[0], desejosHolder);
-
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Reabilita o botao independentemente do resultado
-                                if (btnShare != null) btnShare.setEnabled(true);
-                                if (isFinishing() || isDestroyed()) return;
-                                atualizarLista();
-                                Intent intent = new Intent(Intent.ACTION_SEND);
-                                intent.setType("text/plain");
-                                intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-                                ctx.startActivity(Intent.createChooser(intent, ctx.getString(R.string.share_with_person, p.getNome())));
-                            }
-                        });
+                    public void onChanged(ParticipantesViewModel.MensagemCompartilhamentoResultado resultado) {
+                        viewModel.getMensagemCompartilhamentoResult().removeObserver(this);
+                        if (btnShare != null) btnShare.setEnabled(true);
                     }
                 });
-            } finally {
-                executor.shutdown();
             }
+            viewModel.prepararMensagemCompartilhamento(p);
         }
     }
 }

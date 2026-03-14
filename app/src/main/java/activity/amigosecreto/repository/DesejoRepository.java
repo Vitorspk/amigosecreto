@@ -2,7 +2,10 @@ package activity.amigosecreto.repository;
 
 import android.content.Context;
 
+import androidx.annotation.VisibleForTesting;
+
 import java.util.List;
+import java.util.Map;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
@@ -23,7 +26,7 @@ public class DesejoRepository {
         this.dao = new DesejoDAO(context);
     }
 
-    // Construtor para testes — permite injetar um DAO substituível.
+    @VisibleForTesting
     DesejoRepository(DesejoDAO dao) {
         this.dao = dao;
     }
@@ -50,6 +53,19 @@ public class DesejoRepository {
         dao.open();
         try {
             return dao.contarDesejosPorParticipante(participanteId);
+        } finally {
+            dao.close();
+        }
+    }
+
+    /**
+     * Retorna contagens de desejos por participante para um grupo inteiro em uma única query.
+     * Use no lugar de chamar contarDesejosPorParticipante() em loop (evita problema N+1).
+     */
+    public Map<Integer, Integer> contarDesejosPorGrupo(int grupoId) {
+        dao.open();
+        try {
+            return dao.contarDesejosPorGrupo(grupoId);
         } finally {
             dao.close();
         }

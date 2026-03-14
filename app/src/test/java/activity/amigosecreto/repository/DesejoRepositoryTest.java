@@ -52,8 +52,9 @@ public class DesejoRepositoryTest {
         Participante p = new Participante();
         p.setNome("Participante Teste");
         participanteDao.inserir(p, grupoId);
-        // Recupera ID gerado pelo banco
+        // Recupera ID gerado pelo banco e fecha imediatamente — não é mais necessário.
         participanteId = participanteDao.listarPorGrupo(grupoId).get(0).getId();
+        participanteDao.close();
 
         repository = new DesejoRepository(ctx);
     }
@@ -61,7 +62,6 @@ public class DesejoRepositoryTest {
     @After
     public void tearDown() {
         grupoDao.limparTudo();
-        participanteDao.close();
         grupoDao.close();
     }
 
