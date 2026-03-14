@@ -141,6 +141,7 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
         temp = Double.doubleToLongBits(precoMinimo);
         result = prime * result + (int) (temp ^ (temp >>> 32));
         result = prime * result + ((produto == null) ? 0 : produto.hashCode());
+        result = prime * result + participanteId;
         return result;
     }
 
@@ -175,6 +176,8 @@ public class Desejo implements Parcelable, Comparable<Desejo> {
             if (other.produto != null)
                 return false;
         } else if (!produto.equals(other.produto))
+            return false;
+        if (participanteId != other.participanteId)
             return false;
         return true;
     }
