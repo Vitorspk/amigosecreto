@@ -421,7 +421,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                         desejos = desejoDAO.listarPorParticipante(amigoId);
                                     }
                                     mensagensReconstruidas.put(p.getId(),
-                                            gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                                            MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
                                 }
                             } catch (Exception e) {
                                 mainHandler.post(new Runnable() {
@@ -574,7 +574,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                                 if (amigoId != null && amigoId > 0) {
                                     desejos = desejoDAO.listarPorParticipante(amigoId);
                                 }
-                                mensagensParticipantes.put(p.getId(), gerarMensagemSecreta(p.getNome(), nomeAmigo, desejos));
+                                mensagensParticipantes.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
                             }
                         }
                     } catch (final Exception e) {
@@ -701,11 +701,6 @@ public class ParticipantesActivity extends AppCompatActivity {
                 })
                 .setCancelable(false)
                 .show();
-    }
-
-    // Visivel ao pacote para permitir testes unitarios sem reflexao.
-    private String gerarMensagemSecreta(String nomeParticipante, String nomeAmigo, List<Desejo> desejos) {
-        return MensagemSecretaBuilder.gerar(nomeParticipante, nomeAmigo, desejos);
     }
 
     private void exibirDialogRegras(final Participante p) {
@@ -938,7 +933,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                             desejoDAO.close();
                         }
 
-                        final String mensagem = gerarMensagemSecreta(p.getNome(), nomeAmigoHolder[0], desejosHolder);
+                        final String mensagem = MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigoHolder[0], desejosHolder);
 
                         mainHandler.post(new Runnable() {
                             @Override

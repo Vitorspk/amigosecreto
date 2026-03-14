@@ -103,8 +103,8 @@ public class MensagemSecretaBuilderTest {
         List<Desejo> desejos = Collections.singletonList(buildDesejo("Livro", null, 50.0, 100.0, null));
         String msg = MensagemSecretaBuilder.gerar("Iris", "João", desejos);
         assertTrue(msg.contains("R$"));
-        assertTrue(msg.contains("50") || msg.contains("50,00"));
-        assertTrue(msg.contains("100") || msg.contains("100,00"));
+        assertTrue(msg.contains("50,00"));
+        assertTrue(msg.contains("100,00"));
     }
 
     @Test
@@ -128,6 +128,7 @@ public class MensagemSecretaBuilderTest {
         String msg = MensagemSecretaBuilder.gerar("Otto", "Paulo", desejos);
         assertTrue(msg.contains("ate R$"));
         assertFalse(msg.contains("a partir de R$"));
+        assertFalse(msg.contains("500")); // valor do min nao deve aparecer
     }
 
     @Test

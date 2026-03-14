@@ -25,10 +25,10 @@ public class MensagemSecretaBuilder {
         if (nomeParticipante == null) nomeParticipante = "???";
         if (nomeAmigo == null) nomeAmigo = "???";
         StringBuilder sb = new StringBuilder();
-        sb.append("\uD83C\uDF81 Ola, *").append(nomeParticipante).append("*!\n\n");
+        sb.append("🎁 Ola, *").append(nomeParticipante).append("*!\n\n");
         sb.append("Voce foi sorteado(a) no *Amigo Secreto* e vai presentear alguem especial!\n\n");
         sb.append("Seu Amigo Secreto e:\n");
-        sb.append("*").append(nomeAmigo).append("* \uD83C\uDF89\n\n");
+        sb.append("*").append(nomeAmigo).append("* 🎉\n\n");
         if (desejos != null && !desejos.isEmpty()) {
             StringBuilder desejosBuilder = new StringBuilder();
             int num = 1;
