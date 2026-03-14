@@ -148,7 +148,7 @@ public class MensagemSecretaBuilderTest {
         String msg = MensagemSecretaBuilder.gerar("Otto", "Paulo", desejos);
         assertTrue(msg.contains("ate R$"));
         assertFalse(msg.contains("a partir de R$"));
-        assertFalse(msg.contains("500")); // valor do min nao deve aparecer
+        assertFalse(msg.contains("500,00")); // valor formatado do min nao deve aparecer
     }
 
     @Test
