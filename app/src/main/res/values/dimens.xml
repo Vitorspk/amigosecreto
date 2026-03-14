@@ -1,5 +1,4 @@
-<resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base fallback for values-w820dp/dimens.xml override — lint false positive -->
+    <dimen name="activity_horizontal_margin" tools:ignore="UnusedResources">16dp</dimen>
 </resources>

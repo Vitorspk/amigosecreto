@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Paleta Harmoniosa - Roxo Suave -->
     <color name="md_theme_primary">#6B4CE6</color>
@@ -13,9 +13,10 @@
     <color name="md_theme_secondaryContainer">#E8DEFF</color>
     <color name="md_theme_onSecondaryContainer">#3D2A7D</color>
 
-    <!-- Background - Branco Limpo -->
+    <!-- Background -->
     <color name="md_theme_background">#FAFAFA</color>
-    <color name="md_theme_onBackground">#1C1B1F</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="md_theme_onBackground" tools:ignore="UnusedResources">#1C1B1F</color>
 
     <!-- Surface -->
     <color name="md_theme_surface">#FFFFFF</color>
@@ -24,35 +25,23 @@
     <!-- Cores Principais -->
     <color name="purple_primary">#6B4CE6</color>
     <color name="purple_dark">#5339C9</color>
-    <color name="purple_medium">#8B6FE8</color>
-    <color name="purple_light">#B09EEC</color>
-    <color name="purple_ultra_light">#D5CDF0</color>
     <color name="purple_background">#F5F3FF</color>
-
-    <!-- Cores para Cards - Tons de Roxo -->
-    <color name="card_purple_1_start">#8B7AE8</color>
-    <color name="card_purple_1_end">#6B4CE6</color>
-
-    <color name="card_purple_2_start">#A895EC</color>
-    <color name="card_purple_2_end">#8B7AE8</color>
-
-    <color name="card_purple_3_start">#C5B0F0</color>
-    <color name="card_purple_3_end">#A895EC</color>
 
     <!-- Accent Color - Verde Suave para Sucesso -->
     <color name="accent_green">#4CAF50</color>
-    <color name="accent_green_light">#81C784</color>
 
-    <!-- Legacy colors for backward compatibility -->
+    <!-- Legacy colors -->
     <color name="colorPrimary">@color/purple_primary</color>
-    <color name="colorPrimaryDark">#5339C9</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="colorPrimaryDark" tools:ignore="UnusedResources">#5339C9</color>
     <color name="colorPrimaryContainer">@color/purple_background</color>
     <color name="colorSecondary">@color/accent_green</color>
     <color name="colorSecondaryContainer">#E8F5E9</color>
     <color name="colorAccent">@color/accent_green</color>
     <color name="colorError">#EF5350</color>
     <color name="background">@color/md_theme_background</color>
-    <color name="surface">@color/md_theme_surface</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="surface" tools:ignore="UnusedResources">@color/md_theme_surface</color>
     <color name="text_primary">#1C1B1F</color>
     <color name="text_secondary">#6B6B6B</color>
     <color name="white">#FFFFFF</color>

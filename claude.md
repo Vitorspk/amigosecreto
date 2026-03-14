@@ -246,7 +246,6 @@ implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
 implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 implementation 'androidx.recyclerview:recyclerview:1.3.2'
-implementation 'androidx.core:core-splashscreen:1.0.1'
 
 testImplementation 'junit:junit:4.13.2'
 testImplementation 'org.mockito:mockito-core:5.11.0'
@@ -446,7 +445,7 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 ## Recursos de UI
 
 ### Animações (`res/anim/`)
-`bounce.xml`, `button_press.xml`, `card_appear.xml`, `fade_in.xml`, `fade_out.xml`, `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
+`card_appear.xml`, `fade_in.xml`, `fade_out.xml`, `slide_in_left.xml`, `slide_in_right.xml`, `slide_out_left.xml`, `slide_out_right.xml`
 
 ### Layouts (`res/layout/`) — 21 arquivos
 - 9 layouts de Activity
@@ -456,6 +455,7 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 ### Drawables
 - Gradientes, botões, backgrounds, ícones SVG, ripples
 - Launcher icons com adaptive icon (API 26+)
+- `ic_add.xml`, `ic_dice.xml`, `ic_arrow_forward.xml` — novos ícones tintáveis (`fillColor` preto, tint no call site)
 
 ---
 
@@ -521,9 +521,9 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Migrar para Kotlin
 
 ### Qualidade
-- [ ] Mover ~150 strings hardcoded para `strings.xml`
-- [ ] Remover ~40 recursos não utilizados (Lint `UnusedResources`)
-- [ ] Fechar cursor em `DesejoDAO` (Lint `Recycle`)
+- [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
+- [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
+- [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
 - [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
