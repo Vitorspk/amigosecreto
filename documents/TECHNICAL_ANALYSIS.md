@@ -388,7 +388,7 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 ## Conclusão
 
 O app atingiu nível profissional. Todas as fases principais foram concluídas:
-- 260 testes cobrindo DAOs, models, repository, ViewModel, utilitários e contratos pré-migração Kotlin
+- 260 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
