@@ -56,21 +56,15 @@ public class ParticipanteRepositorySalvarExclusoesTest {
         grupoDao.close();
     }
 
-    private Participante inserir(String nome) {
+    /** Insere participante e retorna o ID atribuído pelo banco. */
+    private int inserir(String nome) {
         Participante p = new Participante();
         p.setNome(nome);
         repository.inserir(p, grupoId);
-        return p;
+        return p.getId();
     }
 
-    private int idOf(String nome) {
-        return repository.listarPorGrupo(grupoId).stream()
-                .filter(p -> p.getNome().equals(nome))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Participante não encontrado: " + nome))
-                .getId();
-    }
-
+    /** Busca exclusões de um participante com uma única query. */
     private List<Integer> exclusoesDeParticipante(int participanteId) {
         return repository.listarPorGrupo(grupoId).stream()
                 .filter(p -> p.getId() == participanteId)
@@ -83,25 +77,19 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_adicionar_persisteExclusao() {
-        inserir("Ana");
-        inserir("Bruno");
-        int idAna = idOf("Ana");
-        int idBruno = idOf("Bruno");
+        int idAna = inserir("Ana");
+        int idBruno = inserir("Bruno");
 
         repository.salvarExclusoes(idAna, Arrays.asList(idBruno), Collections.emptyList());
 
-        List<Integer> excl = exclusoesDeParticipante(idAna);
-        assertTrue(excl.contains(idBruno));
+        assertTrue(exclusoesDeParticipante(idAna).contains(idBruno));
     }
 
     @Test
     public void salvarExclusoes_adicionarMultiplas_todasPersistidas() {
-        inserir("Carla");
-        inserir("Diego");
-        inserir("Eva");
-        int idCarla = idOf("Carla");
-        int idDiego = idOf("Diego");
-        int idEva = idOf("Eva");
+        int idCarla = inserir("Carla");
+        int idDiego = inserir("Diego");
+        int idEva = inserir("Eva");
 
         repository.salvarExclusoes(idCarla, Arrays.asList(idDiego, idEva), Collections.emptyList());
 
@@ -114,16 +102,12 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_remover_removeExclusaoExistente() {
-        inserir("Felipe");
-        inserir("Gabi");
-        int idFelipe = idOf("Felipe");
-        int idGabi = idOf("Gabi");
+        int idFelipe = inserir("Felipe");
+        int idGabi = inserir("Gabi");
 
-        // Primeiro adiciona
         repository.salvarExclusoes(idFelipe, Arrays.asList(idGabi), Collections.emptyList());
         assertTrue(exclusoesDeParticipante(idFelipe).contains(idGabi));
 
-        // Agora remove
         repository.salvarExclusoes(idFelipe, Collections.emptyList(), Arrays.asList(idGabi));
         assertFalse(exclusoesDeParticipante(idFelipe).contains(idGabi));
     }
@@ -132,14 +116,10 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_adicionarERemover_transacaoAtomicaCorreta() {
-        inserir("Hugo");
-        inserir("Iris");
-        inserir("João");
-        int idHugo = idOf("Hugo");
-        int idIris = idOf("Iris");
-        int idJoao = idOf("João");
+        int idHugo = inserir("Hugo");
+        int idIris = inserir("Iris");
+        int idJoao = inserir("João");
 
-        // Adiciona Hugo → Iris
         repository.salvarExclusoes(idHugo, Arrays.asList(idIris), Collections.emptyList());
         assertTrue(exclusoesDeParticipante(idHugo).contains(idIris));
 
@@ -155,15 +135,12 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_listasVazias_naoAlteraEstadoAtual() {
-        inserir("Karen");
-        inserir("Lucas");
-        int idKaren = idOf("Karen");
-        int idLucas = idOf("Lucas");
+        int idKaren = inserir("Karen");
+        int idLucas = inserir("Lucas");
 
         repository.salvarExclusoes(idKaren, Arrays.asList(idLucas), Collections.emptyList());
         int antes = exclusoesDeParticipante(idKaren).size();
 
-        // Chamada com listas vazias — não deve mudar nada
         repository.salvarExclusoes(idKaren, Collections.emptyList(), Collections.emptyList());
 
         assertEquals(antes, exclusoesDeParticipante(idKaren).size());
@@ -171,8 +148,7 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_ambosVazios_naoLancaExcecao() {
-        inserir("Maria");
-        int idMaria = idOf("Maria");
+        int idMaria = inserir("Maria");
         // Não deve lançar exceção
         repository.salvarExclusoes(idMaria, Collections.emptyList(), Collections.emptyList());
     }
@@ -181,17 +157,12 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @Test
     public void salvarExclusoes_naoAfetaOutrosParticipantes() {
-        inserir("Nadia");
-        inserir("Otto");
-        inserir("Paulo");
-        int idNadia = idOf("Nadia");
-        int idOtto = idOf("Otto");
-        int idPaulo = idOf("Paulo");
+        int idNadia = inserir("Nadia");
+        int idOtto = inserir("Otto");
+        int idPaulo = inserir("Paulo");
 
-        // Adiciona exclusão apenas para Nadia
         repository.salvarExclusoes(idNadia, Arrays.asList(idOtto), Collections.emptyList());
 
-        // Otto e Paulo não devem ter exclusões
         assertTrue(exclusoesDeParticipante(idOtto).isEmpty());
         assertTrue(exclusoesDeParticipante(idPaulo).isEmpty());
     }

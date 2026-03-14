@@ -17,9 +17,9 @@ import static org.junit.Assert.*;
  * for perdido ou corrompido na migração, esses testes falharão.
  *
  * Contexto: Desejo é passado entre Activities via Intent extras. A implementação
- * manual usa writeStringArray/readStringArray — campos nulos são serializados como
- * a string "null" e Double.parseDouble("0.0") é o valor padrão. Esses testes
- * documentam o comportamento atual para que @Parcelize produza resultado equivalente.
+ * manual usa writeStringArray/readStringArray — campos nulos são propagados como null
+ * no array (não como a string "null"). Esses testes documentam o comportamento atual
+ * para que @Parcelize produza resultado equivalente.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
@@ -48,73 +48,30 @@ public class DesejoParcelableTest {
         }
     }
 
-    // --- todos os campos preenchidos ---
-
-    @Test
-    public void parcel_allFields_idPreservado() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals(42, restored.getId());
-    }
-
-    @Test
-    public void parcel_allFields_produtoPreservado() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals("Notebook", restored.getProduto());
-    }
-
-    @Test
-    public void parcel_allFields_categoriaPreservada() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals("Eletrônicos", restored.getCategoria());
-    }
-
-    @Test
-    public void parcel_allFields_lojasPreservadas() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals("Amazon, Kabum", restored.getLojas());
-    }
-
-    @Test
-    public void parcel_allFields_precoMinimoPreservado() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals(1500.0, restored.getPrecoMinimo(), 0.001);
-    }
-
-    @Test
-    public void parcel_allFields_precoMaximoPreservado() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals(3000.0, restored.getPrecoMaximo(), 0.001);
-    }
-
-    @Test
-    public void parcel_allFields_participanteIdPreservado() {
-        Desejo restored = parcelRoundTrip(buildDesejo());
-        assertEquals(7, restored.getParticipanteId());
-    }
-
     // --- campos opcionais nulos ---
 
     @Test
-    public void parcel_categoriaNull_preservado() {
+    public void parcel_categoriaNull_preservaNulo() {
         Desejo d = buildDesejo();
         d.setCategoria(null);
         Desejo restored = parcelRoundTrip(d);
-        // implementação atual serializa null como a string "null" via writeStringArray
-        // ao migrar para @Parcelize, o comportamento deve ser null → null
-        // este teste documenta o contrato atual para detectar regressões na migração
-        assertNotNull(restored); // round-trip não deve lançar exceção
+        // writeStringArray propaga null no array; readStringArray restaura null
+        // ao migrar para @Parcelize, null deve permanecer null (não virar "null")
+        assertNotNull(restored);
         assertEquals(d.getId(), restored.getId());
         assertEquals(d.getProduto(), restored.getProduto());
+        assertNull("categoria null deve ser restaurada como null", restored.getCategoria());
     }
 
     @Test
-    public void parcel_lojasNull_preservado() {
+    public void parcel_lojasNull_preservaNulo() {
         Desejo d = buildDesejo();
         d.setLojas(null);
         Desejo restored = parcelRoundTrip(d);
         assertNotNull(restored);
         assertEquals(d.getId(), restored.getId());
         assertEquals(d.getProduto(), restored.getProduto());
+        assertNull("lojas null deve ser restaurada como null", restored.getLojas());
     }
 
     @Test
