@@ -220,7 +220,8 @@
     <string name="emoji_trash" translatable="false">🗑️</string>
 
     <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
-    <!-- cd_remove_group: set programmatically via view.setContentDescription() — lint cannot track this -->
+    <!-- cd_remove_group: used in res/layout/item_grupo.xml — suppressed because that layout is not
+         directly inflated yet (reserved for future use; see item_grupo.xml header comment) -->
     <string name="cd_remove_group" tools:ignore="UnusedResources">Remover Grupo</string>
     <string name="cd_remove_participant">Remover Participante</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
