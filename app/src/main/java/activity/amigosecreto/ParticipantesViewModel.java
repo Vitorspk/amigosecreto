@@ -1,7 +1,6 @@
 package activity.amigosecreto;
 
 import android.app.Application;
-import android.database.sqlite.SQLiteException;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -357,16 +356,16 @@ public class ParticipantesViewModel extends AndroidViewModel {
 
     /**
      * Trata exceções de operações de banco:
-     * - Loga sempre (visível no adb logcat mesmo em release)
-     * - Em builds de debug, relança exceções que não são SQLiteException para não
-     *   engolir bugs de programação (ex: NullPointerException por falha de injeção)
-     * - Posta a mensagem de erro informada para o main thread
+     * - Loga sempre via Log.e (stack trace visível no adb logcat em debug e release)
+     * - Posta a mensagem de erro informada para o main thread em todos os casos
+     *
+     * <p>Não relança a exceção: relançar de dentro de um {@link Runnable} submetido ao executor
+     * vai para o {@link Thread.UncaughtExceptionHandler} da thread de background — o processo
+     * não derruba de forma imediata e o {@code postMain} com a mensagem de erro nunca roda,
+     * deixando o usuário sem feedback. O Log.e é suficiente para diagnóstico no logcat.
      */
     private void handleDbError(Exception e, String logMsg, int errorStringRes) {
         Log.e(TAG, logMsg, e);
-        if (BuildConfig.DEBUG && !(e instanceof SQLiteException)) {
-            throw new RuntimeException(logMsg, e);
-        }
         postMain(() -> errorMessage.setValue(getApplication().getString(errorStringRes)));
     }
 

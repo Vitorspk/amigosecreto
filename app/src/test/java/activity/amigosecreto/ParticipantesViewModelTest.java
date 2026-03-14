@@ -11,13 +11,20 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowLooper;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import android.database.sqlite.SQLiteException;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
@@ -55,17 +62,17 @@ public class ParticipantesViewModelTest {
     private final ExecutorService syncExecutor = new ExecutorService() {
         @Override public void execute(Runnable command) { command.run(); }
         @Override public void shutdown() {}
-        @Override public List<Runnable> shutdownNow() { return java.util.Collections.emptyList(); }
+        @Override public List<Runnable> shutdownNow() { return Collections.emptyList(); }
         @Override public boolean isShutdown() { return false; }
         @Override public boolean isTerminated() { return false; }
-        @Override public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) { return true; }
-        @Override public <T> java.util.concurrent.Future<T> submit(java.util.concurrent.Callable<T> task) { try { return java.util.concurrent.CompletableFuture.completedFuture(task.call()); } catch (Exception e) { throw new RuntimeException(e); } }
-        @Override public <T> java.util.concurrent.Future<T> submit(Runnable task, T result) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(result); }
-        @Override public java.util.concurrent.Future<?> submit(Runnable task) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(null); }
-        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return java.util.Collections.emptyList(); }
-        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return java.util.Collections.emptyList(); }
-        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return null; }
-        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return null; }
+        @Override public boolean awaitTermination(long timeout, TimeUnit unit) { return true; }
+        @Override public <T> Future<T> submit(Callable<T> task) { try { return CompletableFuture.completedFuture(task.call()); } catch (Exception e) { throw new RuntimeException(e); } }
+        @Override public <T> Future<T> submit(Runnable task, T result) { task.run(); return CompletableFuture.completedFuture(result); }
+        @Override public Future<?> submit(Runnable task) { task.run(); return CompletableFuture.completedFuture(null); }
+        @Override public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) { return Collections.emptyList(); }
+        @Override public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) { return Collections.emptyList(); }
+        @Override public <T> T invokeAny(Collection<? extends Callable<T>> tasks) { return null; }
+        @Override public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) { return null; }
     };
 
     @Before
@@ -125,7 +132,7 @@ public class ParticipantesViewModelTest {
 
         realExecutor.shutdown();
         assertTrue("Executor não terminou: background task travou",
-                realExecutor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS));
+                realExecutor.awaitTermination(3, TimeUnit.SECONDS));
         viewModel.setExecutorService(syncExecutor);
         idleMainLooper();
 
@@ -424,7 +431,7 @@ public class ParticipantesViewModelTest {
         idleMainLooper();
 
         // Adicionar exclusão
-        viewModel.salvarExclusoes(id1, java.util.Arrays.asList(id2), java.util.Collections.emptyList());
+        viewModel.salvarExclusoes(id1, Arrays.asList(id2), Collections.emptyList());
         idleMainLooper();
 
         List<Participante> aposAdicionar = participanteDao.listarPorGrupo(grupoId);
@@ -433,7 +440,7 @@ public class ParticipantesViewModelTest {
         assertTrue(p1.getIdsExcluidos().contains(id2));
 
         // Remover exclusão
-        viewModel.salvarExclusoes(id1, java.util.Collections.emptyList(), java.util.Arrays.asList(id2));
+        viewModel.salvarExclusoes(id1, Collections.emptyList(), Arrays.asList(id2));
         idleMainLooper();
 
         List<Participante> aposRemover = participanteDao.listarPorGrupo(grupoId);
@@ -453,11 +460,11 @@ public class ParticipantesViewModelTest {
         ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void inserir(Participante participante, int grupoId) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
         Participante p = new Participante();
@@ -544,7 +551,7 @@ public class ParticipantesViewModelTest {
         viewModel.init(grupoId);
         idleMainLooper();
 
-        viewModel.salvarExclusoes(id1, java.util.Arrays.asList(id2), java.util.Collections.emptyList());
+        viewModel.salvarExclusoes(id1, Arrays.asList(id2), Collections.emptyList());
         idleMainLooper();
 
         // LiveData foi atualizado após a mutação
@@ -655,11 +662,11 @@ public class ParticipantesViewModelTest {
         ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void marcarComoEnviado(int id) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
         assertaErroComRealExecutor(repoQueLanca, () -> viewModel.marcarComoEnviado(1));
@@ -674,11 +681,11 @@ public class ParticipantesViewModelTest {
         ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public boolean atualizar(Participante participante) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
 
@@ -705,11 +712,11 @@ public class ParticipantesViewModelTest {
         ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void remover(int id) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
         assertaErroComRealExecutor(repoQueLanca, () -> viewModel.removerParticipante(1));
@@ -725,11 +732,11 @@ public class ParticipantesViewModelTest {
         ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
             @Override
             public void deletarTodosDoGrupo(int grupoId) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
         assertaErroComRealExecutor(repoQueLanca, () -> viewModel.deletarTodosDoGrupo(grupoId));
@@ -746,14 +753,58 @@ public class ParticipantesViewModelTest {
             @Override
             public void salvarExclusoes(int participanteId, List<Integer> adicionar,
                     List<Integer> remover) {
-                throw new android.database.sqlite.SQLiteException("falha simulada");
+                throw new SQLiteException("falha simulada");
             }
             @Override
             public List<Participante> listarPorGrupo(int grupoId) {
-                return java.util.Collections.emptyList();
+                return Collections.emptyList();
             }
         };
         assertaErroComRealExecutor(repoQueLanca,
-                () -> viewModel.salvarExclusoes(1, java.util.Arrays.asList(2), java.util.Collections.emptyList()));
+                () -> viewModel.salvarExclusoes(1, Arrays.asList(2), Collections.emptyList()));
+    }
+
+    // =========================================================
+    // prepararMensagensSms — caminho de erro
+    // =========================================================
+
+    @Test
+    public void prepararMensagensSms_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        // Forçar exceção no listarPorGrupo que prepararMensagensSms chama internamente
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                throw new SQLiteException("falha simulada");
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.prepararMensagensSms(Collections.emptyList()));
+    }
+
+    // =========================================================
+    // prepararMensagemCompartilhamento — caminho de erro
+    // =========================================================
+
+    @Test
+    public void prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        // Forçar exceção em marcarComoEnviado, que é sempre chamado
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void marcarComoEnviado(int id) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        Participante p = new Participante();
+        p.setId(1);
+        p.setNome("Teste");
+        // amigoSorteadoId = null → getNomeAmigoSorteado não é chamado; marcarComoEnviado sempre é
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.prepararMensagemCompartilhamento(p));
     }
 }
