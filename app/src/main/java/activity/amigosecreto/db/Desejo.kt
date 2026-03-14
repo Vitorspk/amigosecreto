@@ -3,6 +3,9 @@ package activity.amigosecreto.db
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
+// var fields preserved intentionally: Java DAOs populate instances via setters
+// (e.g. GrupoDAO.cursorToDesejo sets each field after construction).
+// Switching to val would break all DAO call sites.
 @Parcelize
 data class Desejo(
     var id: Int = 0,
