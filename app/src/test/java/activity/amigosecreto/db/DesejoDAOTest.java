@@ -42,9 +42,9 @@ public class DesejoDAOTest {
     @After
     public void tearDown() {
         grupoDao.limparTudo(); // limpa desejo, participante, exclusao e grupo em cascata
-        dao.close();
-        participanteDao.close();
         grupoDao.close();
+        participanteDao.close();
+        dao.close();
     }
 
     private Participante criarParticipante(String nome) {
@@ -124,8 +124,7 @@ public class DesejoDAOTest {
         dao.inserir(buildDesejo("Livro A", p.getId()));
         dao.inserir(buildDesejo("Livro B", p.getId()));
 
-        // tearDown chama limparTudo(), garantindo isolamento entre testes
-        List<Desejo> lista = dao.listar();
+        List<Desejo> lista = dao.listarPorParticipante(p.getId());
         assertEquals(2, lista.size());
     }
 
