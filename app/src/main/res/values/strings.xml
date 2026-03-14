@@ -234,7 +234,6 @@
     <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
     <string name="cd_remove_group">Remover Grupo</string>
     <string name="cd_remove_participant">Remover Participante</string>
-    <string name="cd_group_icon">Ícone do grupo</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
     <string name="cd_my_wishes">Meus Desejos</string>
     <string name="cd_restrictions">Restrições</string>
