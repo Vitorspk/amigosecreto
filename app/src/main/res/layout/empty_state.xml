@@ -12,6 +12,7 @@
         android:layout_width="96dp"
         android:layout_height="96dp"
         android:text="@string/emoji_gift"
+        android:importantForAccessibility="no"
         android:textSize="64sp"
         android:gravity="center"
         android:background="@drawable/circle_background"

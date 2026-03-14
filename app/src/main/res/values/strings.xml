@@ -233,6 +233,7 @@
     <!-- Content descriptions -->
     <string name="cd_remove_group">Remover Grupo</string>
     <string name="cd_gift_icon">Ícone do grupo</string>
+    <string name="cd_wish_icon">Ícone do desejo</string>
 
     <!-- Botões de ação de participante -->
     <string name="button_my_wishes">Meus Desejos</string>
@@ -256,9 +257,9 @@
     <!-- Dialog add participante -->
     <string name="dialog_add_participant_title">Adicionar Participante</string>
 
-    <!-- Tela listar participantes (emojis decorativos mantidos intencionalmente — não traduzíveis) -->
-    <string name="button_add_participant">➕ Adicionar Participante</string>
-    <string name="button_draw">🎲 Realizar Sorteio</string>
+    <!-- Tela listar participantes -->
+    <string name="button_add_participant">Adicionar Participante</string>
+    <string name="button_draw">Realizar Sorteio</string>
 
     <!-- Menu -->
     <string name="menu_more">Mais</string>

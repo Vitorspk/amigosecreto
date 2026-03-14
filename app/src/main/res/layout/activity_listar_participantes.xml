@@ -105,7 +105,10 @@
             android:textColor="@color/white"
             app:backgroundTint="@color/colorPrimary"
             app:cornerRadius="12dp"
-            app:elevation="2dp" />
+            app:elevation="2dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white" />
 
         <!-- Botão Realizar Sorteio -->
         <com.google.android.material.button.MaterialButton
@@ -120,7 +123,10 @@
             android:background="@drawable/gradient_green"
             android:textColor="@color/white"
             app:cornerRadius="12dp"
-            app:elevation="0dp" />
+            app:elevation="0dp"
+            app:icon="@drawable/ic_dice"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white" />
 
         <!-- Botão Limpar -->
         <com.google.android.material.button.MaterialButton

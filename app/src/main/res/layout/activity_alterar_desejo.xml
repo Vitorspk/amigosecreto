@@ -51,6 +51,7 @@
                     android:layout_width="56dp"
                     android:layout_height="56dp"
                     android:text="@string/emoji_edit"
+                    android:importantForAccessibility="no"
                     android:textSize="36sp"
                     android:gravity="center"
                     android:background="@drawable/card_gradient_blue"

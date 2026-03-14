@@ -59,6 +59,7 @@
                         android:layout_width="64dp"
                         android:layout_height="64dp"
                         android:text="@string/emoji_gift"
+                        android:importantForAccessibility="no"
                         android:textSize="48sp"
                         android:gravity="center"
                         android:background="@drawable/btn_white_rounded"

@@ -20,7 +20,7 @@
             android:src="@drawable/ic_gift"
             app:tint="@color/purple_primary"
             android:layout_marginEnd="16dp"
-            android:contentDescription="@string/cd_gift_icon" />
+            android:contentDescription="@string/cd_wish_icon" />
 
         <LinearLayout
             android:layout_width="0dp"
