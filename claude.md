@@ -6,12 +6,12 @@
 
 | Campo | Valor |
 |-------|-------|
-| Versão atual | 2.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
+| Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
 | Target / Compile SDK | 35 (Android 15) |
-| Linguagem | Java 17 |
+| Linguagem | Java 17 → Kotlin (migração em andamento — Fase 10) |
 | Branch principal | `master` |
 
 ---
@@ -97,14 +97,14 @@ documents/
 ### Deploy para Produção (tag)
 
 ```bash
-git tag v2.x
-git push origin v2.x
+git tag v3.x
+git push origin v3.x
 ```
 
 **Workflow:** `.github/workflows/release.yml`
-- Trigger: push de tag `v*` (formato: `v2.1` ou `v2.1.0`)
+- Trigger: push de tag `v*` (formato: `v3.0` ou `v3.0.0`)
 - versionCode: `100 + git rev-list --count HEAD`
-- versionName: extraído da tag (`v2.1` → `2.1`)
+- versionName: extraído da tag (`v3.0` → `3.0`)
 - Steps: checkout → JDK 21 → lint → testes → `bundleRelease` → Play Store (production) → GitHub Release
 - Todas as actions pinadas por commit SHA
 
@@ -116,7 +116,7 @@ git push origin master
 
 **Workflow:** `.github/workflows/ci.yml`
 - Trigger: push no master (excluindo tags `v*`)
-- versionName: `2.0-dev.<short-sha>`
+- versionName: `3.0-dev.<short-sha>`
 - Track: **internal** (QA antes de produção)
 - `cancel-in-progress: true`
 
@@ -399,7 +399,7 @@ Menu Global
 
 ```bash
 # Produção (Play Store):
-git tag v2.x && git push origin v2.x
+git tag v3.x && git push origin v3.x
 
 # Interno (QA):
 git push origin master
@@ -539,7 +539,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Implementar Repository pattern (PR #19)
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
-- [ ] Migrar para Kotlin
+- [ ] Migrar para Kotlin (Fase 10 — em andamento)
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)

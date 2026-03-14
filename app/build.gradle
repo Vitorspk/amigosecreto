@@ -24,7 +24,7 @@ android {
             : 9
         versionName project.hasProperty('ciVersionName')
             ? project.property('ciVersionName')
-            : "2.0"
+            : "3.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

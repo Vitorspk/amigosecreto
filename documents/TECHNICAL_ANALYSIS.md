@@ -1,7 +1,7 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #31 merged)
-**Versão Analisada:** 2.0 (build ~157+)
+**Data:** Março/2026 (última atualização: 14/03/2026 — PR #32 merged)
+**Versão Analisada:** 3.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
 ---
@@ -143,7 +143,7 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **✅ Concluído** | **#22** |
 | **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **✅ Concluído** | **#27** |
 | **Fase 9** | **Dependency Injection (Hilt)** | **✅ Concluído** | **#28/#29** |
-| **Fase 10** | **Migração para Kotlin** | **⏳ Próximo** | — |
+| **Fase 10** | **Migração para Kotlin** | **🔄 Em andamento** | — |
 
 ---
 
@@ -253,9 +253,9 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### Fase 10 — Migração para Kotlin (Próximo)
+### Fase 10 — Migração para Kotlin (🔄 Em andamento)
 
-**Objetivo:** Converter o código Java para Kotlin, aproveitando coroutines, extension functions, data classes e null safety.
+**Objetivo:** Converter o código Java para Kotlin, aproveitando coroutines, extension functions, data classes e null safety. Esta migração coincide com o bump de versão **2.x → 3.x**.
 
 **Escopo sugerido:**
 - Migrar models (`Grupo.java`, `Participante.java`, `Desejo.java`) para data classes Kotlin
