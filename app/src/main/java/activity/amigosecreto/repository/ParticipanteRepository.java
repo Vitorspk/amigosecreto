@@ -85,8 +85,8 @@ public class ParticipanteRepository {
         }
     }
 
-    @VisibleForTesting
-    public void adicionarExclusao(int idParticipante, int idExcluido) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    void adicionarExclusao(int idParticipante, int idExcluido) {
         dao.open();
         try {
             dao.adicionarExclusao(idParticipante, idExcluido);
@@ -95,8 +95,8 @@ public class ParticipanteRepository {
         }
     }
 
-    @VisibleForTesting
-    public void removerExclusao(int idParticipante, int idExcluido) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    void removerExclusao(int idParticipante, int idExcluido) {
         dao.open();
         try {
             dao.removerExclusao(idParticipante, idExcluido);

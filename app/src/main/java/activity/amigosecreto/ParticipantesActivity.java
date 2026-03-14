@@ -249,6 +249,9 @@ public class ParticipantesActivity extends AppCompatActivity {
             pendingEditDialog = null;
             pendingEditButton = null;
             pendingEditParticipante = null;
+            pendingEditNomeOriginal = null;
+            pendingEditTelefoneOriginal = null;
+            pendingEditEmailOriginal = null;
         });
 
         // Mensagem de compartilhamento pronta — abrir share sheet.

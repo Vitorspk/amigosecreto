@@ -93,6 +93,13 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    // Configura Robolectric para carregar recursos binários compilados (necessário para getString)
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
     // Lint options
     lint {
         checkReleaseBuilds true

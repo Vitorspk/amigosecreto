@@ -32,6 +32,11 @@ public class DesejoRepository {
         this.dao = dao;
     }
 
+    /**
+     * Lista todos os desejos do banco, sem filtro por grupo ou participante.
+     * Usado por ListarDesejosActivity (visão global). Não usar em loops por participante —
+     * prefira listarDesejosPorGrupo() para evitar carregar dados de outros grupos.
+     */
     public List<Desejo> listar() {
         dao.open();
         try {

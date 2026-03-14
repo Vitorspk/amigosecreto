@@ -1,7 +1,5 @@
 package activity.amigosecreto;
 
-import android.content.Context;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 
@@ -13,13 +11,20 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowLooper;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import android.database.sqlite.SQLiteException;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
@@ -27,6 +32,7 @@ import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.GrupoDAO;
 import activity.amigosecreto.db.Participante;
 import activity.amigosecreto.db.ParticipanteDAO;
+import activity.amigosecreto.repository.DesejoRepository;
 import activity.amigosecreto.repository.ParticipanteRepository;
 
 import static org.junit.Assert.*;
@@ -45,43 +51,47 @@ public class ParticipantesViewModelTest {
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
+    private android.app.Application app;
     private ParticipantesViewModel viewModel;
     private GrupoDAO grupoDao;
     private ParticipanteDAO participanteDao;
+    private DesejoRepository desejoRepository;
     private int grupoId;
 
     /** Executor síncrono: executa Runnable diretamente na thread chamadora. */
     private final ExecutorService syncExecutor = new ExecutorService() {
         @Override public void execute(Runnable command) { command.run(); }
         @Override public void shutdown() {}
-        @Override public List<Runnable> shutdownNow() { return java.util.Collections.emptyList(); }
+        @Override public List<Runnable> shutdownNow() { return Collections.emptyList(); }
         @Override public boolean isShutdown() { return false; }
         @Override public boolean isTerminated() { return false; }
-        @Override public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) { return true; }
-        @Override public <T> java.util.concurrent.Future<T> submit(java.util.concurrent.Callable<T> task) { try { return java.util.concurrent.CompletableFuture.completedFuture(task.call()); } catch (Exception e) { throw new RuntimeException(e); } }
-        @Override public <T> java.util.concurrent.Future<T> submit(Runnable task, T result) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(result); }
-        @Override public java.util.concurrent.Future<?> submit(Runnable task) { task.run(); return java.util.concurrent.CompletableFuture.completedFuture(null); }
-        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return java.util.Collections.emptyList(); }
-        @Override public <T> List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return java.util.Collections.emptyList(); }
-        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) { return null; }
-        @Override public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) { return null; }
+        @Override public boolean awaitTermination(long timeout, TimeUnit unit) { return true; }
+        @Override public <T> Future<T> submit(Callable<T> task) { try { return CompletableFuture.completedFuture(task.call()); } catch (Exception e) { throw new RuntimeException(e); } }
+        @Override public <T> Future<T> submit(Runnable task, T result) { task.run(); return CompletableFuture.completedFuture(result); }
+        @Override public Future<?> submit(Runnable task) { task.run(); return CompletableFuture.completedFuture(null); }
+        @Override public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) { return Collections.emptyList(); }
+        @Override public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) { return Collections.emptyList(); }
+        @Override public <T> T invokeAny(Collection<? extends Callable<T>> tasks) { return null; }
+        @Override public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) { return null; }
     };
 
     @Before
     public void setUp() {
-        Context ctx = ApplicationProvider.getApplicationContext();
+        app = (android.app.Application) ApplicationProvider.getApplicationContext();
 
-        grupoDao = new GrupoDAO(ctx);
+        grupoDao = new GrupoDAO(app);
         grupoDao.open();
         Grupo g = new Grupo();
         g.setNome("Grupo Teste");
         g.setData("01/01/2025");
         grupoId = (int) grupoDao.inserir(g);
 
-        participanteDao = new ParticipanteDAO(ctx);
+        participanteDao = new ParticipanteDAO(app);
         participanteDao.open();
 
-        viewModel = new ParticipantesViewModel((android.app.Application) ctx.getApplicationContext());
+        desejoRepository = new DesejoRepository(app);
+
+        viewModel = new ParticipantesViewModel(app);
         viewModel.setExecutorService(syncExecutor);
     }
 
@@ -97,6 +107,37 @@ public class ParticipantesViewModelTest {
     /** Drena o main looper do Robolectric para que Handler.post() complete antes das asserções. */
     private void idleMainLooper() {
         Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    }
+
+    /**
+     * Configura o ViewModel com {@code repoQueLanca}, executa {@code acao} via um executor real
+     * (necessário para que getApplication().getString() rode no main looper) e verifica que
+     * {@code errorMessage} foi postado com um valor não-nulo e não-vazio.
+     *
+     * <p>Restaura {@code syncExecutor} antes das asserções para evitar
+     * {@link java.util.concurrent.RejectedExecutionException} em tearDown.
+     */
+    private void assertaErroComRealExecutor(ParticipanteRepository repoQueLanca, Runnable acao)
+            throws InterruptedException {
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        viewModel.setExecutorService(realExecutor);
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+
+        idleMainLooper();
+        viewModel.clearErrorMessage();
+        idleMainLooper();
+
+        acao.run();
+
+        realExecutor.shutdown();
+        assertTrue("Executor não terminou: background task travou",
+                realExecutor.awaitTermination(3, TimeUnit.SECONDS));
+        viewModel.setExecutorService(syncExecutor);
+        idleMainLooper();
+
+        assertNotNull(viewModel.getErrorMessage().getValue());
+        assertFalse(viewModel.getErrorMessage().getValue().isEmpty());
     }
 
     private Participante inserirParticipante(String nome) {
@@ -132,8 +173,7 @@ public class ParticipantesViewModelTest {
         List<Participante> apos = participanteDao.listarPorGrupo(grupoId);
         int pid = apos.get(0).getId();
 
-        Context ctx = ApplicationProvider.getApplicationContext();
-        DesejoDAO desejoDAO = new DesejoDAO(ctx);
+        DesejoDAO desejoDAO = new DesejoDAO(app);
         desejoDAO.open();
         Desejo d1 = new Desejo(); d1.setProduto("Livro"); d1.setParticipanteId(pid); desejoDAO.inserir(d1);
         Desejo d2 = new Desejo(); d2.setProduto("Caneta"); d2.setParticipanteId(pid); desejoDAO.inserir(d2);
@@ -391,7 +431,7 @@ public class ParticipantesViewModelTest {
         idleMainLooper();
 
         // Adicionar exclusão
-        viewModel.salvarExclusoes(id1, java.util.Arrays.asList(id2), java.util.Collections.emptyList());
+        viewModel.salvarExclusoes(id1, Arrays.asList(id2), Collections.emptyList());
         idleMainLooper();
 
         List<Participante> aposAdicionar = participanteDao.listarPorGrupo(grupoId);
@@ -400,13 +440,127 @@ public class ParticipantesViewModelTest {
         assertTrue(p1.getIdsExcluidos().contains(id2));
 
         // Remover exclusão
-        viewModel.salvarExclusoes(id1, java.util.Collections.emptyList(), java.util.Arrays.asList(id2));
+        viewModel.salvarExclusoes(id1, Collections.emptyList(), Arrays.asList(id2));
         idleMainLooper();
 
         List<Participante> aposRemover = participanteDao.listarPorGrupo(grupoId);
         Participante p1apos = aposRemover.stream().filter(p -> p.getId() == id1).findFirst().orElse(null);
         assertNotNull(p1apos);
         assertFalse(p1apos.getIdsExcluidos().contains(id2));
+    }
+
+    // =========================================================
+    // inserirParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void inserirParticipante_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        // listarPorGrupo retorna lista vazia para que carregarParticipantes() não polua errorMessage
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void inserir(Participante participante, int grupoId) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        Participante p = new Participante();
+        p.setNome("Erro");
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.inserirParticipante(p, grupoId));
+    }
+
+    // =========================================================
+    // participants LiveData updates after mutations
+    // =========================================================
+
+    @Test
+    public void removerParticipante_atualizaParticipantsLiveData() {
+        inserirParticipante("Ana");
+        inserirParticipante("Bruno");
+        inserirParticipante("Carla");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertEquals(3, antes.size());
+        int idRemover = antes.get(0).getId();
+
+        viewModel.removerParticipante(idRemover);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(2, apos.size());
+        assertFalse(apos.stream().anyMatch(p -> p.getId() == idRemover));
+    }
+
+    @Test
+    public void inserirParticipante_atualizaParticipantsLiveData() {
+        inserirParticipante("Diana");
+        inserirParticipante("Eduardo");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertEquals(2, antes.size());
+
+        Participante novo = new Participante();
+        novo.setNome("Fernanda");
+        novo.setTelefone("11988887777");
+        viewModel.inserirParticipante(novo, grupoId);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(3, apos.size());
+        assertTrue(apos.stream().anyMatch(p -> "Fernanda".equals(p.getNome())));
+    }
+
+    @Test
+    public void deletarTodosDoGrupo_atualizaParticipantsLiveData() {
+        inserirParticipante("Gabi");
+        inserirParticipante("Hugo");
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        List<Participante> antes = viewModel.getParticipants().getValue();
+        assertNotNull(antes);
+        assertFalse(antes.isEmpty());
+
+        viewModel.deletarTodosDoGrupo(grupoId);
+        idleMainLooper();
+
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertTrue(apos.isEmpty());
+    }
+
+    @Test
+    public void salvarExclusoes_atualizaParticipantsLiveData() {
+        inserirParticipante("Ines");
+        inserirParticipante("Jorge");
+        List<Participante> lista = participanteDao.listarPorGrupo(grupoId);
+        int id1 = lista.get(0).getId();
+        int id2 = lista.get(1).getId();
+
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        viewModel.salvarExclusoes(id1, Arrays.asList(id2), Collections.emptyList());
+        idleMainLooper();
+
+        // LiveData foi atualizado após a mutação
+        List<Participante> apos = viewModel.getParticipants().getValue();
+        assertNotNull(apos);
+        assertEquals(2, apos.size());
+        Participante p1 = apos.stream().filter(p -> p.getId() == id1).findFirst().orElse(null);
+        assertNotNull(p1);
+        assertTrue(p1.getIdsExcluidos().contains(id2));
     }
 
     // =========================================================
@@ -496,5 +650,161 @@ public class ParticipantesViewModelTest {
                 .filter(p -> p.getId() == primeiro.getId()).findFirst().orElse(null);
         assertNotNull(primeirosApos);
         assertTrue(primeirosApos.isEnviado());
+    }
+
+    // =========================================================
+    // marcarComoEnviado — caminho de erro
+    // =========================================================
+
+    @Test
+    public void marcarComoEnviado_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void marcarComoEnviado(int id) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.marcarComoEnviado(1));
+    }
+
+    // =========================================================
+    // atualizarParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void atualizarParticipante_excecaoNoRepository_emiteFalse() {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public boolean atualizar(Participante participante) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+
+        viewModel.setRepositories(repoQueLanca, desejoRepository);
+        viewModel.init(grupoId);
+        idleMainLooper();
+
+        Participante p = new Participante();
+        p.setId(1);
+        p.setNome("Teste");
+        viewModel.atualizarParticipante(p);
+        idleMainLooper();
+
+        assertEquals(Boolean.FALSE, viewModel.getAtualizarSucesso().getValue());
+    }
+
+    // =========================================================
+    // removerParticipante — caminho de erro
+    // =========================================================
+
+    @Test
+    public void removerParticipante_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void remover(int id) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.removerParticipante(1));
+    }
+
+    // =========================================================
+    // deletarTodosDoGrupo — caminho de erro
+    // =========================================================
+
+    @Test
+    public void deletarTodosDoGrupo_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void deletarTodosDoGrupo(int grupoId) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca, () -> viewModel.deletarTodosDoGrupo(grupoId));
+    }
+
+    // =========================================================
+    // salvarExclusoes — caminho de erro
+    // =========================================================
+
+    @Test
+    public void salvarExclusoes_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void salvarExclusoes(int participanteId, List<Integer> adicionar,
+                    List<Integer> remover) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.salvarExclusoes(1, Arrays.asList(2), Collections.emptyList()));
+    }
+
+    // =========================================================
+    // prepararMensagensSms — caminho de erro
+    // =========================================================
+
+    @Test
+    public void prepararMensagensSms_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        // Forçar exceção no listarPorGrupo que prepararMensagensSms chama internamente
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                throw new SQLiteException("falha simulada");
+            }
+        };
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.prepararMensagensSms(Collections.emptyList()));
+    }
+
+    // =========================================================
+    // prepararMensagemCompartilhamento — caminho de erro
+    // =========================================================
+
+    @Test
+    public void prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage()
+            throws InterruptedException {
+        // Forçar exceção em marcarComoEnviado, que é sempre chamado
+        ParticipanteRepository repoQueLanca = new ParticipanteRepository(app) {
+            @Override
+            public void marcarComoEnviado(int id) {
+                throw new SQLiteException("falha simulada");
+            }
+            @Override
+            public List<Participante> listarPorGrupo(int grupoId) {
+                return Collections.emptyList();
+            }
+        };
+        Participante p = new Participante();
+        p.setId(1);
+        p.setNome("Teste");
+        // amigoSorteadoId = null → getNomeAmigoSorteado não é chamado; marcarComoEnviado sempre é
+        assertaErroComRealExecutor(repoQueLanca,
+                () -> viewModel.prepararMensagemCompartilhamento(p));
     }
 }
