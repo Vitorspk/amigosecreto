@@ -140,6 +140,53 @@ public class DesejoDAO {
         return mapa;
     }
 
+    /**
+     * Retorna um mapa participante_id → lista de desejos para todos os participantes de um grupo,
+     * usando uma única query com JOIN. Evita N open/close ao preparar mensagens para o grupo inteiro.
+     */
+    public final Map<Integer, List<Desejo>> listarDesejosPorGrupo(int grupoId) {
+        Map<Integer, List<Desejo>> mapa = new HashMap<>();
+        String sql = "SELECT d." + helper.COLUMN_ID
+                + ", d." + helper.COLUMN_PRODUTO
+                + ", d." + helper.COLUMN_CATEGORIA
+                + ", d." + helper.COLUMN_PRECO_MINIMO
+                + ", d." + helper.COLUMN_PRECO_MAXIMO
+                + ", d." + helper.COLUMN_LOJAS
+                + ", d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID
+                + " FROM " + helper.TABLE_DESEJO + " d"
+                + " INNER JOIN " + helper.TABLE_PARTICIPANTE + " p"
+                + " ON d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + " = p." + helper.COLUMN_ID
+                + " WHERE p." + helper.COLUMN_FK_GRUPO_ID + " = ?";
+        Cursor cursor = database.rawQuery(sql, new String[]{String.valueOf(grupoId)});
+        try {
+            if (cursor.moveToFirst()) {
+                int idIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_ID);
+                int prodIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRODUTO);
+                int catIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_CATEGORIA);
+                int minIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MINIMO);
+                int maxIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MAXIMO);
+                int lojasIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_LOJAS);
+                int pidIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_DESEJO_PARTICIPANTE_ID);
+                do {
+                    Desejo d = new Desejo();
+                    d.setId(cursor.getInt(idIdx));
+                    d.setProduto(cursor.getString(prodIdx));
+                    d.setCategoria(cursor.getString(catIdx));
+                    d.setPrecoMinimo(cursor.getDouble(minIdx));
+                    d.setPrecoMaximo(cursor.getDouble(maxIdx));
+                    d.setLojas(cursor.getString(lojasIdx));
+                    int pid = cursor.getInt(pidIdx);
+                    d.setParticipanteId(pid);
+                    if (!mapa.containsKey(pid)) mapa.put(pid, new ArrayList<>());
+                    mapa.get(pid).add(d);
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return mapa;
+    }
+
     public final int proximoId(){
         Cursor cursor = null;
         try {

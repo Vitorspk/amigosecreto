@@ -109,6 +109,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             pendingSmsParticipanteId = savedInstanceState.getInt("pendingSmsId", -1);
             pendingSmsNextIndex = savedInstanceState.getInt("pendingSmsNextIndex", -1);
+            pendingSmsResumeIndex = savedInstanceState.getInt("pendingSmsResumeIndex", -1);
             int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
             String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
             String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
@@ -287,8 +288,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 p.setNome(nome);
                 p.setTelefone(telefone);
                 p.setEmail(email);
-                participanteRepository.inserir(p, grupoAtual.getId());
-                atualizarLista();
+                viewModel.inserirParticipante(p, grupoAtual.getId());
                 dialog.dismiss();
             }
         });
@@ -403,8 +403,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     Participante p = new Participante();
                     p.setNome(name);
                     p.setTelefone(number);
-                    participanteRepository.inserir(p, grupoAtual.getId());
-                    atualizarLista();
+                    viewModel.inserirParticipante(p, grupoAtual.getId());
                     Toast.makeText(this, getString(R.string.toast_contact_added_format, name), Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
@@ -420,7 +419,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         // smsLaunched evita marcacao incorreta apos rotacao (pendingSmsParticipanteId e
         // restaurado do bundle mas o app de SMS nunca foi aberto).
         if (smsLaunched && pendingSmsParticipanteId != -1) {
-            participanteRepository.marcarComoEnviado(pendingSmsParticipanteId);
+            viewModel.marcarComoEnviado(pendingSmsParticipanteId);
             pendingSmsParticipanteId = -1;
             smsLaunched = false;
         }
@@ -453,6 +452,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putInt("pendingSmsId", pendingSmsParticipanteId);
         outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
+        outState.putInt("pendingSmsResumeIndex", pendingSmsResumeIndex);
         // Salva apenas IDs, telefones e nomes — omite as mensagens formatadas para evitar
         // TransactionTooLargeException (~1 MB Binder limit) em grupos com listas de desejos longas.
         // As mensagens sao reconstruidas a partir do banco no onResume apos rotacao.
@@ -489,8 +489,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(getString(R.string.participante_limpar_btn_sim), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        participanteRepository.deletarTodosDoGrupo(grupoAtual.getId());
-                        atualizarLista();
+                        viewModel.deletarTodosDoGrupo(grupoAtual.getId());
                     }
                 })
                 .setNegativeButton("Não", null)
@@ -655,11 +654,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.button_save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        List<Integer> adicionar = new ArrayList<>();
+                        List<Integer> remover = new ArrayList<>();
                         for (int i = 0; i < outros.size(); i++) {
-                            if (selecionados[i]) participanteRepository.adicionarExclusao(p.getId(), outros.get(i).getId());
-                            else participanteRepository.removerExclusao(p.getId(), outros.get(i).getId());
+                            if (selecionados[i]) adicionar.add(outros.get(i).getId());
+                            else remover.add(outros.get(i).getId());
                         }
-                        atualizarLista();
+                        viewModel.salvarExclusoes(p.getId(), adicionar, remover);
                     }
                 })
                 .setNegativeButton(R.string.button_cancel, null)
@@ -757,10 +758,11 @@ public class ParticipantesActivity extends AppCompatActivity {
             btnShare.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Desabilitar imediatamente para evitar multiplos taps que criariam
-                    // ExecutorServices e share sheets duplicados. Reabilitado no mainHandler.post.
+                    // Desabilitar imediatamente para evitar multiplos taps que disparariam
+                    // requisicoes duplicadas. Reabilitado quando notifyDataSetChanged() recria
+                    // as views apos atualizarLista() no observer de mensagemCompartilhamento.
                     v.setEnabled(false);
-                    compartilharResultado(p, v);
+                    compartilharResultado(p);
                 }
             });
 
@@ -774,28 +776,17 @@ public class ParticipantesActivity extends AppCompatActivity {
             btnRemover.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    participanteRepository.remover(p.getId());
-                    atualizarLista();
+                    viewModel.removerParticipante(p.getId());
                 }
             });
 
             return convertView;
         }
 
-        private void compartilharResultado(final Participante p, final View btnShare) {
+        private void compartilharResultado(final Participante p) {
             // ViewModel prepara mensagem em background; resultado chega via observer de
-            // mensagemCompartilhamentoResult em onCreate(). O botão é reabilitado no observer.
-            // Se a preparação falhar, errorMessage é emitido pelo ViewModel.
-            if (btnShare != null) {
-                // Observer em onCreate() reaabilita ao receber o resultado.
-                viewModel.getMensagemCompartilhamentoResult().observeForever(new androidx.lifecycle.Observer<ParticipantesViewModel.MensagemCompartilhamentoResultado>() {
-                    @Override
-                    public void onChanged(ParticipantesViewModel.MensagemCompartilhamentoResultado resultado) {
-                        viewModel.getMensagemCompartilhamentoResult().removeObserver(this);
-                        if (btnShare != null) btnShare.setEnabled(true);
-                    }
-                });
-            }
+            // mensagemCompartilhamentoResult em onCreate(). atualizarLista() no observer
+            // dispara notifyDataSetChanged(), que recria as views e reabilita o botão.
             viewModel.prepararMensagemCompartilhamento(p);
         }
     }

@@ -6,6 +6,7 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.DesejoDAO;
@@ -66,6 +67,19 @@ public class DesejoRepository {
         dao.open();
         try {
             return dao.contarDesejosPorGrupo(grupoId);
+        } finally {
+            dao.close();
+        }
+    }
+
+    /**
+     * Retorna um mapa participante_id → lista de desejos para todos os participantes de um grupo,
+     * usando uma única query (evita N open/close ao preparar mensagens para o grupo inteiro).
+     */
+    public Map<Integer, List<Desejo>> listarDesejosPorGrupo(int grupoId) {
+        dao.open();
+        try {
+            return dao.listarDesejosPorGrupo(grupoId);
         } finally {
             dao.close();
         }

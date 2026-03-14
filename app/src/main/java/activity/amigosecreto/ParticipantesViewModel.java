@@ -100,6 +100,44 @@ public class ParticipantesViewModel extends AndroidViewModel {
         return mensagemCompartilhamentoResult;
     }
 
+    /** Marca participante como enviado em background (evita ANR). */
+    public void marcarComoEnviado(int participanteId) {
+        executor.execute(() -> participanteRepository.marcarComoEnviado(participanteId));
+    }
+
+    /** Remove participante em background (evita ANR). */
+    public void removerParticipante(int participanteId) {
+        executor.execute(() -> {
+            participanteRepository.remover(participanteId);
+            postMain(this::carregarParticipantes);
+        });
+    }
+
+    /** Insere participante em background (evita ANR). */
+    public void inserirParticipante(Participante participante, int grupoId) {
+        executor.execute(() -> {
+            participanteRepository.inserir(participante, grupoId);
+            postMain(this::carregarParticipantes);
+        });
+    }
+
+    /** Deleta todos os participantes de um grupo em background (evita ANR). */
+    public void deletarTodosDoGrupo(int grupoId) {
+        executor.execute(() -> {
+            participanteRepository.deletarTodosDoGrupo(grupoId);
+            postMain(this::carregarParticipantes);
+        });
+    }
+
+    /** Salva exclusões de um participante em background (evita ANR). */
+    public void salvarExclusoes(int participanteId, List<Integer> adicionar, List<Integer> remover) {
+        executor.execute(() -> {
+            for (int id : adicionar) participanteRepository.adicionarExclusao(participanteId, id);
+            for (int id : remover) participanteRepository.removerExclusao(participanteId, id);
+            postMain(this::carregarParticipantes);
+        });
+    }
+
     /** Limpa o resultado do sorteio após consumo pela Activity. */
     public void clearSorteioResult() { sorteioResult.setValue(null); }
 
@@ -198,6 +236,14 @@ public class ParticipantesViewModel extends AndroidViewModel {
     public void prepararMensagensSms(final List<Participante> snapshot) {
         executor.execute(() -> {
             try {
+                // Mapa id → nome construído a partir do snapshot (sem acesso ao banco).
+                Map<Integer, String> nomeMap = new HashMap<>();
+                for (Participante p : snapshot) nomeMap.put(p.getId(), p.getNome());
+
+                // Uma única query traz todos os desejos do grupo de uma vez.
+                Map<Integer, List<Desejo>> desejosMap =
+                        desejoRepository.listarDesejosPorGrupo(grupoId);
+
                 List<Participante> comTelefone = new ArrayList<>();
                 Map<Integer, String> mensagens = new HashMap<>();
                 for (Participante p : snapshot) {
@@ -205,10 +251,10 @@ public class ParticipantesViewModel extends AndroidViewModel {
                         comTelefone.add(p);
                         Integer amigoId = p.getAmigoSorteadoId();
                         String nomeAmigo = (amigoId != null && amigoId > 0)
-                                ? participanteRepository.getNomeAmigoSorteado(amigoId) : null;
-                        List<Desejo> desejos = (amigoId != null && amigoId > 0)
-                                ? desejoRepository.listarPorParticipante(amigoId)
-                                : new ArrayList<>();
+                                ? nomeMap.get(amigoId) : null;
+                        List<Desejo> desejosList = (amigoId != null && amigoId > 0)
+                                ? desejosMap.get(amigoId) : null;
+                        List<Desejo> desejos = desejosList != null ? desejosList : new ArrayList<>();
                         mensagens.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
                     }
                 }
@@ -253,6 +299,7 @@ public class ParticipantesViewModel extends AndroidViewModel {
 
     @VisibleForTesting
     void setExecutorService(ExecutorService executor) {
+        this.executor.shutdown();
         this.executor = executor;
     }
 
