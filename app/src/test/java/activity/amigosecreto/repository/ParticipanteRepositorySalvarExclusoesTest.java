@@ -52,8 +52,12 @@ public class ParticipanteRepositorySalvarExclusoesTest {
 
     @After
     public void tearDown() {
+        // limparTudo() apaga explicitamente exclusao, desejo, participante e grupo
+        // em ordem de dependência — funciona como cascata manual (sem FK CASCADE no DDL)
         grupoDao.limparTudo();
         grupoDao.close();
+        // ParticipanteRepository não mantém conexão aberta entre chamadas —
+        // cada método abre e fecha o DAO em try/finally, sem estado persistente
     }
 
     /** Insere participante e retorna o ID atribuído pelo banco. */

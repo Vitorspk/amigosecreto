@@ -51,8 +51,12 @@ public class ParticipanteKotlinMigrationTest {
     }
 
     @Test
-    public void hashCode_instanciasDiferentes_mesmosValores_hashsDiferentes() {
-        // Mesmo raciocínio: hashCode() atual é o da identidade de objeto
+    public void hashCode_instanciasDiferentes_saoObjetosDistintos() {
+        // hashCode() atual é Object.identityHashCode() — baseado em identidade, não em valor.
+        // Duas instâncias distintas *podem* ter o mesmo hashCode por colisão (muito raro),
+        // portanto não é seguro assertNotEquals nos hashes. Em vez disso, provamos que são
+        // objetos distintos com assertNotSame; o comentário documenta que hashCode não é
+        // sobrescrito, o que mudará ao migrar para Kotlin data class.
         Participante a = new Participante();
         a.setId(1);
         a.setNome("Carla");
@@ -61,7 +65,10 @@ public class ParticipanteKotlinMigrationTest {
         b.setId(1);
         b.setNome("Carla");
 
-        assertNotEquals("hashCode atual é baseado em identidade", a.hashCode(), b.hashCode());
+        // são instâncias diferentes (identidade)
+        assertNotSame("devem ser objetos distintos", a, b);
+        // hashCode não sobrescrito: System.identityHashCode, não baseado em campos
+        // ao migrar para data class, hashCode passará a ser estrutural (id + nome + ...)
     }
 
     // ===== Mutabilidade de idsExcluidos =====

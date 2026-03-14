@@ -56,6 +56,8 @@ public class DesejoDAOBatchQueryTest {
 
     @After
     public void tearDown() {
+        // limparTudo() apaga explicitamente exclusao, desejo, participante e grupo
+        // em ordem de dependência — funciona como cascata manual (sem FK CASCADE no DDL)
         grupoDao.limparTudo();
         grupoDao.close();
         participanteDao.close();
@@ -183,6 +185,8 @@ public class DesejoDAOBatchQueryTest {
         inserirDesejo("Game", p2.getId());
 
         Map<Integer, List<Desejo>> mapa = desejoDao.listarDesejosPorGrupo(grupoId);
+        // a query não define ORDER BY — ordem dentro de cada lista é não-determinística;
+        // testamos apenas contagem, não posição
         assertEquals(2, mapa.get(p1.getId()).size());
         assertEquals(1, mapa.get(p2.getId()).size());
     }
