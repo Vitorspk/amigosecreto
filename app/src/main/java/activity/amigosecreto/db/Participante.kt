@@ -19,7 +19,7 @@ class Participante(
     var telefone: String? = null,
     var amigoSorteadoId: Int? = null,
     var isEnviado: Boolean = false,
-    var codigoAcesso: String? = null,
+    var codigoAcesso: String? = null, // TODO: not persisted — no codigo_acesso column in DB schema v8; add via migration or remove in Fase 10 cleanup
     idsExcluidos: MutableList<Int> = mutableListOf(),
 ) : Serializable {
     // Body property with custom setter: defensive ArrayList copy on construction and on every

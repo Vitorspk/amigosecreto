@@ -6,17 +6,17 @@ import kotlinx.parcelize.Parcelize
 // var fields preserved intentionally: Java DAOs populate instances via setters
 // (e.g. GrupoDAO.cursorToDesejo sets each field after construction).
 // Switching to val would break all DAO call sites.
-// WARNING: Do NOT use Desejo instances as Map/Set keys or TreeSet/TreeMap keys.
-// data class equals/hashCode are field-based — mutating after insertion corrupts HashMap/HashSet.
-// compareTo uses only id — two objects with the same id but different fields compare as equal
-// in a TreeSet, silently dropping one.
 // TODO(fase10-dao): switch to val fields once DesejoDAO is migrated to Kotlin/Room —
 // at that point, constructor injection replaces setter-based population.
+// equals/hashCode use id only (not all fields) — safe to use in HashMap/HashSet/TreeSet
+// because identity is determined by DB primary key, not by mutable field values.
+// WARNING: two Desejo objects with the same id but different fields compare as equal —
+// do not rely on equals for value comparison; use field accessors directly.
 // @JvmOverloads generates 8 constructor overloads (one per defaulted parameter). The only
 // call sites in production are Desejo() (no-arg, used by DAOs) and Desejo(int, String)
 // (used in legacy Java tests); the remaining 6 overloads are unused but harmless.
 @Parcelize
-data class Desejo @JvmOverloads constructor(
+class Desejo @JvmOverloads constructor(
     var id: Int = 0,
     var produto: String? = null,
     var categoria: String? = null,
@@ -25,6 +25,10 @@ data class Desejo @JvmOverloads constructor(
     var precoMaximo: Double = 0.0,
     var participanteId: Int = 0,
 ) : Parcelable, Comparable<Desejo> {
+
+    override fun equals(other: Any?): Boolean = other is Desejo && id == other.id
+
+    override fun hashCode(): Int = id
 
     override fun compareTo(other: Desejo): Int = id.compareTo(other.id)
 
