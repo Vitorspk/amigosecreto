@@ -123,7 +123,6 @@
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_forward"
                 app:tint="@color/purple_primary"
-                android:contentDescription="@null"
                 android:importantForAccessibility="no" />
 
         </LinearLayout>
@@ -190,7 +189,6 @@
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_forward"
                 app:tint="@color/colorError"
-                android:contentDescription="@null"
                 android:importantForAccessibility="no" />
 
         </LinearLayout>
