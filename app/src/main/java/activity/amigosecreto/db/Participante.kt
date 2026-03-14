@@ -6,7 +6,8 @@ import java.io.Serializable
 // Plain class (not data class): reference equality is required by ParticipanteKotlinMigrationTest
 // contracts — two Participante objects with the same fields must NOT be equal.
 // idsExcluidos uses mutableListOf() — each instance gets its own independent list (no sharing).
-// The init block defensively copies the list so Java callers using Arrays.asList can safely mutate it.
+// The body property + custom setter defensively copy on both construction and setIdsExcluidos()
+// calls, so Java callers using Arrays.asList can safely mutate the list afterward.
 // No-arg constructor: Kotlin generates one automatically because all parameters have defaults.
 // @JvmOverloads omitted — plain class with only the no-arg constructor needed by Java call sites.
 class Participante(
@@ -17,17 +18,16 @@ class Participante(
     var amigoSorteadoId: Int? = null,
     var isEnviado: Boolean = false,
     var codigoAcesso: String? = null,
-    var idsExcluidos: MutableList<Int> = mutableListOf(),
+    idsExcluidos: MutableList<Int> = mutableListOf(),
 ) : Serializable {
-    // Defensive copy: Java callers may pass fixed-size lists (e.g. Arrays.asList) whose
-    // add/remove operations throw UnsupportedOperationException. Copying on set guarantees
-    // the field is always a mutable ArrayList regardless of what Java passes in.
-    init {
-        idsExcluidos = ArrayList(idsExcluidos)
-    }
+    // Body property with custom setter: defensive ArrayList copy on construction and on every
+    // setIdsExcluidos() call. Prevents UnsupportedOperationException when Java passes
+    // Arrays.asList(...) (fixed-size) and later calls add() or remove() on the result.
+    var idsExcluidos: MutableList<Int> = ArrayList(idsExcluidos)
+        set(value) { field = ArrayList(value) }
 
     companion object {
-        private const val serialVersionUID = 1L
+        private const val serialVersionUID: Long = 1L
     }
 
     override fun toString(): String = nome ?: ""

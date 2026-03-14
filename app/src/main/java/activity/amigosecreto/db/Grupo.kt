@@ -16,7 +16,7 @@ data class Grupo(
     var data: String? = null,
 ) : Serializable {
     companion object {
-        private const val serialVersionUID = 1L
+        private const val serialVersionUID: Long = 1L
     }
 
     // Returns "" for null nome — Kotlin String cannot be null.
