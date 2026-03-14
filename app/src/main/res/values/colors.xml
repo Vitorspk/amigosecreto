@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UnusedResources">
 
     <!-- Paleta Harmoniosa - Roxo Suave -->
     <color name="md_theme_primary">#6B4CE6</color>
@@ -13,7 +14,7 @@
     <color name="md_theme_secondaryContainer">#E8DEFF</color>
     <color name="md_theme_onSecondaryContainer">#3D2A7D</color>
 
-    <!-- Background - Branco Limpo -->
+    <!-- Background -->
     <color name="md_theme_background">#FAFAFA</color>
     <color name="md_theme_onBackground">#1C1B1F</color>
 
@@ -24,26 +25,12 @@
     <!-- Cores Principais -->
     <color name="purple_primary">#6B4CE6</color>
     <color name="purple_dark">#5339C9</color>
-    <color name="purple_medium">#8B6FE8</color>
-    <color name="purple_light">#B09EEC</color>
-    <color name="purple_ultra_light">#D5CDF0</color>
     <color name="purple_background">#F5F3FF</color>
-
-    <!-- Cores para Cards - Tons de Roxo -->
-    <color name="card_purple_1_start">#8B7AE8</color>
-    <color name="card_purple_1_end">#6B4CE6</color>
-
-    <color name="card_purple_2_start">#A895EC</color>
-    <color name="card_purple_2_end">#8B7AE8</color>
-
-    <color name="card_purple_3_start">#C5B0F0</color>
-    <color name="card_purple_3_end">#A895EC</color>
 
     <!-- Accent Color - Verde Suave para Sucesso -->
     <color name="accent_green">#4CAF50</color>
-    <color name="accent_green_light">#81C784</color>
 
-    <!-- Legacy colors for backward compatibility -->
+    <!-- Legacy colors -->
     <color name="colorPrimary">@color/purple_primary</color>
     <color name="colorPrimaryDark">#5339C9</color>
     <color name="colorPrimaryContainer">@color/purple_background</color>

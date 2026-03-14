@@ -456,6 +456,7 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 ### Drawables
 - Gradientes, botões, backgrounds, ícones SVG, ripples
 - Launcher icons com adaptive icon (API 26+)
+- `ic_add.xml`, `ic_dice.xml`, `ic_arrow_forward.xml` — novos ícones tintáveis (`fillColor` preto, tint no call site)
 
 ---
 
@@ -521,9 +522,9 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Migrar para Kotlin
 
 ### Qualidade
-- [ ] Mover ~150 strings hardcoded para `strings.xml`
-- [ ] Remover ~40 recursos não utilizados (Lint `UnusedResources`)
-- [ ] Fechar cursor em `DesejoDAO` (Lint `Recycle`)
+- [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
+- [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
+- [ ] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — **próximo (PR #22)**
 - [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
