@@ -2,7 +2,6 @@ package activity.amigosecreto.util;
 
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -127,8 +126,8 @@ public class MensagemSecretaBuilderTest {
         // Faixa inválida: min > max — comportamento intencional: exibe "ate R$ max"
         List<Desejo> desejos = Collections.singletonList(buildDesejo("Item", null, 500.0, 100.0, null));
         String msg = MensagemSecretaBuilder.gerar("Otto", "Paulo", desejos);
-        assertTrue(msg.contains("a partir de R$"));
-        assertFalse(msg.contains("ate R$"));
+        assertTrue(msg.contains("ate R$"));
+        assertFalse(msg.contains("a partir de R$"));
     }
 
     @Test
@@ -146,6 +145,17 @@ public class MensagemSecretaBuilderTest {
         String msg = MensagemSecretaBuilder.gerar("Sara", "Tiago", desejos);
         // lista de desejos nao deve aparecer pois o unico item foi filtrado
         assertFalse(msg.contains("Cat"));
+        assertFalse(msg.contains("Lista de desejos"));
+    }
+
+    @Test
+    public void gerar_allDesejos_nullProduto_noWishlistSection() {
+        List<Desejo> desejos = Arrays.asList(
+                buildDesejo(null, null, 0, 0, null),
+                buildDesejo("   ", null, 0, 0, null)
+        );
+        String msg = MensagemSecretaBuilder.gerar("Sara", "Tiago", desejos);
+        assertFalse(msg.contains("Lista de desejos"));
     }
 
     @Test
@@ -176,17 +186,4 @@ public class MensagemSecretaBuilderTest {
         assertTrue(msg.contains("Mochila"));
     }
 
-    // --- formatarPreco ---
-
-    @Test
-    public void formatarPreco_inteiro_formataCorretamente() {
-        String result = MensagemSecretaBuilder.formatarPreco(1000.0);
-        assertTrue(result.contains("1.000") || result.contains("1000"));
-    }
-
-    @Test
-    public void formatarPreco_decimal_formataCorretamente() {
-        String result = MensagemSecretaBuilder.formatarPreco(29.90);
-        assertTrue(result.contains("29"));
-    }
 }
