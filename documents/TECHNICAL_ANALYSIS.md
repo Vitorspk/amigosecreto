@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #27 merged)
+**Data:** Março/2026 (última atualização: 14/03/2026 — PR #29 merged)
 **Versão Analisada:** 2.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -12,7 +12,7 @@ O app **está se aproximando do nível profissional** com progresso significativ
 
 É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern implementados. As Fases 1, 2, 3, 4 e 5 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade.
 
-O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. O próximo passo é Dependency Injection (Hilt).
+O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. PR #28 introduziu Dependency Injection com Hilt. O próximo passo é a migração para Kotlin.
 
 ---
 
@@ -137,7 +137,8 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | Fase 6 | Strings XML layouts/menus + Acessibilidade | ✅ Concluído | #21 |
 | **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **✅ Concluído** | **#22** |
 | **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **✅ Concluído** | **#27** |
-| **Fase 9** | **Dependency Injection (Hilt)** | **⏳ Próximo** | — |
+| **Fase 9** | **Dependency Injection (Hilt)** | **✅ Concluído** | **#28/#29** |
+| **Fase 10** | **Migração para Kotlin** | **⏳ Próximo** | — |
 
 ---
 
@@ -219,17 +220,39 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### Fase 9 — Dependency Injection com Hilt (Próximo)
+### Fase 9 — Dependency Injection com Hilt — ✅ Concluído (PR #28/#29)
 
-**Objetivo:** Introduzir Hilt para injeção de dependências, eliminando acoplamento manual entre ViewModel, Repository e DAO.
+**Objetivo:** Introduzir Hilt para injeção de dependências, eliminando acoplamento manual entre ViewModel, Repository e DAO. ✅
 
-**Escopo:**
-- Adicionar dependências `hilt-android` e `hilt-compiler` ao `build.gradle`
-- Anotar `Application`, Activities e ViewModels com `@HiltAndroidApp` / `@AndroidEntryPoint` / `@HiltViewModel`
-- Criar módulos `@Module` para prover `MySQLiteOpenHelper`, DAOs e Repositories
-- Remover instanciação manual em `ParticipantesViewModel`
+**Resultado:**
+- `hilt-android:2.51.1` e `hilt-compiler:2.51.1` adicionados ao `build.gradle`
+- `AmigoSecretoApplication` anotado com `@HiltAndroidApp`
+- `ParticipantesActivity` anotado com `@AndroidEntryPoint`
+- `ParticipantesViewModel` anotado com `@HiltViewModel` — recebe Repositories via `@Inject`
+- `DatabaseModule` criado com `@Module @InstallIn(SingletonComponent)` — provê `ParticipanteRepository` e `DesejoRepository` como `@Singleton`
+- Instanciação manual removida de `ParticipantesViewModel`
+- PR #29 removeu `hilt-android-testing` adicionado prematuramente (sem testes `@HiltAndroidTest` ainda) — reduz tempo de annotation processing
+- 224 testes mantidos (sem regressão)
 
-**Pré-requisito:** Migração para Kotlin (Hilt é mais ergonômico com Kotlin; funciona em Java mas com mais boilerplate).
+---
+
+### Fase 10 — Migração para Kotlin (Próximo)
+
+**Objetivo:** Converter o código Java para Kotlin, aproveitando coroutines, extension functions, data classes e null safety.
+
+**Escopo sugerido:**
+- Migrar models (`Grupo.java`, `Participante.java`, `Desejo.java`) para data classes Kotlin
+- Migrar utilitários (`MensagemSecretaBuilder`, `ValidationUtils`, etc.)
+- Migrar DAOs e Repositories
+- Migrar ViewModels com coroutines (substituir `ExecutorService` + `Handler`)
+- Migrar Activities por último (maior superfície, maior risco)
+
+**Benefícios:**
+- Null safety em tempo de compilação
+- Coroutines — elimina boilerplate de `ExecutorService` + `Handler.post`
+- Data classes — `equals`/`hashCode`/`toString` automáticos
+- Extension functions — simplifica utilitários
+- Hilt mais ergonômico com Kotlin (`@Inject constructor`)
 
 ---
 
@@ -330,14 +353,30 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
+### PR #28/#29 — Dependency Injection com Hilt (Fase 9)
+
+| Item | Situação |
+|------|---------|
+| `hilt-android:2.51.1` + `hilt-compiler:2.51.1` | Adicionados ao `build.gradle` |
+| `AmigoSecretoApplication` com `@HiltAndroidApp` | Ponto de geração de componentes Hilt |
+| `ParticipantesActivity` com `@AndroidEntryPoint` | Injeção habilitada na Activity |
+| `ParticipantesViewModel` com `@HiltViewModel` + `@Inject` | Recebe Repositories via DI |
+| `DatabaseModule` `@Module @InstallIn(SingletonComponent)` | Provê repositories como `@Singleton` |
+| Instanciação manual removida | `ParticipantesViewModel` não cria mais dependências manualmente |
+| `hilt-android-testing` removido (PR #29) | Dep prematura — sem testes `@HiltAndroidTest` ainda |
+| Testes | 224 (sem regressão) |
+
+---
+
 ## Conclusão
 
 O app atingiu nível profissional. Todas as fases principais foram concluídas:
 - 224 testes cobrindo DAOs, models, repositories, ViewModel e utilitários
 - MVVM com Repository pattern implementado
+- Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
 - `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
 
-**Próximo passo:** Fase 9 — Dependency Injection com Hilt.
+**Próximo passo:** Fase 10 — Migração para Kotlin.
