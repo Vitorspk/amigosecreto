@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by HP on 21/06/2015.
@@ -107,6 +109,82 @@ public class DesejoDAO {
         int count = cursor.getInt(0);
         cursor.close();
         return count;
+    }
+
+    /**
+     * Retorna um mapa participante_id → quantidade de desejos para todos os participantes
+     * de um grupo, usando uma única query com GROUP BY. Evita o problema N+1 de chamar
+     * contarDesejosPorParticipante() individualmente para cada participante.
+     */
+    public final Map<Integer, Integer> contarDesejosPorGrupo(int grupoId) {
+        Map<Integer, Integer> mapa = new HashMap<>();
+        // JOIN com participante para filtrar pelo grupo sem subquery complexa.
+        String sql = "SELECT d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + ", COUNT(*) AS cnt"
+                + " FROM " + helper.TABLE_DESEJO + " d"
+                + " INNER JOIN " + helper.TABLE_PARTICIPANTE + " p"
+                + " ON d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + " = p." + helper.COLUMN_ID
+                + " WHERE p." + helper.COLUMN_FK_GRUPO_ID + " = ?"
+                + " GROUP BY d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID;
+        Cursor cursor = database.rawQuery(sql, new String[]{String.valueOf(grupoId)});
+        try {
+            if (cursor.moveToFirst()) {
+                int pidIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_DESEJO_PARTICIPANTE_ID);
+                int cntIdx = cursor.getColumnIndexOrThrow("cnt");
+                do {
+                    mapa.put(cursor.getInt(pidIdx), cursor.getInt(cntIdx));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return mapa;
+    }
+
+    /**
+     * Retorna um mapa participante_id → lista de desejos para todos os participantes de um grupo,
+     * usando uma única query com JOIN. Evita N open/close ao preparar mensagens para o grupo inteiro.
+     */
+    public final Map<Integer, List<Desejo>> listarDesejosPorGrupo(int grupoId) {
+        Map<Integer, List<Desejo>> mapa = new HashMap<>();
+        String sql = "SELECT d." + helper.COLUMN_ID
+                + ", d." + helper.COLUMN_PRODUTO
+                + ", d." + helper.COLUMN_CATEGORIA
+                + ", d." + helper.COLUMN_PRECO_MINIMO
+                + ", d." + helper.COLUMN_PRECO_MAXIMO
+                + ", d." + helper.COLUMN_LOJAS
+                + ", d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID
+                + " FROM " + helper.TABLE_DESEJO + " d"
+                + " INNER JOIN " + helper.TABLE_PARTICIPANTE + " p"
+                + " ON d." + helper.COLUMN_DESEJO_PARTICIPANTE_ID + " = p." + helper.COLUMN_ID
+                + " WHERE p." + helper.COLUMN_FK_GRUPO_ID + " = ?";
+        Cursor cursor = database.rawQuery(sql, new String[]{String.valueOf(grupoId)});
+        try {
+            if (cursor.moveToFirst()) {
+                int idIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_ID);
+                int prodIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRODUTO);
+                int catIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_CATEGORIA);
+                int minIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MINIMO);
+                int maxIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_PRECO_MAXIMO);
+                int lojasIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_LOJAS);
+                int pidIdx = cursor.getColumnIndexOrThrow(helper.COLUMN_DESEJO_PARTICIPANTE_ID);
+                do {
+                    Desejo d = new Desejo();
+                    d.setId(cursor.getInt(idIdx));
+                    d.setProduto(cursor.getString(prodIdx));
+                    d.setCategoria(cursor.getString(catIdx));
+                    d.setPrecoMinimo(cursor.getDouble(minIdx));
+                    d.setPrecoMaximo(cursor.getDouble(maxIdx));
+                    d.setLojas(cursor.getString(lojasIdx));
+                    int pid = cursor.getInt(pidIdx);
+                    d.setParticipanteId(pid);
+                    if (!mapa.containsKey(pid)) mapa.put(pid, new ArrayList<>());
+                    mapa.get(pid).add(d);
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return mapa;
     }
 
     public final int proximoId(){

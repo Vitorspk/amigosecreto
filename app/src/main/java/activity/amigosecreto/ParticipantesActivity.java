@@ -39,15 +39,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import activity.amigosecreto.db.Desejo;
 import activity.amigosecreto.db.Grupo;
 import activity.amigosecreto.db.Participante;
-import activity.amigosecreto.db.ParticipanteDAO;
-import activity.amigosecreto.db.DesejoDAO;
-import activity.amigosecreto.util.MensagemSecretaBuilder;
 import activity.amigosecreto.util.ValidationUtils;
 
 public class ParticipantesActivity extends AppCompatActivity {
@@ -64,6 +57,16 @@ public class ParticipantesActivity extends AppCompatActivity {
     // Mensagens SMS já formatadas, mapeadas por participante ID.
     private Map<Integer, String> pendingSmsMensagens = null;
     private int pendingSmsNextIndex = -1;
+    // Índice de retomada após rotação quando ViewModel reconstrói mensagens em background.
+    private int pendingSmsResumeIndex = -1;
+
+    // Estado do dialog de edição em andamento; usado pelo observer de atualizarSucesso.
+    private AlertDialog pendingEditDialog = null;
+    private View pendingEditButton = null;
+    private Participante pendingEditParticipante = null;
+    private String pendingEditNomeOriginal = null;
+    private String pendingEditTelefoneOriginal = null;
+    private String pendingEditEmailOriginal = null;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -74,7 +77,6 @@ public class ParticipantesActivity extends AppCompatActivity {
     private MaterialButton fabAdd;
     private View btnSortear;
     private View btnLimpar;
-    private ParticipanteDAO dao;
     private List<Participante> listaParticipantes = new ArrayList<>();
     private ParticipantesAdapter adapter;
     private Grupo grupoAtual;
@@ -110,6 +112,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             pendingSmsParticipanteId = savedInstanceState.getInt("pendingSmsId", -1);
             pendingSmsNextIndex = savedInstanceState.getInt("pendingSmsNextIndex", -1);
+            pendingSmsResumeIndex = savedInstanceState.getInt("pendingSmsResumeIndex", -1);
             int[] ids = savedInstanceState.getIntArray("pendingSmsIds");
             String[] telefones = savedInstanceState.getStringArray("pendingSmsTelefones");
             String[] nomes = savedInstanceState.getStringArray("pendingSmsNomes");
@@ -132,7 +135,6 @@ public class ParticipantesActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        dao = new ParticipanteDAO(this);
         lvParticipantes = findViewById(R.id.lv_participantes);
         tvCount = findViewById(R.id.tv_count);
         fabAdd = findViewById(R.id.fab_add_participante);
@@ -214,6 +216,52 @@ public class ParticipantesActivity extends AppCompatActivity {
             viewModel.clearErrorMessage();
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         });
+
+        // Mensagens SMS prontas — iniciar (ou retomar) sequência de envio.
+        // pendingSmsResumeIndex é >= 0 quando estamos retomando após rotação de tela.
+        viewModel.getMensagensSmsResult().observe(this, resultado -> {
+            if (resultado == null) return;
+            viewModel.clearMensagensSmsResult();
+            if (resultado.participantesComTelefone.isEmpty()) {
+                Toast.makeText(this, R.string.error_no_phone_participants, Toast.LENGTH_LONG).show();
+                return;
+            }
+            int startIndex = pendingSmsResumeIndex >= 0 ? pendingSmsResumeIndex : 0;
+            pendingSmsResumeIndex = -1;
+            enviarSmsSequencial(resultado.participantesComTelefone, resultado.mensagens, startIndex);
+        });
+
+        // Resultado de atualizar participante — fechar dialog se sucesso, restaurar estado se falha.
+        viewModel.getAtualizarSucesso().observe(this, sucesso -> {
+            if (sucesso == null) return;
+            viewModel.clearAtualizarSucesso();
+            if (pendingEditButton != null) pendingEditButton.setEnabled(true);
+            if (sucesso) {
+                if (pendingEditDialog != null) pendingEditDialog.dismiss();
+            } else {
+                if (pendingEditParticipante != null) {
+                    pendingEditParticipante.setNome(pendingEditNomeOriginal);
+                    pendingEditParticipante.setTelefone(pendingEditTelefoneOriginal);
+                    pendingEditParticipante.setEmail(pendingEditEmailOriginal);
+                }
+                Toast.makeText(this, R.string.error_save_failed, Toast.LENGTH_SHORT).show();
+            }
+            pendingEditDialog = null;
+            pendingEditButton = null;
+            pendingEditParticipante = null;
+        });
+
+        // Mensagem de compartilhamento pronta — abrir share sheet.
+        viewModel.getMensagemCompartilhamentoResult().observe(this, resultado -> {
+            if (resultado == null) return;
+            viewModel.clearMensagemCompartilhamentoResult();
+            atualizarLista();
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, resultado.mensagem);
+            startActivity(Intent.createChooser(intent,
+                    getString(R.string.share_with_person, resultado.participante.getNome())));
+        });
     }
 
     private void atualizarLista() {
@@ -262,10 +310,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 p.setNome(nome);
                 p.setTelefone(telefone);
                 p.setEmail(email);
-                dao.open();
-                dao.inserir(p, grupoAtual.getId());
-                dao.close();
-                atualizarLista();
+                viewModel.inserirParticipante(p, grupoAtual.getId());
                 dialog.dismiss();
             }
         });
@@ -306,61 +351,20 @@ public class ParticipantesActivity extends AppCompatActivity {
                 String telefone = etTelefone.getText().toString().trim();
                 String email = etEmail.getText().toString().trim();
 
-                // Captura valores editados e originais antes de entrar na thread
-                final String nomeFinal = nome;
-                final String telefoneFinal = telefone;
-                final String emailFinal = email;
-                final String nomeOriginal = participante.getNome();
-                final String telefoneOriginal = participante.getTelefone();
-                final String emailOriginal = participante.getEmail();
+                // Salva estado original e referências para o observer de atualizarSucesso.
+                pendingEditNomeOriginal = participante.getNome();
+                pendingEditTelefoneOriginal = participante.getTelefone();
+                pendingEditEmailOriginal = participante.getEmail();
+                pendingEditParticipante = participante;
+                pendingEditDialog = dialog;
+                pendingEditButton = v;
 
-                // Desabilita o botao para evitar duplo toque enquanto o banco salva
+                // Aplica valores e delega ao ViewModel (background, evita ANR).
+                participante.setNome(nome);
+                participante.setTelefone(telefone);
+                participante.setEmail(email);
                 v.setEnabled(false);
-
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                try {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            boolean ok = false;
-                            // Aplica valores no objeto antes de tentar salvar no banco
-                            participante.setNome(nomeFinal);
-                            participante.setTelefone(telefoneFinal);
-                            participante.setEmail(emailFinal);
-                            // DAO local evita conflito com o dao compartilhado da Activity.
-                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                            try {
-                                daoLocal.open();
-                                ok = daoLocal.atualizar(participante);
-                            } catch (Exception e) {
-                                ok = false;
-                            } finally {
-                                daoLocal.close();
-                            }
-                            final boolean sucesso = ok;
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    v.setEnabled(true);
-                                    if (isFinishing() || isDestroyed()) return;
-                                    if (sucesso) {
-                                        atualizarLista();
-                                        dialog.dismiss();
-                                    } else {
-                                        // Restaura estado original para manter objeto em sincronia com o banco
-                                        participante.setNome(nomeOriginal);
-                                        participante.setTelefone(telefoneOriginal);
-                                        participante.setEmail(emailOriginal);
-                                        Toast.makeText(ParticipantesActivity.this,
-                                                R.string.error_save_failed, Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                } finally {
-                    executor.shutdown();
-                }
+                viewModel.atualizarParticipante(participante);
             }
         });
     }
@@ -384,10 +388,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                     Participante p = new Participante();
                     p.setNome(name);
                     p.setTelefone(number);
-                    dao.open();
-                    dao.inserir(p, grupoAtual.getId());
-                    dao.close();
-                    atualizarLista();
+                    viewModel.inserirParticipante(p, grupoAtual.getId());
                     Toast.makeText(this, getString(R.string.toast_contact_added_format, name), Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
@@ -403,9 +404,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         // smsLaunched evita marcacao incorreta apos rotacao (pendingSmsParticipanteId e
         // restaurado do bundle mas o app de SMS nunca foi aberto).
         if (smsLaunched && pendingSmsParticipanteId != -1) {
-            dao.open();
-            dao.marcarComoEnviado(pendingSmsParticipanteId);
-            dao.close();
+            viewModel.marcarComoEnviado(pendingSmsParticipanteId);
             pendingSmsParticipanteId = -1;
             smsLaunched = false;
         }
@@ -425,55 +424,10 @@ public class ParticipantesActivity extends AppCompatActivity {
                 pendingSmsMensagens = null;
                 enviarSmsSequencial(lista, mensagens, nextIndex);
             } else {
-                // Mensagens perdidas por rotacao: reconstroi a partir do banco em background
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                try {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            final Map<Integer, String> mensagensReconstruidas = new HashMap<>();
-                            ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                            DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
-                            try {
-                                daoLocal.open();
-                                desejoDAO.open();
-                                for (Participante p : lista) {
-                                    Integer amigoId = p.getAmigoSorteadoId();
-                                    String nomeAmigo = (amigoId != null && amigoId > 0)
-                                            ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
-                                    List<Desejo> desejos = new ArrayList<>();
-                                    if (amigoId != null && amigoId > 0) {
-                                        desejos = desejoDAO.listarPorParticipante(amigoId);
-                                    }
-                                    mensagensReconstruidas.put(p.getId(),
-                                            MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
-                                }
-                            } catch (Exception e) {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if (isFinishing() || isDestroyed()) return;
-                                        Toast.makeText(ParticipantesActivity.this,
-                                                R.string.error_resume_sms_failed, Toast.LENGTH_LONG).show();
-                                    }
-                                });
-                                return;
-                            } finally {
-                                daoLocal.close();
-                                desejoDAO.close();
-                            }
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (isFinishing() || isDestroyed()) return;
-                                    enviarSmsSequencial(lista, mensagensReconstruidas, nextIndex);
-                                }
-                            });
-                        }
-                    });
-                } finally {
-                    executor.shutdown();
-                }
+                // Mensagens perdidas por rotacao: ViewModel reconstroi a partir do banco.
+                // O observer de mensagensSmsResult retoma a partir de pendingSmsResumeIndex.
+                pendingSmsResumeIndex = nextIndex;
+                viewModel.prepararMensagensSms(lista);
             }
         }
     }
@@ -483,6 +437,7 @@ public class ParticipantesActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putInt("pendingSmsId", pendingSmsParticipanteId);
         outState.putInt("pendingSmsNextIndex", pendingSmsNextIndex);
+        outState.putInt("pendingSmsResumeIndex", pendingSmsResumeIndex);
         // Salva apenas IDs, telefones e nomes — omite as mensagens formatadas para evitar
         // TransactionTooLargeException (~1 MB Binder limit) em grupos com listas de desejos longas.
         // As mensagens sao reconstruidas a partir do banco no onResume apos rotacao.
@@ -519,10 +474,7 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(getString(R.string.participante_limpar_btn_sim), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        dao.open();
-                        dao.deletarTodosDoGrupo(grupoAtual.getId());
-                        dao.close();
-                        atualizarLista();
+                        viewModel.deletarTodosDoGrupo(grupoAtual.getId());
                     }
                 })
                 .setNegativeButton("Não", null)
@@ -535,72 +487,9 @@ public class ParticipantesActivity extends AppCompatActivity {
 
     // Envia SMS abrindo o app de mensagens do dispositivo via Intent (sem permissao SEND_SMS).
     // O usuario confirma e envia um por um — compativel com Play Store sem restricoes.
-    // O acesso ao banco e feito em thread de fundo para evitar ANR em grupos grandes.
+    // O acesso ao banco e feito pelo ViewModel em background; o resultado chega via LiveData.
     private void enviarSmsViaIntent() {
-        final List<Participante> snapshot = new ArrayList<>(listaParticipantes);
-        // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
-        // RejectedExecutionException (ex: executor ja foi encerrado).
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    final List<Participante> comTelefone = new ArrayList<>();
-                    final Map<Integer, String> mensagensParticipantes = new HashMap<>();
-                    // DAOs locais evitam race condition com o dao compartilhado da Activity
-                    // que pode ser usado na main thread (ex: compartilharResultado) simultaneamente.
-                    // close() chama helper.close() — nao acessa database diretamente,
-                    // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
-                    ParticipanteDAO daoLocal = new ParticipanteDAO(ParticipantesActivity.this);
-                    DesejoDAO desejoDAO = new DesejoDAO(ParticipantesActivity.this);
-                    try {
-                        daoLocal.open();
-                        desejoDAO.open();
-                        for (Participante p : snapshot) {
-                            if (p.getTelefone() != null && !p.getTelefone().trim().isEmpty()) {
-                                comTelefone.add(p);
-                                Integer amigoId = p.getAmigoSorteadoId();
-                                String nomeAmigo = (amigoId != null && amigoId > 0)
-                                        ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
-                                List<Desejo> desejos = new ArrayList<>();
-                                if (amigoId != null && amigoId > 0) {
-                                    desejos = desejoDAO.listarPorParticipante(amigoId);
-                                }
-                                mensagensParticipantes.put(p.getId(), MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigo, desejos));
-                            }
-                        }
-                    } catch (final Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (isFinishing() || isDestroyed()) return;
-                                Toast.makeText(ParticipantesActivity.this,
-                                        R.string.error_prepare_messages_failed, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        return;
-                    } finally {
-                        daoLocal.close();
-                        desejoDAO.close();
-                    }
-
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isFinishing() || isDestroyed()) return;
-                            if (comTelefone.isEmpty()) {
-                                Toast.makeText(ParticipantesActivity.this,
-                                        R.string.error_no_phone_participants, Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            enviarSmsSequencial(comTelefone, mensagensParticipantes, 0);
-                        }
-                    });
-                }
-            });
-        } finally {
-            executor.shutdown();
-        }
+        viewModel.prepararMensagensSms(new ArrayList<>(listaParticipantes));
     }
 
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
@@ -750,13 +639,13 @@ public class ParticipantesActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.button_save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        dao.open();
+                        List<Integer> adicionar = new ArrayList<>();
+                        List<Integer> remover = new ArrayList<>();
                         for (int i = 0; i < outros.size(); i++) {
-                            if (selecionados[i]) dao.adicionarExclusao(p.getId(), outros.get(i).getId());
-                            else dao.removerExclusao(p.getId(), outros.get(i).getId());
+                            if (selecionados[i]) adicionar.add(outros.get(i).getId());
+                            else remover.add(outros.get(i).getId());
                         }
-                        dao.close();
-                        atualizarLista();
+                        viewModel.salvarExclusoes(p.getId(), adicionar, remover);
                     }
                 })
                 .setNegativeButton(R.string.button_cancel, null)
@@ -854,10 +743,11 @@ public class ParticipantesActivity extends AppCompatActivity {
             btnShare.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Desabilitar imediatamente para evitar multiplos taps que criariam
-                    // ExecutorServices e share sheets duplicados. Reabilitado no mainHandler.post.
+                    // Desabilitar imediatamente para evitar multiplos taps que disparariam
+                    // requisicoes duplicadas. Reabilitado quando notifyDataSetChanged() recria
+                    // as views apos atualizarLista() no observer de mensagemCompartilhamento.
                     v.setEnabled(false);
-                    compartilharResultado(p, v);
+                    compartilharResultado(p);
                 }
             });
 
@@ -871,80 +761,18 @@ public class ParticipantesActivity extends AppCompatActivity {
             btnRemover.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    dao.open();
-                    dao.remover(p.getId());
-                    dao.close();
-                    atualizarLista();
+                    viewModel.removerParticipante(p.getId());
                 }
             });
 
             return convertView;
         }
 
-        private void compartilharResultado(final Participante p, final View btnShare) {
-            // executor.shutdown() em finally garante liberacao mesmo se execute() lancar
-            // RejectedExecutionException (ex: executor ja foi encerrado).
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            try {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        // DAOs locais evitam conflito com o dao compartilhado da Activity.
-                        // close() chama helper.close() — nao acessa database diretamente,
-                        // portanto nao lanca NPE mesmo que open() falhe antes de inicializar database.
-                        final String[] nomeAmigoHolder = {null};
-                        final List<Desejo> desejosHolder = new ArrayList<>();
-                        ParticipanteDAO daoLocal = new ParticipanteDAO(ctx);
-                        DesejoDAO desejoDAO = new DesejoDAO(ctx);
-                        try {
-                            daoLocal.open();
-                            desejoDAO.open();
-                            Integer amigoId = p.getAmigoSorteadoId();
-                            nomeAmigoHolder[0] = (amigoId != null && amigoId > 0)
-                                    ? daoLocal.getNomeAmigoSorteado(amigoId) : null;
-                            if (amigoId != null && amigoId > 0) {
-                                desejosHolder.addAll(desejoDAO.listarPorParticipante(amigoId));
-                            }
-                            // Marca como enviado apenas apos obter todos os dados necessarios para a mensagem.
-                            // TODO: idealmente marcarComoEnviado deveria ser chamado apos confirmacao do usuario
-                            //       (ex: callback do share sheet), mas a API do ACTION_SEND nao oferece esse callback.
-                            daoLocal.marcarComoEnviado(p.getId());
-                        } catch (final Exception e) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (btnShare != null) btnShare.setEnabled(true);
-                                    if (isFinishing() || isDestroyed()) return;
-                                    Toast.makeText(ctx,
-                                            "Erro ao carregar dados. Tente novamente.", Toast.LENGTH_LONG).show();
-                                }
-                            });
-                            return;
-                        } finally {
-                            daoLocal.close();
-                            desejoDAO.close();
-                        }
-
-                        final String mensagem = MensagemSecretaBuilder.gerar(p.getNome(), nomeAmigoHolder[0], desejosHolder);
-
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Reabilita o botao independentemente do resultado
-                                if (btnShare != null) btnShare.setEnabled(true);
-                                if (isFinishing() || isDestroyed()) return;
-                                atualizarLista();
-                                Intent intent = new Intent(Intent.ACTION_SEND);
-                                intent.setType("text/plain");
-                                intent.putExtra(Intent.EXTRA_TEXT, mensagem);
-                                ctx.startActivity(Intent.createChooser(intent, ctx.getString(R.string.share_with_person, p.getNome())));
-                            }
-                        });
-                    }
-                });
-            } finally {
-                executor.shutdown();
-            }
+        private void compartilharResultado(final Participante p) {
+            // ViewModel prepara mensagem em background; resultado chega via observer de
+            // mensagemCompartilhamentoResult em onCreate(). atualizarLista() no observer
+            // dispara notifyDataSetChanged(), que recria as views e reabilita o botão.
+            viewModel.prepararMensagemCompartilhamento(p);
         }
     }
 }
