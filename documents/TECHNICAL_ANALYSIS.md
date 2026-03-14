@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #29 merged)
+**Data:** Março/2026 (última atualização: 14/03/2026 — PR #31 merged)
 **Versão Analisada:** 2.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -10,7 +10,7 @@
 
 O app **atingiu nível profissional** com progresso consistente desde a análise inicial.
 
-É um app funcional, com pipeline de CI/CD real, testes unitários (224 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt.
+É um app funcional, com pipeline de CI/CD real, testes unitários (260 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt; PR #31 adicionou testes de segurança pré-migração.
 
 O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. PR #28 introduziu Dependency Injection com Hilt. O próximo passo é a migração para Kotlin.
 
@@ -22,7 +22,7 @@ O app está em nível profissional. O `lintDebug` está zerado — PR #22 elimin
 |------|-----------|
 | CI/CD (GitHub Actions → Play Store) | Excelente |
 | Segurança (HTTPS, SQL injection, keystore) | Sólido |
-| Testes unitários e de DAO (Robolectric) | **224 casos — PR #18–#20** |
+| Testes unitários e de DAO (Robolectric) | **260 casos — PR #18–#20 + PR #31** |
 | `MensagemSecretaBuilder` — lógica de mensagem extraída | **PR #17** |
 | `ParticipantesViewModel` — sorteio e carregamento em background | **PR #18** |
 | Feedback visual e haptico | Bom |
@@ -94,6 +94,13 @@ PR #22 removeu 5 arquivos genuinamente orphans (`bounce.xml`, `button_press.xml`
 - `ParticipanteRepository` / `DesejoRepository` desacoplando ViewModel dos DAOs
 - `ParticipanteRepositoryTest` — 17 casos, `DesejoRepositoryTest` — 16 casos
 - Cobertura de caminhos de erro no ViewModel (total: 224 testes)
+
+**Adicionados no PR #31 — Testes de segurança pré-migração Kotlin:**
+- `DesejoParcelableTest` — 6 casos: serialização/desserialização via Parcel, campos nulos, round-trip
+- `DesejoDAOBatchQueryTest` — 11 casos: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` (INNER JOIN + GROUP BY)
+- `ParticipanteRepositorySalvarExclusoesTest` — 7 casos: `salvarExclusoes()` transação atômica
+- `ParticipanteKotlinMigrationTest` — 12 casos: contratos que mudam com data class (equals, hashCode, mutabilidade de `idsExcluidos`, `amigoSorteadoId` nullable)
+- Total: 260 testes
 
 ---
 
@@ -172,9 +179,9 @@ Recursos críticos removidos no PR #14/#15. PR #22 zerou os 47 `UnusedResources`
 
 ---
 
-### Fase 4 — Cobertura de Testes — ✅ Concluído (PR #16–#20)
+### Fase 4 — Cobertura de Testes — ✅ Concluído (PR #16–#20 + PR #31)
 
-224 testes. Todas as camadas cobertas: DAO, model, repository, ViewModel, utilitários. Ver seção §4 acima.
+260 testes. Todas as camadas cobertas: DAO, model, repository, ViewModel, utilitários. PR #31 adicionou testes de segurança pré-migração Kotlin. Ver seção §4 acima.
 
 ---
 
@@ -231,6 +238,18 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 - Instanciação manual removida de `ParticipantesViewModel`
 - PR #29 removeu `hilt-android-testing` adicionado prematuramente (sem testes `@HiltAndroidTest` ainda) — reduz tempo de annotation processing
 - 224 testes mantidos (sem regressão)
+
+---
+
+### PR #31 — Testes de Segurança Pré-migração Kotlin
+
+| Item | Situação |
+|------|---------|
+| `DesejoParcelableTest` — 6 casos | Parcelable round-trip, null em campos opcionais, `describeContents`, `newArray` |
+| `DesejoDAOBatchQueryTest` — 11 casos | `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` (INNER JOIN + GROUP BY, isolamento entre grupos) |
+| `ParticipanteRepositorySalvarExclusoesTest` — 7 casos | `salvarExclusoes()` atomic add/remove, listas vazias, isolamento entre participantes |
+| `ParticipanteKotlinMigrationTest` — 12 casos | Semântica de equals/hashCode (referência → estrutural ao usar data class), mutabilidade de `idsExcluidos`, `amigoSorteadoId` nullable |
+| Testes | 224 → 260 (36 novos casos) |
 
 ---
 
@@ -369,7 +388,7 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 ## Conclusão
 
 O app atingiu nível profissional. Todas as fases principais foram concluídas:
-- 224 testes cobrindo DAOs, models, repositories, ViewModel e utilitários
+- 260 testes cobrindo DAOs, models, repository, ViewModel, utilitários e contratos pré-migração Kotlin
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
