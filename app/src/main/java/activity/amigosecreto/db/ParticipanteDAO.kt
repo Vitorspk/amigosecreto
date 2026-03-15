@@ -64,26 +64,37 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     fun deletarTodosDoGrupo(grupoId: Int) {
-        val cursor = database.query(
-            MySQLiteOpenHelper.TABLE_PARTICIPANTE,
-            arrayOf(MySQLiteOpenHelper.COLUMN_ID),
-            "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?",
-            arrayOf(grupoId.toString()),
-            null, null, null
-        )
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    val idStr = it.getInt(0).toString()
-                    database.delete(
-                        MySQLiteOpenHelper.TABLE_EXCLUSAO,
-                        "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
-                        arrayOf(idStr, idStr)
-                    )
-                } while (it.moveToNext())
+        database.beginTransaction()
+        try {
+            val cursor = database.query(
+                MySQLiteOpenHelper.TABLE_PARTICIPANTE,
+                arrayOf(MySQLiteOpenHelper.COLUMN_ID),
+                "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?",
+                arrayOf(grupoId.toString()),
+                null, null, null
+            )
+            cursor.use {
+                if (it.moveToFirst()) {
+                    do {
+                        val idStr = it.getInt(0).toString()
+                        database.delete(
+                            MySQLiteOpenHelper.TABLE_EXCLUSAO,
+                            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
+                            arrayOf(idStr, idStr)
+                        )
+                        database.delete(
+                            MySQLiteOpenHelper.TABLE_DESEJO,
+                            "${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = ?",
+                            arrayOf(idStr)
+                        )
+                    } while (it.moveToNext())
+                }
             }
+            database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()))
+            database.setTransactionSuccessful()
+        } finally {
+            database.endTransaction()
         }
-        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()))
     }
 
     fun limparSorteioDoGrupo(grupoId: Int) {
@@ -247,6 +258,11 @@ class ParticipanteDAO(ctx: Context) {
         return mapa
     }
 
+    /**
+     * Retorna o participante pelo id, ou null se não existir.
+     * Nota: [Participante.idsExcluidos] NÃO é populado — use [listarPorGrupo] quando
+     * as exclusões forem necessárias.
+     */
     fun buscarPorId(id: Int): Participante? {
         val cursor = database.query(
             MySQLiteOpenHelper.TABLE_PARTICIPANTE, null,

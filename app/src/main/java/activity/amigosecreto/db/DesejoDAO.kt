@@ -3,13 +3,14 @@ package activity.amigosecreto.db
 import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
+import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.util.Log
 
 class DesejoDAO(ctx: Context) {
 
     private val helper = MySQLiteOpenHelper(ctx)
-    private lateinit var database: android.database.sqlite.SQLiteDatabase
+    private lateinit var database: SQLiteDatabase
 
     @Throws(SQLException::class)
     fun open() {
@@ -188,6 +189,12 @@ class DesejoDAO(ctx: Context) {
         return mapa
     }
 
+    /**
+     * Retorna MAX(id)+1 para uso pré-inserção em InserirDesejoActivity e ParticipanteDesejosActivity.
+     * Mantido por compatibilidade com Activities Java ainda não migradas — não remover até Fase 10e.
+     * Nota: inserir() já seta desejo.id via AUTOINCREMENT; este método tem race condition potencial
+     * em ambiente multi-thread. Migrar call sites para depender apenas de inserir() quando possível.
+     */
     fun proximoId(): Int {
         return try {
             val cursor = database.rawQuery("SELECT MAX(${MySQLiteOpenHelper.COLUMN_ID}) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)

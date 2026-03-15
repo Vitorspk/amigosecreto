@@ -58,6 +58,11 @@ class GrupoDAO(ctx: Context) {
                             "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
                             arrayOf(pid, pid)
                         )
+                        database.delete(
+                            MySQLiteOpenHelper.TABLE_DESEJO,
+                            "${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = ?",
+                            arrayOf(pid)
+                        )
                     } while (it.moveToNext())
                 }
             }
