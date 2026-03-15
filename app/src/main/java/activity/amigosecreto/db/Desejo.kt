@@ -7,8 +7,10 @@ import kotlinx.parcelize.Parcelize
 // TODO(fase10-dao): switch to val + constructor injection once DesejoDAO migrates to Room.
 // equals/hashCode use id only — identity = DB primary key, not field values.
 // Semantic change: Java compared all fields; audited — no production call site relied on that.
+// Audited (all Desejo Activities): desejoDAO.remover(desejo) calls are DAO deletions, not
+// List.remove() — equals is not involved. All collections are List<Desejo> iterated by index.
 @Parcelize
-class Desejo @JvmOverloads constructor(
+class Desejo(
     var id: Int = 0,
     var produto: String? = null,
     var categoria: String? = null,
@@ -17,6 +19,12 @@ class Desejo @JvmOverloads constructor(
     var precoMaximo: Double = 0.0,
     var participanteId: Int = 0,
 ) : Parcelable, Comparable<Desejo> {
+
+    // Secondary constructor preserving the Java Desejo(int, String) call site in tests.
+    constructor(id: Int, produto: String?) : this(
+        id = id, produto = produto, categoria = null, lojas = null,
+        precoMinimo = 0.0, precoMaximo = 0.0, participanteId = 0,
+    )
 
     override fun equals(other: Any?): Boolean = other is Desejo && id == other.id
 
