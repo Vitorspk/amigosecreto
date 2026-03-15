@@ -2,16 +2,10 @@ package activity.amigosecreto.db
 
 import java.io.Serializable
 
-// Serializable (not Parcelable): Participante is passed via Intent extras as Serializable.
-// Plain class (not data class): reference equality is required by ParticipanteKotlinMigrationTest
-// contracts — two Participante objects with the same fields must NOT be equal.
-// idsExcluidos uses mutableListOf() — each instance gets its own independent list (no sharing).
-// The body property + custom setter defensively copy on both construction and setIdsExcluidos()
-// calls, so Java callers using Arrays.asList can safely mutate the list afterward.
-// No-arg constructor: Kotlin generates one automatically because all parameters have defaults.
-// @JvmOverloads omitted — plain class with only the no-arg constructor needed by Java call sites.
-// TODO(fase10-dao): switch to val fields once ParticipanteDAO is migrated to Kotlin/Room —
-// at that point, constructor injection replaces setter-based population.
+// var fields: ParticipanteDAO populates via setters after construction (see CLAUDE.md § Model layer decisions).
+// TODO(fase10-dao): switch to val + constructor injection once ParticipanteDAO migrates to Room.
+// Plain class (not data class): reference equality required by ParticipanteKotlinMigrationTest contracts.
+// toString() returns "" for null nome; Java returned null.
 class Participante(
     var id: Int = 0,
     var nome: String? = null,
@@ -19,18 +13,15 @@ class Participante(
     var telefone: String? = null,
     var amigoSorteadoId: Int? = null,
     var isEnviado: Boolean = false,
-    var codigoAcesso: String? = null, // TODO: not persisted — no codigo_acesso column in DB schema v8; add via migration or remove in Fase 10 cleanup
+    var codigoAcesso: String? = null, // TODO: orphaned — no DB column in schema v8; add migration or remove in Fase 10
     idsExcluidos: MutableList<Int> = mutableListOf(),
 ) : Serializable {
-    // Body property with custom setter: defensive ArrayList copy on construction and on every
-    // setIdsExcluidos() call. Prevents UnsupportedOperationException when Java passes
-    // Arrays.asList(...) (fixed-size) and later calls add() or remove() on the result.
+    // Defensive copy on construction and on every setIdsExcluidos() call.
+    // Prevents UnsupportedOperationException when Java passes Arrays.asList (fixed-size list).
     var idsExcluidos: MutableList<Int> = ArrayList(idsExcluidos)
         set(value) { field = ArrayList(value) }
 
     companion object {
-        // 'const val' compiles to a ConstantValue attribute (private static final long) on the
-        // outer class — confirmed via javap. Java serialization reads it correctly at value 1L.
         private const val serialVersionUID: Long = 1L
     }
 
