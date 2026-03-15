@@ -317,4 +317,50 @@ public class ParticipanteDAOTest {
         String nome = dao.getNomeAmigoSorteado(-1);
         assertEquals("Ninguém", nome);
     }
+
+    // --- salvarSorteio tamanhos diferentes ---
+
+    @Test
+    public void salvarSorteio_listas_tamanhos_diferentes_retorna_false() {
+        Participante a = criarParticipante("A", grupoId);
+        Participante b = criarParticipante("B", grupoId);
+        Participante c = criarParticipante("C", grupoId);
+
+        // sorteados tem um elemento a menos — IndexOutOfBoundsException esperado
+        boolean ok = dao.salvarSorteio(Arrays.asList(a, b, c), Arrays.asList(b, c));
+        assertFalse(ok);
+
+        // banco não deve ter sido alterado (transação revertida)
+        List<Participante> lista = dao.listarPorGrupo(grupoId);
+        for (Participante p : lista) {
+            assertNull(p.getAmigoSorteadoId());
+        }
+    }
+
+    // --- adicionarExclusao idempotência ---
+
+    @Test
+    public void adicionarExclusao_duplicada_nao_insere_registro_extra() {
+        Participante a = criarParticipante("A", grupoId);
+        Participante b = criarParticipante("B", grupoId);
+
+        dao.adicionarExclusao(a.getId(), b.getId());
+        dao.adicionarExclusao(a.getId(), b.getId()); // duplicate — CONFLICT_IGNORE
+
+        List<Participante> lista = dao.listarPorGrupo(grupoId);
+        Participante aAtualizado = lista.stream().filter(p -> p.getId() == a.getId()).findFirst().orElse(null);
+        assertNotNull(aAtualizado);
+        // exactly one entry, not two
+        assertEquals(1, aAtualizado.getIdsExcluidos().size());
+        assertTrue(aAtualizado.getIdsExcluidos().contains(b.getId()));
+    }
+
+    // --- deletarTodosDoGrupo grupo vazio ---
+
+    @Test
+    public void deletarTodosDoGrupo_grupo_vazio_nao_lanca_excecao() {
+        // grupo sem participantes — moveToFirst() retorna false, nenhuma deleção ocorre
+        dao.deletarTodosDoGrupo(grupoId);
+        assertTrue(dao.listarPorGrupo(grupoId).isEmpty());
+    }
 }
