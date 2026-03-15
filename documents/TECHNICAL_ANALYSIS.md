@@ -270,7 +270,7 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 
 #### Fase 10b — Utilitários 🔄 Próximo
 
-**Escopo:** Migrar as 7 classes em `util/` para Kotlin puro:
+**Escopo:** Migrar as 8 classes em `util/` para Kotlin puro:
 - `MensagemSecretaBuilder.java` — lógica pura, sem Android, ideal para começar
 - `ValidationUtils.java` — lógica pura, regex e validações
 - `SorteioEngine.java` — algoritmo de sorteio, sem Android
@@ -288,10 +288,13 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 - `ParticipanteRepository.java`, `DesejoRepository.java` → Kotlin
 - TODO `fase10-dao`: trocar `var` por `val` nos models após DAOs migrarem para Room
 
-#### Fase 10d — ViewModel e Activities (futuro)
+#### Fase 10d — ViewModel (futuro)
 
 - `ParticipantesViewModel.java` → coroutines (substituir `ExecutorService` + `Handler.post`)
-- Activities — maior superfície, maior risco, por último
+
+#### Fase 10e — Activities (futuro)
+
+- 9 Activities — maior superfície, maior risco, por último
 
 **Benefícios:**
 - Null safety em tempo de compilação
