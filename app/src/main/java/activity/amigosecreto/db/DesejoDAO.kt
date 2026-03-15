@@ -52,39 +52,21 @@ class DesejoDAO(ctx: Context) {
     }
 
     fun listar(): List<Desejo> {
-        val lista = mutableListOf<Desejo>()
         val cursor = database.rawQuery("SELECT * FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
-        cursor.use {
-            if (it.moveToFirst()) {
-                val idIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)
-                val prodIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRODUTO)
-                val catIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_CATEGORIA)
-                val minIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MINIMO)
-                val maxIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO)
-                val lojasIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_LOJAS)
-                val pidIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID)
-                do {
-                    val d = Desejo()
-                    d.id = it.getInt(idIdx)
-                    d.produto = it.getString(prodIdx)
-                    d.categoria = it.getString(catIdx)
-                    d.precoMinimo = it.getDouble(minIdx)
-                    d.precoMaximo = it.getDouble(maxIdx)
-                    d.lojas = it.getString(lojasIdx)
-                    d.participanteId = it.getInt(pidIdx)
-                    lista.add(d)
-                } while (it.moveToNext())
-            }
-        }
-        return lista
+        return mapearDesejosCursor(cursor)
     }
 
     fun listarPorParticipante(participanteId: Int): List<Desejo> {
-        val lista = mutableListOf<Desejo>()
         val cursor = database.rawQuery(
             "SELECT * FROM ${MySQLiteOpenHelper.TABLE_DESEJO} WHERE ${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = ?",
             arrayOf(participanteId.toString())
         )
+        return mapearDesejosCursor(cursor)
+    }
+
+    /** Maps a SELECT * cursor over TABLE_DESEJO into a List<Desejo>. */
+    private fun mapearDesejosCursor(cursor: android.database.Cursor): List<Desejo> {
+        val lista = mutableListOf<Desejo>()
         cursor.use {
             if (it.moveToFirst()) {
                 val idIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)

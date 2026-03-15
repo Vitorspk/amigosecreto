@@ -77,4 +77,16 @@ class DesejoRepository private constructor(private val dao: DesejoDAO) {
         dao.open()
         return try { dao.buscarPorId(id) } finally { dao.close() }
     }
+
+    /**
+     * Retorna MAX(id)+1 para uso pré-inserção em Activities Java ainda não migradas.
+     * Mantido para preservar isolamento do Repository pattern — Activities não devem
+     * acessar o DAO diretamente.
+     * TODO: remover quando InserirDesejoActivity e ParticipanteDesejosActivity migrarem
+     * para Kotlin (Fase 10e) e passarem a depender apenas de inserir() com AUTOINCREMENT.
+     */
+    fun proximoId(): Int {
+        dao.open()
+        return try { dao.proximoId() } finally { dao.close() }
+    }
 }

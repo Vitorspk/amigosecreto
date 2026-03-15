@@ -28,7 +28,7 @@ class ParticipanteDAO(ctx: Context) {
             put(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, grupoId)
         }
         val id = database.insert(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, values)
-        p.id = id.toInt()
+        p.id = id.toInt() // safe: participant count never approaches Int.MAX_VALUE (2^31-1)
     }
 
     fun atualizar(p: Participante): Boolean {
@@ -207,7 +207,9 @@ class ParticipanteDAO(ctx: Context) {
         }
         if (mapaParticipantes.isEmpty()) return emptyList()
 
-        // Pass 2 — fetch all exclusions for the group in one query (eliminates N+1)
+        // Pass 2 — fetch all exclusions for the group in one query (eliminates N+1).
+        // IDs are integers from our own DB — no SQL injection risk. rawQuery with '?'
+        // does not support dynamic IN lists, so interpolation is the correct approach here.
         val ids = mapaParticipantes.keys.joinToString(",")
         val exclCursor = database.rawQuery(
             "SELECT ${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID}, ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID}" +
@@ -228,23 +230,6 @@ class ParticipanteDAO(ctx: Context) {
         return mapaParticipantes.values.toList()
     }
 
-    private fun listarExclusoes(idParticipante: Int): List<Int> {
-        val exclusoes = mutableListOf<Int>()
-        val cursor = database.query(
-            MySQLiteOpenHelper.TABLE_EXCLUSAO,
-            arrayOf(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID),
-            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ?",
-            arrayOf(idParticipante.toString()),
-            null, null, null
-        )
-        cursor.use {
-            if (it.moveToFirst()) {
-                do { exclusoes.add(it.getInt(0)) } while (it.moveToNext())
-            }
-        }
-        return exclusoes
-    }
-
     fun getNomeAmigoSorteado(amigoId: Int): String {
         val cursor = database.query(
             MySQLiteOpenHelper.TABLE_PARTICIPANTE,
@@ -253,6 +238,10 @@ class ParticipanteDAO(ctx: Context) {
             arrayOf(amigoId.toString()),
             null, null, null
         )
+        // "Ninguém" is a DAO-level fallback; ideally the ViewModel would own this string
+        // (via getString R.string.*), but changing the return type cascades to RevelarAmigoActivity.java
+        // which calls the DAO directly. TODO: migrate to String? return in Fase 10e when
+        // RevelarAmigoActivity migrates to Kotlin.
         return cursor.use {
             if (it.moveToFirst()) it.getString(0) else "Ninguém"
         }
