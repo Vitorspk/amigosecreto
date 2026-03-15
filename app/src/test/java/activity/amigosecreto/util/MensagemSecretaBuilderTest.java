@@ -191,6 +191,33 @@ public class MensagemSecretaBuilderTest {
         assertTrue(msg.contains("1. Mochila"));
     }
 
+    // --- trim de produto, categoria e lojas (comportamento Kotlin: trim antes de append) ---
+
+    @Test
+    public void gerar_produtoComEspacosExternos_trimadoNoOutput() {
+        // Kotlin trim()s the value before appending — leading/trailing spaces must not appear.
+        List<Desejo> desejos = Collections.singletonList(buildDesejo("  Fone  ", null, 0, 0, null));
+        String msg = MensagemSecretaBuilder.gerar("Ana", "Bruno", desejos);
+        assertTrue(msg.contains("Fone"));
+        assertFalse(msg.contains("  Fone  "));
+    }
+
+    @Test
+    public void gerar_categoriaComEspacosExternos_trimadaNoOutput() {
+        List<Desejo> desejos = Collections.singletonList(buildDesejo("Fone", "  Eletronicos  ", 0, 0, null));
+        String msg = MensagemSecretaBuilder.gerar("Ana", "Bruno", desejos);
+        assertTrue(msg.contains("Eletronicos"));
+        assertFalse(msg.contains("(  Eletronicos  )"));
+    }
+
+    @Test
+    public void gerar_lojasComEspacosExternos_trimadoNoOutput() {
+        List<Desejo> desejos = Collections.singletonList(buildDesejo("Fone", null, 0, 0, "  Amazon  "));
+        String msg = MensagemSecretaBuilder.gerar("Ana", "Bruno", desejos);
+        assertTrue(msg.contains("Amazon"));
+        assertFalse(msg.contains("  Amazon  "));
+    }
+
     // --- múltiplos desejos ---
 
     @Test

@@ -500,11 +500,11 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (263 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (266 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
-| Util | `MensagemSecretaBuilderTest` | 21 |
+| Util | `MensagemSecretaBuilderTest` | 24 |
 | Util | `ValidationUtilsTest` | 19 |
 | Util | `SorteioEngineTest` | 11 |
 | Util | `FormatarPrecoTest` | 12 |
@@ -564,6 +564,26 @@ Quando os DAOs migrarem para Kotlin/Room (TODOs `fase10-dao`), os fields viram `
 ### codigoAcesso (campo órfão)
 
 `Participante.codigoAcesso` existe no model mas não tem coluna `codigo_acesso` no schema v8 e não é lido/gravado por nenhum DAO. Decisão pendente: adicionar via migration (schema v9) ou remover no cleanup de Fase 10.
+
+---
+
+## Utility Layer — Decisões de Design (PR #36)
+
+### trim() em produto/categoria/lojas (MensagemSecretaBuilder)
+
+No Java original, `trim()` era usado apenas na validação (`isEmpty()` após `trim()`), mas o valor bruto era appendado. Em Kotlin, o valor trimado é appendado diretamente. Comportamento intencionalmente melhorado: espaços acidentais não aparecem na mensagem final. Documentado com três testes em `MensagemSecretaBuilderTest`.
+
+### tentarSorteio(list, random) — visibilidade public (SorteioEngine)
+
+O overload com `Random` é `public` em vez de `internal` porque `SorteioEngineTest.java` o chama diretamente com seed fixa para testes determinísticos. `internal` em Kotlin compila com nome mangled inacessível do Java. **TODO:** quando `SorteioEngineTest` migrar para Kotlin (Fase 10e), converter para `internal` + `@VisibleForTesting` — padrão já adotado em `ParticipanteRepository`.
+
+### java.util.Random em SorteioEngine
+
+Mantido `java.util.Random` (em vez de `kotlin.random.Random`) para preservar o call site Java com `new Random(seed)` em `SorteioEngineTest`. **TODO:** ao migrar o teste para Kotlin, substituir por `kotlin.random.Random(seed)` e remover o import `java.util.Random`.
+
+### formatarPreco / numberFormatPtBr (MensagemSecretaBuilder → WindowInsetsUtils)
+
+`MensagemSecretaBuilder.formatarPreco()` delega para `WindowInsetsUtils.numberFormatPtBr()`. Esse método de formatação pt-BR pertence logicamente a um `FormatUtils` separado, não a `WindowInsetsUtils`. **TODO:** extrair para `FormatUtils.kt` na Fase 10b restante ou 10c, junto com `LOCALE_PT_BR`.
 
 ---
 
