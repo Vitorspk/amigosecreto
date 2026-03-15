@@ -62,14 +62,14 @@ app/src/main/java/activity/amigosecreto/
 │   └── DesejoRepository.java             # encapsula DesejoDAO; síncrono, thread de BG
 │
 └── util/
-    ├── AnimationUtils.java                # animações reutilizáveis
-    ├── AsyncDatabaseHelper.java           # operações assíncronas no banco
-    ├── HapticFeedbackUtils.java           # feedback háptico (flags=0, respeita acessibilidade)
+    ├── AnimationUtils.kt                  # animações reutilizáveis — Kotlin
+    ├── AsyncDatabaseHelper.kt             # operações assíncronas no banco — Kotlin
+    ├── HapticFeedbackUtils.kt             # feedback háptico (flags=0, respeita acessibilidade) — Kotlin
     ├── MensagemSecretaBuilder.kt          # formata mensagem de compartilhamento do sorteio — Kotlin
-    ├── SnackbarHelper.java                # mensagens padronizadas
+    ├── SnackbarHelper.kt                  # mensagens padronizadas — Kotlin
     ├── SorteioEngine.kt                   # motor de sorteio (extraído para testabilidade) — Kotlin
-    ├── ValidationUtils.java               # validação centralizada de inputs
-    └── WindowInsetsUtils.java             # IME padding, Locale pt-BR, formatação monetária
+    ├── ValidationUtils.kt                 # validação centralizada de inputs — Kotlin
+    └── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
 ```
 
 ```
@@ -598,8 +598,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
 - [x] Migrar models para Kotlin — Fase 10a (PR #33)
-- [x] Migrar utilitários puros (`MensagemSecretaBuilder`, `SorteioEngine`) — Fase 10b parcial
-- [ ] Migrar utilitários Android (`ValidationUtils`, `AnimationUtils`, `SnackbarHelper`, `HapticFeedbackUtils`, `AsyncDatabaseHelper`, `WindowInsetsUtils`) — Fase 10b restante
+- [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
 - [ ] Migrar DAOs e Repositories para Kotlin — Fase 10c
 - [ ] Migrar ViewModel com coroutines — Fase 10d
 - [ ] Migrar Activities — Fase 10e
