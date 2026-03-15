@@ -143,7 +143,8 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 7** | **UnusedResources (47 warnings lintDebug)** | **✅ Concluído** | **#22** |
 | **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **✅ Concluído** | **#27** |
 | **Fase 9** | **Dependency Injection (Hilt)** | **✅ Concluído** | **#28/#29** |
-| **Fase 10** | **Migração para Kotlin** | **🔄 Em andamento** | — |
+| **Fase 10a** | **Migração para Kotlin — Models** | **✅ Concluído** | **#33** |
+| **Fase 10b** | **Migração para Kotlin — Utilitários** | **🔄 Próximo** | — |
 
 ---
 
@@ -253,21 +254,52 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ---
 
-### Fase 10 — Migração para Kotlin (🔄 Em andamento)
+### Fase 10 — Migração para Kotlin
 
-**Objetivo:** Converter o código Java para Kotlin, aproveitando coroutines, extension functions, data classes e null safety. Esta migração coincide com o bump de versão **2.x → 3.x**.
+**Objetivo:** Converter o código Java para Kotlin, aproveitando coroutines, extension functions, null safety e a integração nativa com Hilt. Esta migração coincide com o bump de versão **2.x → 3.x**.
 
-**Escopo sugerido:**
-- Migrar models (`Grupo.java`, `Participante.java`, `Desejo.java`) para data classes Kotlin
-- Migrar utilitários (`MensagemSecretaBuilder`, `ValidationUtils`, etc.)
-- Migrar DAOs e Repositories
-- Migrar ViewModels com coroutines (substituir `ExecutorService` + `Handler`)
-- Migrar Activities por último (maior superfície, maior risco)
+#### Fase 10a — Models ✅ Concluído (PR #33)
+
+- `Grupo.java` → `Grupo.kt` — plain class, Serializable, `serialVersionUID = 1L`
+- `Participante.java` → `Participante.kt` — plain class, Serializable, `idsExcluidos` com cópia defensiva
+- `Desejo.java` → `Desejo.kt` — plain class, `@Parcelize`, `equals`/`hashCode` por `id`, construtor secundário `(id, produto)`
+- Kotlin 2.0.21 + `kotlin-parcelize` + `kapt` para Hilt adicionados ao build
+- 263 testes passando após migração
+
+Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de Design (PR #33)".
+
+#### Fase 10b — Utilitários 🔄 Próximo
+
+**Escopo:** Migrar as 8 classes em `util/` para Kotlin puro:
+- `MensagemSecretaBuilder.java` — lógica pura, sem Android, ideal para começar
+- `ValidationUtils.java` — lógica pura, regex e validações
+- `SorteioEngine.java` — algoritmo de sorteio, sem Android
+- `AnimationUtils.java` — depende de `Context`/`View`
+- `SnackbarHelper.java` — depende de `View`
+- `HapticFeedbackUtils.java` — depende de `View`
+- `AsyncDatabaseHelper.java` — depende de `Handler`/threads
+- `WindowInsetsUtils.java` — depende de `Window`/`View`
+
+**Estratégia:** converter por risco crescente (lógica pura primeiro, Android depois).
+
+#### Fase 10c — DAOs e Repositories (futuro)
+
+- `GrupoDAO.java`, `ParticipanteDAO.java`, `DesejoDAO.java` → Kotlin
+- `ParticipanteRepository.java`, `DesejoRepository.java` → Kotlin
+- Após migração: trocar `var` por `val` nos models (ver [Issue #35](https://github.com/Vitorspk/amigosecreto/issues/35))
+
+#### Fase 10d — ViewModel (futuro)
+
+- `ParticipantesViewModel.java` → coroutines (substituir `ExecutorService` + `Handler.post`)
+
+#### Fase 10e — Activities (futuro)
+
+- 9 Activities — maior superfície, maior risco, por último
 
 **Benefícios:**
 - Null safety em tempo de compilação
 - Coroutines — elimina boilerplate de `ExecutorService` + `Handler.post`
-- Data classes — `equals`/`hashCode`/`toString` automáticos
+- Data classes — `equals`/`hashCode`/`toString` automáticos (aplicável em Fase 10c+ onde não há restrição de var fields)
 - Extension functions — simplifica utilitários
 - Hilt mais ergonômico com Kotlin (`@Inject constructor`)
 
@@ -387,13 +419,14 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 ## Conclusão
 
-O app atingiu nível profissional. Todas as fases principais foram concluídas:
-- 260 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
+O app atingiu nível profissional. As fases de infraestrutura foram concluídas; a Fase 10 (migração para Kotlin) está em andamento:
+- 263 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
 - `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
+- Fase 10a concluída: models migrados para Kotlin (PR #33)
 
-**Próximo passo:** Fase 10 — Migração para Kotlin.
+**Próximo passo:** Fase 10b — Migrar utilitários (`util/`) para Kotlin.

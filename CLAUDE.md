@@ -51,7 +51,7 @@ app/src/main/java/activity/amigosecreto/
 │   ├── GrupoDAO.java                      # CRUD de grupos
 │   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
 │   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
-│   ├── Desejo.kt                          # model de desejo (Parcelable) — Kotlin
+│   ├── Desejo.kt                          # model de desejo (Parcelable via @Parcelize) — Kotlin
 │   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
 │
 ├── di/
@@ -500,7 +500,7 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (260 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (263 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -577,7 +577,11 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Implementar Repository pattern (PR #19)
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
-- [ ] Migrar para Kotlin (Fase 10 — em andamento)
+- [x] Migrar models para Kotlin — Fase 10a (PR #33)
+- [ ] Migrar utilitários (`util/`) para Kotlin — Fase 10b (próximo)
+- [ ] Migrar DAOs e Repositories para Kotlin — Fase 10c
+- [ ] Migrar ViewModel com coroutines — Fase 10d
+- [ ] Migrar Activities — Fase 10e
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
