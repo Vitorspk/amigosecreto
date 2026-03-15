@@ -51,7 +51,7 @@ app/src/main/java/activity/amigosecreto/
 │   ├── GrupoDAO.java                      # CRUD de grupos
 │   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
 │   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
-│   ├── Desejo.kt                          # model de desejo (Parcelable) — Kotlin
+│   ├── Desejo.kt                          # model de desejo (Parcelable via @Parcelize) — Kotlin
 │   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
 │
 ├── di/
