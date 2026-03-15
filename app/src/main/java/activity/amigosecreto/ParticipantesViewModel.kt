@@ -258,6 +258,7 @@ class ParticipantesViewModel @Inject constructor(
      * Aceita uma lista de participantes para suportar tanto o fluxo normal (snapshot da lista)
      * quanto a reconstrução após rotação (lista restaurada do bundle).
      */
+    // TODO: consider toggling _isLoading while this runs (pre-existing omission, same as Java original).
     fun prepararMensagensSms(snapshot: List<Participante>) {
         executor.execute {
             try {
@@ -275,9 +276,9 @@ class ParticipantesViewModel @Inject constructor(
                     val tel = p.telefone
                     if (!tel.isNullOrBlank()) {
                         comTelefone.add(p)
-                        val amigoId = p.amigoSorteadoId
-                        val nomeAmigo = if (amigoId != null && amigoId > 0) nomeMap[amigoId] else null
-                        val desejos: List<Desejo> = if (amigoId != null && amigoId > 0) desejosMap[amigoId] ?: emptyList() else emptyList()
+                        val validAmigoId = p.amigoSorteadoId?.takeIf { it > 0 }
+                        val nomeAmigo = validAmigoId?.let { nomeMap[it] }
+                        val desejos: List<Desejo> = validAmigoId?.let { desejosMap[it] } ?: emptyList()
                         mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos)
                     }
                 }
@@ -294,6 +295,9 @@ class ParticipantesViewModel @Inject constructor(
      * Acessa o banco em background, marca como enviado e posta o resultado em
      * mensagemCompartilhamentoResult.
      *
+     * Nota: _isLoading não é alternado aqui (pré-existente, mesmo comportamento do Java original).
+     * TODO: considerar toggle de _isLoading em Fase 10e junto com a Activity.
+     *
      * Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
      * o share sheet (a API do ACTION_SEND não oferece callback de confirmação). Se o
      * usuário abrir o chooser e cancelar, o participante ficará marcado como enviado.
@@ -306,9 +310,9 @@ class ParticipantesViewModel @Inject constructor(
     fun prepararMensagemCompartilhamento(participante: Participante) {
         executor.execute {
             try {
-                val amigoId = participante.amigoSorteadoId
-                val nomeAmigo = if (amigoId != null && amigoId > 0) participanteRepository.getNomeAmigoSorteado(amigoId) else null
-                val desejos: List<Desejo> = if (amigoId != null && amigoId > 0) desejoRepository.listarPorParticipante(amigoId) else emptyList()
+                val validAmigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
+                val nomeAmigo = validAmigoId?.let { participanteRepository.getNomeAmigoSorteado(it) }
+                val desejos: List<Desejo> = validAmigoId?.let { desejoRepository.listarPorParticipante(it) } ?: emptyList()
                 val mensagem = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos)
                 participanteRepository.marcarComoEnviado(participante.id)
                 postMain { _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem) }
