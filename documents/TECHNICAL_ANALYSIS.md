@@ -286,7 +286,7 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 
 - `GrupoDAO.java`, `ParticipanteDAO.java`, `DesejoDAO.java` → Kotlin
 - `ParticipanteRepository.java`, `DesejoRepository.java` → Kotlin
-- TODO `fase10-dao`: trocar `var` por `val` nos models após DAOs migrarem para Room
+- Após migração: trocar `var` por `val` nos models (ver [Issue #35](https://github.com/Vitorspk/amigosecreto/issues/35))
 
 #### Fase 10d — ViewModel (futuro)
 
@@ -299,6 +299,7 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 **Benefícios:**
 - Null safety em tempo de compilação
 - Coroutines — elimina boilerplate de `ExecutorService` + `Handler.post`
+- Data classes — `equals`/`hashCode`/`toString` automáticos (aplicável em Fase 10c+ onde não há restrição de var fields)
 - Extension functions — simplifica utilitários
 - Hilt mais ergonômico com Kotlin (`@Inject constructor`)
 
@@ -418,7 +419,7 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 
 ## Conclusão
 
-O app atingiu nível profissional. Todas as fases principais foram concluídas:
+O app atingiu nível profissional. As fases de infraestrutura foram concluídas; a Fase 10 (migração para Kotlin) está em andamento:
 - 263 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
