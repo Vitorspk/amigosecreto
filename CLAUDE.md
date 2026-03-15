@@ -48,18 +48,18 @@ app/src/main/java/activity/amigosecreto/
 ├── db/
 │   ├── MySQLiteOpenHelper.java            # schema SQLite v8 + migrações
 │   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
-│   ├── GrupoDAO.java                      # CRUD de grupos
+│   ├── GrupoDAO.kt                        # CRUD de grupos — Kotlin
 │   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
-│   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
+│   ├── ParticipanteDAO.kt                 # CRUD + exclusões + sorteio + transações atômicas — Kotlin
 │   ├── Desejo.kt                          # model de desejo (Parcelable via @Parcelize) — Kotlin
-│   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
+│   └── DesejoDAO.kt                       # CRUD de desejos + batch queries (N+1 eliminado) — Kotlin
 │
 ├── di/
 │   └── DatabaseModule.java                # @Module @InstallIn(SingletonComponent) — provê Repositories
 │
 ├── repository/
-│   ├── ParticipanteRepository.java        # encapsula ParticipanteDAO; síncrono, thread de BG
-│   └── DesejoRepository.java             # encapsula DesejoDAO; síncrono, thread de BG
+│   ├── ParticipanteRepository.kt          # encapsula ParticipanteDAO; síncrono, thread de BG — Kotlin
+│   └── DesejoRepository.kt               # encapsula DesejoDAO; síncrono, thread de BG — Kotlin
 │
 └── util/
     ├── AnimationUtils.kt                  # animações reutilizáveis — Kotlin
@@ -500,7 +500,7 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (283 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (285 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -513,7 +513,7 @@ app/src/test/java/activity/amigosecreto/
 | Model | `GrupoModelTest` | 7 |
 | Model | `DesejoParcelableTest` | 6 |
 | Model | `ParticipanteKotlinMigrationTest` | 12 |
-| DAO | `ParticipanteDAOTest` | 21 |
+| DAO | `ParticipanteDAOTest` | 23 |
 | DAO | `DesejoDAOTest` | 20 |
 | DAO | `GrupoDAOTest` | 12 |
 | DAO | `MySQLiteOpenHelperTest` | 8 |
@@ -521,7 +521,7 @@ app/src/test/java/activity/amigosecreto/
 | Repository | `ParticipanteRepositoryTest` | 17 |
 | Repository | `DesejoRepositoryTest` | 16 |
 | Repository | `ParticipanteRepositorySalvarExclusoesTest` | 7 |
-| ViewModel | `ParticipantesViewModelTest` | 31 |
+| ViewModel | `ParticipantesViewModelTest` | 33 |
 
 **Configuração Robolectric:** `testOptions.unitTests.includeAndroidResources = true` habilitado em `build.gradle` para permitir acesso a recursos compilados (`getString()`) nos testes unitários.
 
@@ -540,14 +540,10 @@ Ver `documents/TEST_PLAN.md` para descrição detalhada das Fases 1–3 e progre
 
 `Desejo.equals` e `hashCode` usam apenas `id` (chave primária do banco). Mudança semântica em relação ao Java (que comparava todos os campos). Auditado: nenhum call site de produção usa `contains`/`remove`/`Set`/`Map` com `Desejo` — todos os usos são `List<Desejo>` iterada por índice.
 
-### var fields e DAOs Java
+### var fields e DAOs
 
-Os três models usam `var` porque os DAOs Java populam instâncias via setters após construção:
-- `GrupoDAO.java` — `new Grupo()` depois `setId()`, `setNome()`, `setData()`
-- `ParticipanteDAO.java` — `new Participante()` depois setters por coluna
-- `DesejoDAO.java` — `new Desejo()` depois setters por coluna
-
-Quando os DAOs migrarem para Kotlin/Room (TODOs `fase10-dao`), os fields viram `val` e a construção via construtor primário elimina os setters.
+Os três models usam `var` porque os DAOs populam instâncias via property assignment após construção.
+DAOs já migraram para Kotlin (Fase 10c — PR #38). Fields podem virar `val` com construtor primário quando/se migrar para Room.
 
 ### serialVersionUID em companion object
 
@@ -564,6 +560,38 @@ Quando os DAOs migrarem para Kotlin/Room (TODOs `fase10-dao`), os fields viram `
 ### codigoAcesso (campo órfão)
 
 `Participante.codigoAcesso` existe no model mas não tem coluna `codigo_acesso` no schema v8 e não é lido/gravado por nenhum DAO. Decisão pendente: adicionar via migration (schema v9) ou remover no cleanup de Fase 10.
+
+---
+
+## DAO + Repository Layer — Decisões de Design (PR #38)
+
+### open class + open fun em ParticipanteRepository
+
+`ParticipanteRepository` é `open class` com todos os métodos `open` porque `ParticipantesViewModelTest.java` cria subclasses anônimas para injetar comportamento nos testes. Kotlin classes são `final` por padrão — sem `open`, a compilação falha com "cannot inherit from final". **TODO:** quando `ParticipantesViewModelTest` migrar para Kotlin (Fase 10e), converter para `internal` + `@VisibleForTesting` e remover `open`.
+
+### Construtor triplo em Repositories
+
+`private constructor(dao)` — construção interna; `constructor(context)` — produção via Hilt; `internal constructor(dao, forTesting: Boolean)` — injeção de DAO nos testes. O parâmetro `forTesting: Boolean` existe apenas para diferenciar a assinatura do construtor primário.
+
+### listarPorGrupo — 2 passes para eliminar N+1
+
+Pass 1 busca participantes em `LinkedHashMap` (preserva `ORDER BY nome`). Pass 2 busca todas as exclusões do grupo em uma única query `WHERE participante_id IN ($ids)`. IDs são inteiros vindos do próprio banco — interpolação sem risco de SQL injection. `rawQuery` com `?` não suporta listas dinâmicas no IN.
+
+### NOME_AMIGO_DESCONHECIDO em companion object
+
+`ParticipanteDAO.NOME_AMIGO_DESCONHECIDO = "Ninguém"` extraído para constante pública porque `RevelarAmigoActivity.java` chama o DAO diretamente e precisa comparar com o fallback. **TODO:** mover para `strings.xml` quando `RevelarAmigoActivity` migrar para Kotlin (Fase 10e) e `getNomeAmigoSorteado()` puder retornar `String?`.
+
+### @Deprecated em proximoId()
+
+`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.java` e `ParticipanteDesejosActivity.java` que ainda chamam via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. **TODO:** remover quando essas Activities migrarem para Kotlin (Fase 10e).
+
+### mapearDesejosCursor — helper privado
+
+`DesejoDAO.mapearDesejosCursor(cursor: Cursor)` elimina duplicação entre `listar()` e `listarPorParticipante()`. Usa `getColumnIndexOrThrow()` em todos os campos — falha ruidosamente em schema mismatch.
+
+### Ordem de deleção (FK-safe)
+
+Ao remover participante/grupo: exclusao → desejo → participante → grupo. Sem `ON DELETE CASCADE` no schema v8, a ordem deve ser child-before-parent manualmente. Comentário `// TODO: schema v9 ON DELETE CASCADE` nos loops em `GrupoDAO.remover()` e `ParticipanteDAO.remover()`.
 
 ---
 
@@ -599,7 +627,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
 - [x] Migrar models para Kotlin — Fase 10a (PR #33)
 - [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
-- [x] Migrar DAOs e Repositories para Kotlin — Fase 10c
+- [x] Migrar DAOs e Repositories para Kotlin — Fase 10c (PR #38)
 - [ ] Migrar ViewModel com coroutines — Fase 10d
 - [ ] Migrar Activities — Fase 10e
 
