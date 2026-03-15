@@ -1,11 +1,22 @@
 package activity.amigosecreto.util;
 
+import android.content.Context;
+import android.widget.EditText;
+
+import androidx.test.core.app.ApplicationProvider;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
+
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 28)
 
 public class ValidationUtilsTest {
 
@@ -138,6 +149,162 @@ public class ValidationUtilsTest {
         Pattern p = getPattern("PHONE_PATTERN");
         assertFalse(p.matcher("123").matches());
         assertFalse(p.matcher("abc").matches());
+    }
+
+    // --- getNetworkErrorMessage ---
+
+    @Test
+    public void getNetworkErrorMessage_timeout_retorna_msg_amigavel() {
+        Exception e = new Exception("connection timeout exceeded");
+        String msg = ValidationUtils.getNetworkErrorMessage(e);
+        assertNotNull(msg);
+        assertFalse(msg.isEmpty());
+    }
+
+    @Test
+    public void getNetworkErrorMessage_unable_to_resolve_host_retorna_msg_amigavel() {
+        Exception e = new Exception("Unable to resolve host \"api.example.com\"");
+        String msg = ValidationUtils.getNetworkErrorMessage(e);
+        assertNotNull(msg);
+        assertFalse(msg.isEmpty());
+    }
+
+    @Test
+    public void getNetworkErrorMessage_erro_generico_retorna_msg_padrao() {
+        Exception e = new Exception("unknown network error");
+        String msg = ValidationUtils.getNetworkErrorMessage(e);
+        assertNotNull(msg);
+        assertFalse(msg.isEmpty());
+    }
+
+    @Test
+    public void getNetworkErrorMessage_message_null_retorna_msg_padrao() {
+        Exception e = new Exception((String) null);
+        String msg = ValidationUtils.getNetworkErrorMessage(e);
+        assertNotNull(msg);
+        assertFalse(msg.isEmpty());
+    }
+
+    // --- validateNotEmpty (Robolectric) ---
+
+    @Test
+    public void validateNotEmpty_campoVazio_retorna_false_e_seta_erro() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("");
+        assertFalse(ValidationUtils.validateNotEmpty(et, "Campo obrigatório"));
+        assertEquals("Campo obrigatório", et.getError().toString());
+    }
+
+    @Test
+    public void validateNotEmpty_campoSoEspacos_retorna_false() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("   ");
+        assertFalse(ValidationUtils.validateNotEmpty(et, "Campo obrigatório"));
+    }
+
+    @Test
+    public void validateNotEmpty_campoPreenchido_retorna_true_e_limpa_erro() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("Ana");
+        assertTrue(ValidationUtils.validateNotEmpty(et, "Campo obrigatório"));
+        assertNull(et.getError());
+    }
+
+    // --- validateName (Robolectric) ---
+
+    @Test
+    public void validateName_nomeVazio_retorna_false() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("");
+        assertFalse(ValidationUtils.validateName(et));
+        assertNotNull(et.getError());
+    }
+
+    @Test
+    public void validateName_nomeUmCaractere_retorna_false() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("A");
+        assertFalse(ValidationUtils.validateName(et));
+        assertNotNull(et.getError());
+    }
+
+    @Test
+    public void validateName_nomeDoisCaracteres_retorna_true() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("Al");
+        assertTrue(ValidationUtils.validateName(et));
+        assertNull(et.getError());
+    }
+
+    @Test
+    public void validateName_nomeValido_retorna_true() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("Carlos");
+        assertTrue(ValidationUtils.validateName(et));
+        assertNull(et.getError());
+    }
+
+    // --- validateEmail (Robolectric) ---
+
+    @Test
+    public void validateEmail_vazio_retorna_true_email_opcional() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("");
+        assertTrue(ValidationUtils.validateEmail(et));
+    }
+
+    @Test
+    public void validateEmail_emailValido_retorna_true() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("user@example.com");
+        assertTrue(ValidationUtils.validateEmail(et));
+        assertNull(et.getError());
+    }
+
+    @Test
+    public void validateEmail_emailInvalido_retorna_false() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("nao-e-email");
+        assertFalse(ValidationUtils.validateEmail(et));
+        assertNotNull(et.getError());
+    }
+
+    // --- validatePhone (Robolectric) ---
+
+    @Test
+    public void validatePhone_vazio_retorna_true_telefone_opcional() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("");
+        assertTrue(ValidationUtils.validatePhone(et));
+    }
+
+    @Test
+    public void validatePhone_telefoneValido_retorna_true() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("(11) 91234-5678");
+        assertTrue(ValidationUtils.validatePhone(et));
+        assertNull(et.getError());
+    }
+
+    @Test
+    public void validatePhone_telefoneInvalido_retorna_false() {
+        Context ctx = ApplicationProvider.getApplicationContext();
+        EditText et = new EditText(ctx);
+        et.setText("123");
+        assertFalse(ValidationUtils.validatePhone(et));
+        assertNotNull(et.getError());
     }
 
     // Utilitario para acessar constantes privadas via reflexao
