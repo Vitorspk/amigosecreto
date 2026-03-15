@@ -2,6 +2,7 @@ package activity.amigosecreto.db
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
@@ -65,7 +66,7 @@ class DesejoDAO(ctx: Context) {
     }
 
     /** Maps a SELECT * cursor over TABLE_DESEJO into a List<Desejo>. */
-    private fun mapearDesejosCursor(cursor: android.database.Cursor): List<Desejo> {
+    private fun mapearDesejosCursor(cursor: Cursor): List<Desejo> {
         val lista = mutableListOf<Desejo>()
         cursor.use {
             if (it.moveToFirst()) {

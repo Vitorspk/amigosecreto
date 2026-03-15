@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
+import androidx.annotation.VisibleForTesting
 
 class GrupoDAO(ctx: Context) {
 
@@ -97,6 +98,7 @@ class GrupoDAO(ctx: Context) {
         return lista
     }
 
+    @VisibleForTesting
     fun limparTudo() {
         database.beginTransaction()
         try {

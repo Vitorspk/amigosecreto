@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 
 class ParticipanteDAO(ctx: Context) {
 
@@ -164,6 +165,7 @@ class ParticipanteDAO(ctx: Context) {
             database.setTransactionSuccessful()
             return true
         } catch (e: Exception) {
+            Log.e("ParticipanteDAO", "salvarSorteio failed", e)
             return false
         } finally {
             database.endTransaction()
