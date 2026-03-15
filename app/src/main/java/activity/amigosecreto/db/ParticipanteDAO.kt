@@ -178,7 +178,8 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     fun listarPorGrupo(grupoId: Int): List<Participante> {
-        val lista = mutableListOf<Participante>()
+        // Pass 1 — fetch participants
+        val mapaParticipantes = linkedMapOf<Int, Participante>()
         val cursor = database.query(
             MySQLiteOpenHelper.TABLE_PARTICIPANTE, null,
             "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()),
@@ -200,14 +201,31 @@ class ParticipanteDAO(ctx: Context) {
                     p.telefone = it.getString(telefoneIdx)
                     if (!it.isNull(amigoIdx)) p.amigoSorteadoId = it.getInt(amigoIdx)
                     p.isEnviado = it.getInt(enviadoIdx) == 1
-                    // TODO: N+1 — listarExclusoes() is called per participant; replace with a single
-                    //  batch query (JOIN or IN clause) similar to contarDesejosPorGrupo()
-                    p.idsExcluidos = listarExclusoes(p.id).toMutableList()
-                    lista.add(p)
+                    mapaParticipantes[p.id] = p
                 } while (it.moveToNext())
             }
         }
-        return lista
+        if (mapaParticipantes.isEmpty()) return emptyList()
+
+        // Pass 2 — fetch all exclusions for the group in one query (eliminates N+1)
+        val ids = mapaParticipantes.keys.joinToString(",")
+        val exclCursor = database.rawQuery(
+            "SELECT ${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID}, ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID}" +
+            " FROM ${MySQLiteOpenHelper.TABLE_EXCLUSAO}" +
+            " WHERE ${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} IN ($ids)",
+            null
+        )
+        exclCursor.use {
+            if (it.moveToFirst()) {
+                val pidIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID)
+                val eidIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID)
+                do {
+                    mapaParticipantes[it.getInt(pidIdx)]?.idsExcluidos?.add(it.getInt(eidIdx))
+                } while (it.moveToNext())
+            }
+        }
+
+        return mapaParticipantes.values.toList()
     }
 
     private fun listarExclusoes(idParticipante: Int): List<Int> {

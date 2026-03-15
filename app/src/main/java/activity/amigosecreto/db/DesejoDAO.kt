@@ -128,12 +128,14 @@ class DesejoDAO(ctx: Context) {
      */
     fun contarDesejosPorGrupo(grupoId: Int): Map<Int, Int> {
         val mapa = mutableMapOf<Int, Int>()
-        val sql = "SELECT d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}, COUNT(*) AS cnt" +
-                " FROM ${MySQLiteOpenHelper.TABLE_DESEJO} d" +
-                " INNER JOIN ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} p" +
-                " ON d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = p.${MySQLiteOpenHelper.COLUMN_ID}" +
-                " WHERE p.${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?" +
-                " GROUP BY d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}"
+        val sql = """
+            SELECT d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}, COUNT(*) AS cnt
+            FROM ${MySQLiteOpenHelper.TABLE_DESEJO} d
+            INNER JOIN ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} p
+                ON d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = p.${MySQLiteOpenHelper.COLUMN_ID}
+            WHERE p.${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?
+            GROUP BY d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}
+        """.trimIndent()
         val cursor = database.rawQuery(sql, arrayOf(grupoId.toString()))
         cursor.use {
             if (it.moveToFirst()) {
@@ -151,17 +153,19 @@ class DesejoDAO(ctx: Context) {
      */
     fun listarDesejosPorGrupo(grupoId: Int): Map<Int, List<Desejo>> {
         val mapa = mutableMapOf<Int, MutableList<Desejo>>()
-        val sql = "SELECT d.${MySQLiteOpenHelper.COLUMN_ID}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_PRODUTO}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_CATEGORIA}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_PRECO_MINIMO}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_LOJAS}" +
-                ", d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}" +
-                " FROM ${MySQLiteOpenHelper.TABLE_DESEJO} d" +
-                " INNER JOIN ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} p" +
-                " ON d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = p.${MySQLiteOpenHelper.COLUMN_ID}" +
-                " WHERE p.${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?"
+        val sql = """
+            SELECT d.${MySQLiteOpenHelper.COLUMN_ID},
+                   d.${MySQLiteOpenHelper.COLUMN_PRODUTO},
+                   d.${MySQLiteOpenHelper.COLUMN_CATEGORIA},
+                   d.${MySQLiteOpenHelper.COLUMN_PRECO_MINIMO},
+                   d.${MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO},
+                   d.${MySQLiteOpenHelper.COLUMN_LOJAS},
+                   d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}
+            FROM ${MySQLiteOpenHelper.TABLE_DESEJO} d
+            INNER JOIN ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} p
+                ON d.${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = p.${MySQLiteOpenHelper.COLUMN_ID}
+            WHERE p.${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?
+        """.trimIndent()
         val cursor = database.rawQuery(sql, arrayOf(grupoId.toString()))
         cursor.use {
             if (it.moveToFirst()) {
