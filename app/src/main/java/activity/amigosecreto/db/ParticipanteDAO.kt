@@ -48,12 +48,19 @@ class ParticipanteDAO(ctx: Context) {
 
     fun remover(id: Int) {
         val idStr = id.toString()
-        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(idStr))
-        database.delete(
-            MySQLiteOpenHelper.TABLE_EXCLUSAO,
-            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
-            arrayOf(idStr, idStr)
-        )
+        database.beginTransaction()
+        try {
+            // Delete child records before parent to be FK-safe (schema v9 will add ON DELETE CASCADE)
+            database.delete(
+                MySQLiteOpenHelper.TABLE_EXCLUSAO,
+                "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
+                arrayOf(idStr, idStr)
+            )
+            database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(idStr))
+            database.setTransactionSuccessful()
+        } finally {
+            database.endTransaction()
+        }
     }
 
     fun deletarTodosDoGrupo(grupoId: Int) {
@@ -168,14 +175,22 @@ class ParticipanteDAO(ctx: Context) {
         )
         cursor.use {
             if (it.moveToFirst()) {
+                val idIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)
+                val nomeIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_NOME)
+                val emailIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_EMAIL)
+                val telefoneIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_TELEFONE)
+                val amigoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID)
+                val enviadoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ENVIADO)
                 do {
                     val p = Participante()
-                    p.id = it.getInt(0)
-                    p.nome = it.getString(1)
-                    p.email = it.getString(2)
-                    p.telefone = it.getString(3)
-                    if (!it.isNull(4)) p.amigoSorteadoId = it.getInt(4)
-                    p.isEnviado = it.getInt(5) == 1
+                    p.id = it.getInt(idIdx)
+                    p.nome = it.getString(nomeIdx)
+                    p.email = it.getString(emailIdx)
+                    p.telefone = it.getString(telefoneIdx)
+                    if (!it.isNull(amigoIdx)) p.amigoSorteadoId = it.getInt(amigoIdx)
+                    p.isEnviado = it.getInt(enviadoIdx) == 1
+                    // TODO: N+1 — listarExclusoes() is called per participant; replace with a single
+                    //  batch query (JOIN or IN clause) similar to contarDesejosPorGrupo()
                     p.idsExcluidos = listarExclusoes(p.id).toMutableList()
                     lista.add(p)
                 } while (it.moveToNext())

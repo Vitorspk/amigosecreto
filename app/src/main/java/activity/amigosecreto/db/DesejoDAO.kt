@@ -3,6 +3,7 @@ package activity.amigosecreto.db
 import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
+import android.database.sqlite.SQLiteException
 import android.util.Log
 
 class DesejoDAO(ctx: Context) {
@@ -54,15 +55,22 @@ class DesejoDAO(ctx: Context) {
         val cursor = database.rawQuery("SELECT * FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
         cursor.use {
             if (it.moveToFirst()) {
+                val idIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)
+                val prodIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRODUTO)
+                val catIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_CATEGORIA)
+                val minIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MINIMO)
+                val maxIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO)
+                val lojasIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_LOJAS)
+                val pidIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID)
                 do {
                     val d = Desejo()
-                    d.id = it.getInt(0)
-                    d.produto = it.getString(1)
-                    d.categoria = it.getString(2)
-                    d.precoMinimo = it.getDouble(3)
-                    d.precoMaximo = it.getDouble(4)
-                    d.lojas = it.getString(5)
-                    if (it.columnCount > 6) d.participanteId = it.getInt(6)
+                    d.id = it.getInt(idIdx)
+                    d.produto = it.getString(prodIdx)
+                    d.categoria = it.getString(catIdx)
+                    d.precoMinimo = it.getDouble(minIdx)
+                    d.precoMaximo = it.getDouble(maxIdx)
+                    d.lojas = it.getString(lojasIdx)
+                    d.participanteId = it.getInt(pidIdx)
                     lista.add(d)
                 } while (it.moveToNext())
             }
@@ -78,15 +86,22 @@ class DesejoDAO(ctx: Context) {
         )
         cursor.use {
             if (it.moveToFirst()) {
+                val idIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ID)
+                val prodIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRODUTO)
+                val catIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_CATEGORIA)
+                val minIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MINIMO)
+                val maxIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO)
+                val lojasIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_LOJAS)
+                val pidIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID)
                 do {
                     val d = Desejo()
-                    d.id = it.getInt(0)
-                    d.produto = it.getString(1)
-                    d.categoria = it.getString(2)
-                    d.precoMinimo = it.getDouble(3)
-                    d.precoMaximo = it.getDouble(4)
-                    d.lojas = it.getString(5)
-                    d.participanteId = it.getInt(6)
+                    d.id = it.getInt(idIdx)
+                    d.produto = it.getString(prodIdx)
+                    d.categoria = it.getString(catIdx)
+                    d.precoMinimo = it.getDouble(minIdx)
+                    d.precoMaximo = it.getDouble(maxIdx)
+                    d.lojas = it.getString(lojasIdx)
+                    d.participanteId = it.getInt(pidIdx)
                     lista.add(d)
                 } while (it.moveToNext())
             }
@@ -175,12 +190,12 @@ class DesejoDAO(ctx: Context) {
 
     fun proximoId(): Int {
         return try {
-            val cursor = database.rawQuery("SELECT MAX(id) FROM desejo", null)
+            val cursor = database.rawQuery("SELECT MAX(${MySQLiteOpenHelper.COLUMN_ID}) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
             cursor.use {
                 it.moveToFirst()
                 it.getInt(0) + 1
             }
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             Log.e("DesejoDAO", "proximoId failed", e)
             1
         }
@@ -200,8 +215,7 @@ class DesejoDAO(ctx: Context) {
             d.precoMinimo = it.getDouble(it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MINIMO))
             d.precoMaximo = it.getDouble(it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO))
             d.lojas = it.getString(it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_LOJAS))
-            val pidIdx = it.getColumnIndex(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID)
-            if (pidIdx >= 0) d.participanteId = it.getInt(pidIdx)
+            d.participanteId = it.getInt(it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID))
             d
         }
     }
