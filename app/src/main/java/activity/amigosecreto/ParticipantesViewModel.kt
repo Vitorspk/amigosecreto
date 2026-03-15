@@ -229,6 +229,7 @@ class ParticipantesViewModel @Inject constructor(
             val salvo = try {
                 participanteRepository.salvarSorteio(sortableSnapshot, sorteados)
             } catch (e: Exception) {
+                Log.e(TAG, "realizarSorteio: failed to save draw result", e)
                 false
             }
 
@@ -288,6 +289,8 @@ class ParticipantesViewModel @Inject constructor(
      *
      * Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
      * o share sheet (a API do ACTION_SEND não oferece callback de confirmação).
+     * A geração da mensagem ocorre antes de marcarComoEnviado — se gerar() lançar
+     * exceção, o participante não será marcado como enviado.
      */
     fun prepararMensagemCompartilhamento(participante: Participante) {
         executor.execute {
@@ -295,8 +298,8 @@ class ParticipantesViewModel @Inject constructor(
                 val amigoId = participante.amigoSorteadoId
                 val nomeAmigo = if (amigoId != null && amigoId > 0) participanteRepository.getNomeAmigoSorteado(amigoId) else null
                 val desejos: List<Desejo> = if (amigoId != null && amigoId > 0) desejoRepository.listarPorParticipante(amigoId) else emptyList()
-                participanteRepository.marcarComoEnviado(participante.id)
                 val mensagem = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos)
+                participanteRepository.marcarComoEnviado(participante.id)
                 postMain { _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem) }
             } catch (e: Exception) {
                 postMain { _errorMessage.value = getApplication<Application>().getString(R.string.error_load_share_data) }
