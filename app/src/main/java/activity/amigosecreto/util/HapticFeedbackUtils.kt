@@ -24,7 +24,7 @@ object HapticFeedbackUtils {
     /** Medium haptic feedback for important actions */
     @JvmStatic
     fun performMediumFeedback(view: View?) {
-        if (view == null) return
+        view ?: return
         val constant = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             HapticFeedbackConstants.CONFIRM
         else

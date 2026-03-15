@@ -2,6 +2,7 @@ package activity.amigosecreto.util
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -21,7 +22,7 @@ object AsyncDatabaseHelper {
                 val result = backgroundTask.doInBackground()
                 mainHandler.post { resultCallback?.onSuccess(result) }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("AsyncDatabaseHelper", "Background task failed", e)
                 mainHandler.post { resultCallback?.onError(e) }
             }
         }
@@ -34,7 +35,7 @@ object AsyncDatabaseHelper {
                 task.run()
                 if (callback != null) mainHandler.post(callback)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("AsyncDatabaseHelper", "Background task failed", e)
             }
         }
     }

@@ -3,9 +3,13 @@ package activity.amigosecreto.util
 import android.app.Activity
 import activity.amigosecreto.R
 
+// overridePendingTransition deprecated in API 34 (use overrideActivityTransition).
+// TODO: migrate to overrideActivityTransition() in Fase 10e (Activities migration).
+
 /**
  * Utility class for applying consistent animations across the app
  */
+@Suppress("DEPRECATION")
 object AnimationUtils {
 
     /** Apply slide transition when starting a new activity */
