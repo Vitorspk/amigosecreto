@@ -36,6 +36,8 @@ object AsyncDatabaseHelper {
                 if (callback != null) mainHandler.post(callback)
             } catch (e: Exception) {
                 Log.e("AsyncDatabaseHelper", "Background task failed", e)
+                // TODO: fase10d — com coroutines, a exceção propagará ao caller;
+                // por ora, executeSimple não tem callback de erro e o caller não recebe feedback.
             }
         }
     }

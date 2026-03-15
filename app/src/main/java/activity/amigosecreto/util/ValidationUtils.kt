@@ -34,6 +34,8 @@ object ValidationUtils {
         }
     }
 
+    // TODO: fase10e — mover strings de erro hardcoded (validateName/validateEmail/validatePhone)
+    //  para strings.xml; ValidationUtils não tem Context, então requer refactor via Activity.
     @JvmStatic
     fun validateName(editText: EditText): Boolean {
         val name = editText.text.toString().trim()

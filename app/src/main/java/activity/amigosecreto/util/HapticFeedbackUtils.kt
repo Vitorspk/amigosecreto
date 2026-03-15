@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.HapticFeedbackConstants
 import android.view.View
 
@@ -11,6 +12,19 @@ import android.view.View
  * Utility class for providing haptic feedback on user interactions
  */
 object HapticFeedbackUtils {
+
+    /**
+     * Returns the default Vibrator, using VibratorManager on API 31+ (VIBRATOR_SERVICE deprecated).
+     */
+    @Suppress("DEPRECATION")
+    private fun getVibrator(context: Context): Vibrator? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)
+                ?.defaultVibrator
+        } else {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    }
 
     /** Light haptic feedback for normal button presses */
     @JvmStatic
@@ -36,7 +50,7 @@ object HapticFeedbackUtils {
     @JvmStatic
     @Suppress("DEPRECATION")
     fun performStrongFeedback(context: Context) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        val vibrator = getVibrator(context) ?: return
         if (!vibrator.hasVibrator()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
@@ -49,7 +63,7 @@ object HapticFeedbackUtils {
     @JvmStatic
     @Suppress("DEPRECATION")
     fun performSuccessFeedback(context: Context) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        val vibrator = getVibrator(context) ?: return
         if (!vibrator.hasVibrator()) return
         val pattern = longArrayOf(0, 50, 50, 50, 50, 100)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -63,7 +77,7 @@ object HapticFeedbackUtils {
     @JvmStatic
     @Suppress("DEPRECATION")
     fun performErrorFeedback(context: Context) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        val vibrator = getVibrator(context) ?: return
         if (!vibrator.hasVibrator()) return
         val pattern = longArrayOf(0, 100, 50, 100)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -77,7 +91,7 @@ object HapticFeedbackUtils {
     @JvmStatic
     @Suppress("DEPRECATION")
     fun performCelebrationFeedback(context: Context) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        val vibrator = getVibrator(context) ?: return
         if (!vibrator.hasVibrator()) return
         val pattern = longArrayOf(0, 50, 50, 50, 50, 50, 50, 100, 50, 150)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
