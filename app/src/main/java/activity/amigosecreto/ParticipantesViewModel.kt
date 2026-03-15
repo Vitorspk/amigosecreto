@@ -22,6 +22,8 @@ import activity.amigosecreto.util.SorteioEngine
 @HiltViewModel
 class ParticipantesViewModel @Inject constructor(
     application: Application,
+    // var (not val) — required by @VisibleForTesting setRepositories() used in ParticipantesViewModelTest.java.
+    // TODO: Fase 10e — convert to val once ParticipantesViewModelTest migrates to Kotlin.
     private var participanteRepository: ParticipanteRepository,
     private var desejoRepository: DesejoRepository
 ) : AndroidViewModel(application) {
@@ -30,7 +32,8 @@ class ParticipantesViewModel @Inject constructor(
         private const val TAG = "ParticipantesViewModel"
     }
 
-    /** Resultado do sorteio — substitui sealed class (mantido compatível com Java). */
+    /** Resultado do sorteio — substitui sealed class (mantido compatível com Java).
+     *  TODO: Fase 10e — convert to sealed class once ParticipantesActivity migrates to Kotlin. */
     class SorteioResultado(@JvmField val status: Status) {
         enum class Status { SUCCESS, FAILURE_NOT_ENOUGH, FAILURE_IMPOSSIBLE }
     }
@@ -226,6 +229,10 @@ class ParticipantesViewModel @Inject constructor(
                 return@execute
             }
 
+            // Inline handling (not handleDbError) because the result drives a tri-state
+            // postMain block below: success reloads + posts SUCCESS, failure posts error_save_draw.
+            // handleDbError posts errorMessage directly via Handler.post, which would race with
+            // the postMain block and leave _isLoading stuck at true.
             val salvo = try {
                 participanteRepository.salvarSorteio(sortableSnapshot, sorteados)
             } catch (e: Exception) {
@@ -288,9 +295,13 @@ class ParticipantesViewModel @Inject constructor(
      * mensagemCompartilhamentoResult.
      *
      * Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
-     * o share sheet (a API do ACTION_SEND não oferece callback de confirmação).
-     * A geração da mensagem ocorre antes de marcarComoEnviado — se gerar() lançar
-     * exceção, o participante não será marcado como enviado.
+     * o share sheet (a API do ACTION_SEND não oferece callback de confirmação). Se o
+     * usuário abrir o chooser e cancelar, o participante ficará marcado como enviado.
+     *
+     * Ordem: gerar() é chamado antes de marcarComoEnviado(). Se gerar() lançar exceção,
+     * o participante não é marcado. Se marcarComoEnviado() lançar depois de gerar()
+     * ter retornado com sucesso, o catch posta error_load_share_data mesmo que a mensagem
+     * estivesse pronta — edge case aceitável dado que falha no banco nesse ponto é rara.
      */
     fun prepararMensagemCompartilhamento(participante: Participante) {
         executor.execute {
