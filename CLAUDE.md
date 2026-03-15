@@ -599,7 +599,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
 - [x] Migrar models para Kotlin — Fase 10a (PR #33)
 - [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
-- [ ] Migrar DAOs e Repositories para Kotlin — Fase 10c
+- [x] Migrar DAOs e Repositories para Kotlin — Fase 10c
 - [ ] Migrar ViewModel com coroutines — Fase 10d
 - [ ] Migrar Activities — Fase 10e
 
