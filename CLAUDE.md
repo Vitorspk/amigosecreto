@@ -65,9 +65,9 @@ app/src/main/java/activity/amigosecreto/
     ├── AnimationUtils.java                # animações reutilizáveis
     ├── AsyncDatabaseHelper.java           # operações assíncronas no banco
     ├── HapticFeedbackUtils.java           # feedback háptico (flags=0, respeita acessibilidade)
-    ├── MensagemSecretaBuilder.java        # formata mensagem de compartilhamento do sorteio
+    ├── MensagemSecretaBuilder.kt          # formata mensagem de compartilhamento do sorteio — Kotlin
     ├── SnackbarHelper.java                # mensagens padronizadas
-    ├── SorteioEngine.java                 # motor de sorteio (extraído para testabilidade)
+    ├── SorteioEngine.kt                   # motor de sorteio (extraído para testabilidade) — Kotlin
     ├── ValidationUtils.java               # validação centralizada de inputs
     └── WindowInsetsUtils.java             # IME padding, Locale pt-BR, formatação monetária
 ```
@@ -578,7 +578,8 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
 - [x] Migrar models para Kotlin — Fase 10a (PR #33)
-- [ ] Migrar utilitários (`util/`) para Kotlin — Fase 10b (próximo)
+- [x] Migrar utilitários puros (`MensagemSecretaBuilder`, `SorteioEngine`) — Fase 10b parcial
+- [ ] Migrar utilitários Android (`ValidationUtils`, `AnimationUtils`, `SnackbarHelper`, `HapticFeedbackUtils`, `AsyncDatabaseHelper`, `WindowInsetsUtils`) — Fase 10b restante
 - [ ] Migrar DAOs e Repositories para Kotlin — Fase 10c
 - [ ] Migrar ViewModel com coroutines — Fase 10d
 - [ ] Migrar Activities — Fase 10e
