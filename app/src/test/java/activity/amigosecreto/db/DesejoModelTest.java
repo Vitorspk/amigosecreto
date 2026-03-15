@@ -48,11 +48,14 @@ public class DesejoModelTest {
         assertEquals(10, d.getParticipanteId());
     }
 
+    // equals/hashCode are based on id only (plain class, not data class).
+    // Identity is the DB primary key — mutable fields do not affect equality.
+
     @Test
-    public void equals_sameFields_isEqual() {
+    public void equals_mesmoId_isEqual() {
         Desejo a = buildDesejo();
         Desejo b = buildDesejo();
-        assertEquals(a, b);
+        assertEquals(a, b); // same id=1
     }
 
     @Test
@@ -64,19 +67,20 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void equals_differentParticipanteId_notEqual() {
-        Desejo a = buildDesejo();
-        Desejo b = buildDesejo();
-        b.setParticipanteId(b.getParticipanteId() + 1);
-        assertNotEquals(a, b);
-    }
-
-    @Test
-    public void equals_differentProduto_notEqual() {
+    public void equals_mesmoId_diferenteProduto_aindaEqual() {
+        // equals uses id only — changing other fields must not affect equality
         Desejo a = buildDesejo();
         Desejo b = buildDesejo();
         b.setProduto("Outro produto");
-        assertNotEquals(a, b);
+        assertEquals(a, b); // same id → still equal
+    }
+
+    @Test
+    public void equals_mesmoId_diferenteParticipanteId_aindaEqual() {
+        Desejo a = buildDesejo();
+        Desejo b = buildDesejo();
+        b.setParticipanteId(b.getParticipanteId() + 1);
+        assertEquals(a, b); // same id → still equal
     }
 
     @Test
@@ -91,10 +95,10 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void hashCode_equalObjects_sameHash() {
+    public void hashCode_mesmoId_sameHash() {
         Desejo a = buildDesejo();
         Desejo b = buildDesejo();
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(a.hashCode(), b.hashCode()); // same id → same hash
     }
 
     @Test
@@ -121,7 +125,8 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void nullCategoria_equalsHandled() {
+    public void nullCategoria_naoAfetaEquals() {
+        // equals uses id only — null fields must not affect equality
         Desejo a = buildDesejo();
         a.setCategoria(null);
         Desejo b = buildDesejo();
@@ -130,7 +135,7 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void nullLojas_equalsHandled() {
+    public void nullLojas_naoAfetaEquals() {
         Desejo a = buildDesejo();
         a.setLojas(null);
         Desejo b = buildDesejo();
@@ -139,7 +144,7 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void nullProduto_equalsHandled() {
+    public void nullProduto_naoAfetaEquals() {
         Desejo a = buildDesejo();
         a.setProduto(null);
         Desejo b = buildDesejo();
@@ -156,10 +161,10 @@ public class DesejoModelTest {
     }
 
     @Test
-    public void hashCode_differentParticipanteId_differentHash() {
-        Desejo a = buildDesejo();
+    public void hashCode_differentId_differentHash() {
+        Desejo a = buildDesejo(); // id=1
         Desejo b = buildDesejo();
-        b.setParticipanteId(b.getParticipanteId() + 1);
+        b.setId(2);
         assertNotEquals(a.hashCode(), b.hashCode());
     }
 }

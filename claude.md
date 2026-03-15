@@ -6,12 +6,12 @@
 
 | Campo | Valor |
 |-------|-------|
-| Versão atual | 2.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
+| Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
 | Target / Compile SDK | 35 (Android 15) |
-| Linguagem | Java 17 |
+| Linguagem | Java 17 → Kotlin (migração em andamento — Fase 10) |
 | Branch principal | `master` |
 
 ---
@@ -47,11 +47,11 @@ app/src/main/java/activity/amigosecreto/
 │
 ├── db/
 │   ├── MySQLiteOpenHelper.java            # schema SQLite v8 + migrações
-│   ├── Grupo.java                         # model de grupo (Serializable)
+│   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
 │   ├── GrupoDAO.java                      # CRUD de grupos
-│   ├── Participante.java                  # model de participante (Serializable)
+│   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
 │   ├── ParticipanteDAO.java               # CRUD + exclusões + sorteio + transações atômicas
-│   ├── Desejo.java                        # model de desejo (Serializable)
+│   ├── Desejo.kt                          # model de desejo (Parcelable) — Kotlin
 │   └── DesejoDAO.java                     # CRUD de desejos + batch queries (N+1 eliminado)
 │
 ├── di/
@@ -97,14 +97,14 @@ documents/
 ### Deploy para Produção (tag)
 
 ```bash
-git tag v2.x
-git push origin v2.x
+git tag v3.x
+git push origin v3.x
 ```
 
 **Workflow:** `.github/workflows/release.yml`
-- Trigger: push de tag `v*` (formato: `v2.1` ou `v2.1.0`)
+- Trigger: push de tag `v*` (formato: `v3.0` ou `v3.0.0`)
 - versionCode: `100 + git rev-list --count HEAD`
-- versionName: extraído da tag (`v2.1` → `2.1`)
+- versionName: extraído da tag (`v3.0` → `3.0`)
 - Steps: checkout → JDK 21 → lint → testes → `bundleRelease` → Play Store (production) → GitHub Release
 - Todas as actions pinadas por commit SHA
 
@@ -116,7 +116,7 @@ git push origin master
 
 **Workflow:** `.github/workflows/ci.yml`
 - Trigger: push no master (excluindo tags `v*`)
-- versionName: `2.0-dev.<short-sha>`
+- versionName: `3.0-dev.<short-sha>`
 - Track: **internal** (QA antes de produção)
 - `cancel-in-progress: true`
 
@@ -247,7 +247,7 @@ CREATE TABLE desejo (
 ### Dependências
 ```gradle
 implementation 'com.google.dagger:hilt-android:2.51.1'
-annotationProcessor 'com.google.dagger:hilt-compiler:2.51.1'
+kapt 'com.google.dagger:hilt-compiler:2.51.1'
 
 implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
@@ -399,7 +399,7 @@ Menu Global
 
 ```bash
 # Produção (Play Store):
-git tag v2.x && git push origin v2.x
+git tag v3.x && git push origin v3.x
 
 # Interno (QA):
 git push origin master
@@ -529,6 +529,44 @@ Ver `documents/TEST_PLAN.md` para descrição detalhada das Fases 1–3 e progre
 
 ---
 
+## Model Layer — Decisões de Design (PR #33)
+
+### Por que plain class e não data class?
+
+`Participante` e `Grupo` são plain classes; `Desejo` também é plain class com `equals`/`hashCode` explícitos.
+`data class` gera `equals`/`hashCode` baseados em campos — com `var` fields mutáveis, objetos inseridos em coleções ficam inencontráveis após mutação. Plain class usa referência por padrão (ou override explícito de id).
+
+### equals/hashCode por id (Desejo)
+
+`Desejo.equals` e `hashCode` usam apenas `id` (chave primária do banco). Mudança semântica em relação ao Java (que comparava todos os campos). Auditado: nenhum call site de produção usa `contains`/`remove`/`Set`/`Map` com `Desejo` — todos os usos são `List<Desejo>` iterada por índice.
+
+### var fields e DAOs Java
+
+Os três models usam `var` porque os DAOs Java populam instâncias via setters após construção:
+- `GrupoDAO.java` — `new Grupo()` depois `setId()`, `setNome()`, `setData()`
+- `ParticipanteDAO.java` — `new Participante()` depois setters por coluna
+- `DesejoDAO.java` — `new Desejo()` depois setters por coluna
+
+Quando os DAOs migrarem para Kotlin/Room (TODOs `fase10-dao`), os fields viram `val` e a construção via construtor primário elimina os setters.
+
+### serialVersionUID em companion object
+
+`private const val serialVersionUID: Long = 1L` em `companion object` compila para `ConstantValue: long 1l` no outer class (verificado via `javap`). Java serialization lê corretamente — não é necessário `@JvmStatic` ou `@JvmField`.
+
+### Construtores de Desejo
+
+`Desejo` tem construtor primário (no-arg, usado pelos DAOs) e um secundário `Desejo(id, produto)` que preserva o call site Java nos testes. `@JvmOverloads` foi removido — gerava 8 overloads, dos quais 6 eram inutilizados.
+
+### toString() null → ""
+
+`Grupo.toString()` e `Participante.toString()` retornam `""` para `nome` nulo (Kotlin `String` não aceita `null`). Java retornava `null`. Auditado: GruposActivity usa `getNome()` diretamente, não `toString()` implícito — sem regressão de UI.
+
+### codigoAcesso (campo órfão)
+
+`Participante.codigoAcesso` existe no model mas não tem coluna `codigo_acesso` no schema v8 e não é lido/gravado por nenhum DAO. Decisão pendente: adicionar via migration (schema v9) ou remover no cleanup de Fase 10.
+
+---
+
 ## Próximas Melhorias
 
 Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizado.
@@ -539,7 +577,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Implementar Repository pattern (PR #19)
 - [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
 - [x] Adicionar Dependency Injection (Hilt) — PR #29
-- [ ] Migrar para Kotlin
+- [ ] Migrar para Kotlin (Fase 10 — em andamento)
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)

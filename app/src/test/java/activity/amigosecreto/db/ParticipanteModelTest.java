@@ -75,10 +75,27 @@ public class ParticipanteModelTest {
     }
 
     @Test
+    public void setIdsExcluidos_comArraysAsList_continuaMutavel() {
+        // Arrays.asList returns a fixed-size list; the setter must defensively copy it
+        // so that subsequent add() calls do not throw UnsupportedOperationException.
+        Participante p = new Participante();
+        p.setIdsExcluidos(Arrays.asList(1, 2, 3));
+        p.getIdsExcluidos().add(4); // would throw UOE without defensive copy
+        assertEquals(4, p.getIdsExcluidos().size());
+        assertTrue(p.getIdsExcluidos().contains(4));
+    }
+
+    @Test
     public void toString_retorna_nome() {
         Participante p = new Participante();
         p.setNome("Joao");
         assertEquals("Joao", p.toString());
+    }
+
+    @Test
+    public void toString_com_nome_null_retorna_string_vazia() {
+        Participante p = new Participante();
+        assertEquals("", p.toString());
     }
 
     @Test

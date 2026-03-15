@@ -1,5 +1,8 @@
 plugins {
     id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
+    id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
 }
 
@@ -24,7 +27,7 @@ android {
             : 9
         versionName project.hasProperty('ciVersionName')
             ? project.property('ciVersionName')
-            : "2.0"
+            : "3.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -94,6 +97,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
     // Configura Robolectric para carregar recursos binários compilados (necessário para getString)
     testOptions {
         unitTests {
@@ -115,10 +122,19 @@ android {
     }
 }
 
+// kapt uses the K2 compiler stub generation in Kotlin 2.x. If Hilt annotation processing
+// breaks after a Kotlin upgrade, migrate to KSP (kotlin-symbol-processing) as kapt
+// is in maintenance mode. See: https://kotlinlang.org/docs/ksp-overview.html
+kapt {
+    correctErrorTypes = true
+}
+
 dependencies {
     // Dependency Injection — Hilt
     implementation 'com.google.dagger:hilt-android:2.51.1'
-    annotationProcessor 'com.google.dagger:hilt-compiler:2.51.1'
+    kapt 'com.google.dagger:hilt-compiler:2.51.1'
+
+    // kotlin-stdlib is added automatically by the kotlin-android plugin (since 1.4)
 
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'

@@ -48,9 +48,10 @@ public class GrupoModelTest {
     }
 
     @Test
-    public void toString_com_nome_null_retorna_null() {
+    public void toString_com_nome_null_retorna_string_vazia() {
+        // Kotlin toString() retorna "" quando nome é null (String não pode ser null em Kotlin)
         Grupo g = new Grupo();
-        assertNull(g.toString());
+        assertEquals("", g.toString());
     }
 
     @Test
