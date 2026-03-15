@@ -500,12 +500,12 @@ app/src/test/java/activity/amigosecreto/
     └── ValidationUtilsTest.java         # validações de input e regex
 ```
 
-### Cobertura Atual (266 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (283 testes — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
 | Util | `MensagemSecretaBuilderTest` | 24 |
-| Util | `ValidationUtilsTest` | 19 |
+| Util | `ValidationUtilsTest` | 36 |
 | Util | `SorteioEngineTest` | 11 |
 | Util | `FormatarPrecoTest` | 12 |
 | Model | `DesejoModelTest` | 18 |

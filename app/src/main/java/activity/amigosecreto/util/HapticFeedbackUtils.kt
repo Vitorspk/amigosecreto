@@ -46,6 +46,10 @@ object HapticFeedbackUtils {
         view.performHapticFeedback(constant, 0 /* respect user accessibility settings */)
     }
 
+    // TODO: fase10e — performStrongFeedback e similares chamam vibrator.vibrate() diretamente,
+    //  sem verificar Settings.System.HAPTIC_FEEDBACK_ENABLED. Usuários que desativaram vibração
+    //  ainda a recebem. Pré-existente no Java; corrigir quando Activities migrarem para Kotlin.
+
     /** Strong haptic feedback for critical actions or errors */
     @JvmStatic
     @Suppress("DEPRECATION")

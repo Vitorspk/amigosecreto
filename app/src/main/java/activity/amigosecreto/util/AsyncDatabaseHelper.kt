@@ -12,6 +12,8 @@ import java.util.concurrent.Executors
  */
 object AsyncDatabaseHelper {
 
+    // TODO: fase10d — singleton com pool fixo: após shutdown() (ex: Application.onTerminate()),
+    //  chamadas subsequentes a execute() lançam RejectedExecutionException. Desaparece com coroutines.
     private val executor: ExecutorService = Executors.newFixedThreadPool(4)
     private val mainHandler: Handler = Handler(Looper.getMainLooper())
 

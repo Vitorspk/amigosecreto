@@ -23,8 +23,8 @@ object ValidationUtils {
 
     @JvmStatic
     fun validateNotEmpty(editText: EditText, errorMessage: String): Boolean {
-        val text = editText.text.toString().trim()
-        return if (text.isEmpty()) {
+        val text = editText.text.toString()
+        return if (text.isBlank()) {
             editText.error = errorMessage
             editText.requestFocus()
             false

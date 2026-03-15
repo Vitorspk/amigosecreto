@@ -9,23 +9,25 @@ import activity.amigosecreto.R
 /**
  * Utility class for applying consistent animations across the app
  */
-@Suppress("DEPRECATION")
 object AnimationUtils {
 
     /** Apply slide transition when starting a new activity */
     @JvmStatic
+    @Suppress("DEPRECATION")
     fun applySlideTransition(activity: Activity) {
         activity.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     /** Apply slide transition when finishing/going back */
     @JvmStatic
+    @Suppress("DEPRECATION")
     fun applySlideBackTransition(activity: Activity) {
         activity.overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 
     /** Apply fade transition */
     @JvmStatic
+    @Suppress("DEPRECATION")
     fun applyFadeTransition(activity: Activity) {
         activity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
     }
