@@ -10,8 +10,13 @@ import kotlinx.parcelize.Parcelize
 // at that point, constructor injection replaces setter-based population.
 // equals/hashCode use id only (not all fields) — safe to use in HashMap/HashSet/TreeSet
 // because identity is determined by DB primary key, not by mutable field values.
+// Semantic change from Java: old Java equals compared all fields; new equals compares only id.
+// Audited: no production call site depends on field-based equality (all Desejo collections
+// are List<Desejo> iterated by index; no contains/remove/Set/Map usage found).
 // WARNING: two Desejo objects with the same id but different fields compare as equal —
 // do not rely on equals for value comparison; use field accessors directly.
+// serialVersionUID: 'const val' in companion object compiles to a ConstantValue attribute
+// (private static final long) on the outer class — confirmed via javap. Value is 1L.
 // @JvmOverloads generates 8 constructor overloads (one per defaulted parameter). The only
 // call sites in production are Desejo() (no-arg, used by DAOs) and Desejo(int, String)
 // (used in legacy Java tests); the remaining 6 overloads are unused but harmless.

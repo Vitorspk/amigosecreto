@@ -29,6 +29,8 @@ class Participante(
         set(value) { field = ArrayList(value) }
 
     companion object {
+        // 'const val' compiles to a ConstantValue attribute (private static final long) on the
+        // outer class — confirmed via javap. Java serialization reads it correctly at value 1L.
         private const val serialVersionUID: Long = 1L
     }
 
