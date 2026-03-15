@@ -99,8 +99,7 @@ class DesejoDAO(ctx: Context) {
             arrayOf(participanteId.toString())
         )
         return cursor.use {
-            it.moveToFirst()
-            it.getInt(0)
+            if (it.moveToFirst()) it.getInt(0) else 0
         }
     }
 
@@ -181,7 +180,14 @@ class DesejoDAO(ctx: Context) {
      * Mantido por compatibilidade com Activities Java ainda não migradas — não remover até Fase 10e.
      * Nota: inserir() já seta desejo.id via AUTOINCREMENT; este método tem race condition potencial
      * em ambiente multi-thread. Migrar call sites para depender apenas de inserir() quando possível.
+     *
+     * @deprecated Use [inserir] instead — it sets [Desejo.id] from AUTOINCREMENT without a race condition.
+     *   This method is kept until InserirDesejoActivity and ParticipanteDesejosActivity migrate to Kotlin (Fase 10e).
      */
+    @Deprecated(
+        message = "Use inserir() instead — sets Desejo.id via AUTOINCREMENT without race condition.",
+        replaceWith = ReplaceWith("inserir(desejo)")
+    )
     fun proximoId(): Int {
         return try {
             val cursor = database.rawQuery("SELECT MAX(${MySQLiteOpenHelper.COLUMN_ID}) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)

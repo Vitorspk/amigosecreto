@@ -50,6 +50,8 @@ class GrupoDAO(ctx: Context) {
                 arrayOf(id.toString()),
                 null, null, null
             )
+            // TODO: when schema v9 adds ON DELETE CASCADE on exclusao and desejo FKs,
+            //  this per-participant loop becomes dead code and can be removed.
             cursor.use {
                 if (it.moveToFirst()) {
                     do {

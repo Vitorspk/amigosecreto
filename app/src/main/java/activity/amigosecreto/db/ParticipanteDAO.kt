@@ -4,9 +4,16 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteException
 import android.util.Log
 
 class ParticipanteDAO(ctx: Context) {
+
+    companion object {
+        // TODO: move to strings.xml when RevelarAmigoActivity migrates to Kotlin (Fase 10e)
+        //  and getNomeAmigoSorteado() can return String? instead.
+        const val NOME_AMIGO_DESCONHECIDO = "Ninguém"
+    }
 
     private val helper = MySQLiteOpenHelper(ctx)
     private lateinit var database: SQLiteDatabase
@@ -150,6 +157,10 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     fun salvarSorteio(participantes: List<Participante>, sorteados: List<Participante>): Boolean {
+        if (participantes.size != sorteados.size) {
+            Log.e("ParticipanteDAO", "salvarSorteio: list size mismatch (${participantes.size} vs ${sorteados.size})")
+            return false
+        }
         database.beginTransaction()
         try {
             for (i in participantes.indices) {
@@ -164,7 +175,7 @@ class ParticipanteDAO(ctx: Context) {
             }
             database.setTransactionSuccessful()
             return true
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             Log.e("ParticipanteDAO", "salvarSorteio failed", e)
             return false
         } finally {
@@ -245,7 +256,7 @@ class ParticipanteDAO(ctx: Context) {
         // which calls the DAO directly. TODO: migrate to String? return in Fase 10e when
         // RevelarAmigoActivity migrates to Kotlin.
         return cursor.use {
-            if (it.moveToFirst()) it.getString(0) else "Ninguém"
+            if (it.moveToFirst()) it.getString(0) else NOME_AMIGO_DESCONHECIDO
         }
     }
 
