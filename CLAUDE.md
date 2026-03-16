@@ -33,7 +33,7 @@ app/src/main/java/activity/amigosecreto/
 ├── AmigoSecretoApplication.java           # @HiltAndroidApp — ponto de entrada do Hilt
 ├── GruposActivity.java                    # LAUNCHER — tela principal, gerenciar grupos
 ├── ParticipantesActivity.java             # @AndroidEntryPoint — gerenciar participantes de um grupo
-├── ParticipantesViewModel.java            # @HiltViewModel — lógica de negócio + LiveData
+├── ParticipantesViewModel.kt              # @HiltViewModel — lógica de negócio + LiveData — Kotlin
 ├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
 ├── ParticipanteDesejosActivity.java       # ver desejos de um participante
 ├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
@@ -283,11 +283,15 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Testes de ViewModel instanciam o ViewModel diretamente via construtor (sem Hilt no unit test)
 
 ### MVVM (ParticipantesActivity)
-- `ParticipantesViewModel extends AndroidViewModel` com `LiveData` para todos os estados
+- `ParticipantesViewModel : AndroidViewModel` com `LiveData` para todos os estados — Kotlin (PR #39)
 - Todas as operações de banco executadas via `ExecutorService` (thread de background)
-- Resultados postados de volta ao main thread via `Handler(Looper.getMainLooper())`
+- Resultados postados de volta ao main thread via `Handler(Looper.getMainLooper())` ou `postValue`
 - Activity apenas observa LiveData e não toca diretamente nos repositórios
 - `InstantTaskExecutorRule` + `syncExecutor` para testes determinísticos
+- `@JvmField` nos campos dos result classes — acesso direto de `ParticipantesActivity.java`
+- `@get:JvmName("getIsLoading")` — Kotlin gera `isLoading()` para Boolean; Java espera `getIsLoading()`
+- `private var` repositories — requerido por `@VisibleForTesting setRepositories()` usado nos testes Java
+- `@Volatile grupoId` — escrito no main thread, lido em background threads do executor
 
 ### Repository Pattern (ParticipantesActivity)
 - `ParticipanteRepository` / `DesejoRepository` desacoplam ViewModel dos DAOs
@@ -595,6 +599,42 @@ Ao remover participante/grupo: exclusao → desejo → participante → grupo. S
 
 ---
 
+## ViewModel Layer — Decisões de Design (PR #39)
+
+### Java interop — result classes com @JvmField
+
+`SorteioResultado`, `MensagensSmsResultado` e `MensagemCompartilhamentoResultado` são inner classes com `@JvmField val` nos campos. `@JvmField` elimina o getter gerado pelo Kotlin, permitindo acesso direto de `ParticipantesActivity.java` (`resultado.participante`, `resultado.mensagem` sem `.getParticipante()`). **TODO:** Fase 10e — remover `@JvmField` ao migrar a Activity para Kotlin.
+
+### @get:JvmName("getIsLoading")
+
+`isLoading: LiveData<Boolean>` gera `isLoading()` por padrão em Kotlin. `ParticipantesActivity.java` e `ParticipantesViewModelTest.java` esperam `getIsLoading()` (convenção JavaBean para Boolean). `@get:JvmName("getIsLoading")` força o nome correto sem alterar a API Kotlin.
+
+### private var repositories
+
+`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `ParticipantesViewModelTest.java` chama `setRepositories()` anotado com `@VisibleForTesting` para injetar fakes. Kotlin classes requerem `var` para reassignment. **TODO:** Fase 10e — converter para `val`, remover `setRepositories()` e migrar injeção de fakes para construtor ou `@TestInstallIn` do Hilt.
+
+### ExecutorService + Handler em vez de coroutines
+
+A Fase 10d manteve `ExecutorService` + `Handler(Looper.getMainLooper())` em vez de migrar para coroutines — a migração de threading é independente da migração de linguagem e tem escopo maior (requer `viewModelScope`, `Dispatchers.IO`, suspending repositories). **TODO:** Fase 10e ou posterior — avaliar migrar para coroutines após a migração das Activities, quando `ParticipantesViewModelTest` também estiver em Kotlin e puder usar `TestCoroutineDispatcher`/`UnconfinedTestDispatcher`.
+
+### handleDbError() — padrão de tratamento de erros
+
+Todos os catch blocks chamam `handleDbError(e, logMsg, errorStringRes)` que: (1) loga via `Log.e` com stack trace, (2) posta `errorMessage` no main thread. Exceções nunca são relançadas de dentro do executor — relançar de `Runnable` vai para `UncaughtExceptionHandler` sem feedback ao usuário.
+
+### realizarSorteio — inline try/catch
+
+`realizarSorteio` usa try/catch inline (não `handleDbError`) porque o resultado conduz um bloco `postMain` tri-state: sucesso recarrega + posta SUCCESS, falha posta `error_save_draw`. `handleDbError` postaria `errorMessage` diretamente via `Handler.post`, criando race condition com o bloco `postMain` e deixando `_isLoading` preso em `true`.
+
+### takeIf { it > 0 } para amigoSorteadoId
+
+`p.amigoSorteadoId?.takeIf { it > 0 }` substitui o duplo guard Java (`!= null && > 0`) em `prepararMensagensSms` e `prepararMensagemCompartilhamento`. `amigoSorteadoId = 0` indica "não sorteado" no schema — sem o guard, `nomeMap[0]` ou `desejosMap[0]` retornariam dados do participante errado.
+
+### Ordem em prepararMensagemCompartilhamento
+
+`MensagemSecretaBuilder.gerar()` é chamado **antes** de `marcarComoEnviado()`. Se `gerar()` lançar exceção, o participante não é marcado. Inverter a ordem causaria marcação sem mensagem entregue (bug de dados silencioso). Ver KDoc do método.
+
+---
+
 ## Utility Layer — Decisões de Design (PR #36)
 
 ### trim() em produto/categoria/lojas (MensagemSecretaBuilder)
@@ -628,7 +668,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar models para Kotlin — Fase 10a (PR #33)
 - [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
 - [x] Migrar DAOs e Repositories para Kotlin — Fase 10c (PR #38)
-- [ ] Migrar ViewModel com coroutines — Fase 10d
+- [x] Migrar ViewModel para Kotlin — Fase 10d (PR #39)
 - [ ] Migrar Activities — Fase 10e
 
 ### Qualidade
