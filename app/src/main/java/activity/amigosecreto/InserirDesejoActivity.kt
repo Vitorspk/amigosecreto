@@ -109,6 +109,7 @@ class InserirDesejoActivity : AppCompatActivity() {
                 override fun onError(e: Exception) {
                     if (isDestroyed || isFinishing) return
                     btnSalvar.isEnabled = true
+                    invalidateOptionsMenu() // re-enables menu_salvar if triggered via toolbar
                     val msg = e.message ?: getString(R.string.error_unknown)
                     Toast.makeText(this@InserirDesejoActivity, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
                 }
