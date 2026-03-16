@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import kotlin.collections.Collection
 
 /**
  * Testes unitários de ParticipantesViewModel via Robolectric + InstantTaskExecutorRule.
@@ -66,10 +67,11 @@ class ParticipantesViewModelTest {
         override fun submit(task: Runnable): Future<*> {
             task.run(); return CompletableFuture.completedFuture(null)
         }
-        override fun <T> invokeAll(tasks: kotlin.collections.Collection<Callable<T>>): List<Future<T>> = emptyList()
-        override fun <T> invokeAll(tasks: kotlin.collections.Collection<Callable<T>>, timeout: Long, unit: TimeUnit): List<Future<T>> = emptyList()
-        override fun <T> invokeAny(tasks: kotlin.collections.Collection<Callable<T>>): T? = null
-        override fun <T> invokeAny(tasks: kotlin.collections.Collection<Callable<T>>, timeout: Long, unit: TimeUnit): T? = null
+        override fun <T> invokeAll(tasks: Collection<Callable<T>>): List<Future<T>> = emptyList()
+        override fun <T> invokeAll(tasks: Collection<Callable<T>>, timeout: Long, unit: TimeUnit): List<Future<T>> = emptyList()
+        // invokeAny não é chamado pelo código de produção; lança para tornar violação de contrato explícita.
+        override fun <T> invokeAny(tasks: Collection<Callable<T>>): T = throw UnsupportedOperationException("invokeAny não suportado pelo syncExecutor")
+        override fun <T> invokeAny(tasks: Collection<Callable<T>>, timeout: Long, unit: TimeUnit): T = throw UnsupportedOperationException("invokeAny não suportado pelo syncExecutor")
     }
 
     @Before

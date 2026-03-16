@@ -94,6 +94,8 @@ class DesejoParcelableTest {
     fun parcel_roundTrip_equalsOriginal() {
         val original = buildDesejo()
         val restored = parcelRoundTrip(original)
+        // Desejo.equals() compara apenas o campo `id` — os demais campos são verificados
+        // individualmente nos testes acima (parcel_categoriaNull, parcel_lojasNull, etc.).
         assertEquals(original, restored)
     }
 }

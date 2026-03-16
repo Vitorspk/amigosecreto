@@ -54,6 +54,7 @@ class FormatarPrecoTest {
 
     @Test
     fun ieee754_arredonda_para_duas_casas() {
+        // NumberFormat arredonda automaticamente para 2 casas — imprecisões IEEE 754 irrelevantes.
         assertEquals("100,00", MensagemSecretaBuilder.formatarPreco(100.0000000001))
     }
 
