@@ -311,7 +311,7 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 **Shims Java interop removidos:**
 - `@JvmField` de `SorteioResultado`, `MensagensSmsResultado`, `MensagemCompartilhamentoResultado` em `ParticipantesViewModel.kt`
 - `@get:JvmName("getIsLoading")` de `ParticipantesViewModel.kt`
-- `SorteioEngine.tentarSorteio(list, random)` convertido de `public @JvmStatic` para `internal @VisibleForTesting`
+- `SorteioEngine.tentarSorteio(list, random)` convertido de `public` para `internal @VisibleForTesting` (a anotação `@JvmStatic` pertence ao overload público `tentarSorteio(list)`, que não era shim e permanece inalterado)
 
 **TODOs pendentes pós-Fase 10f:**
 - Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` (requer refatorar `InserirDesejoActivity.kt`)
@@ -458,6 +458,6 @@ O app atingiu nível profissional. As fases de infraestrutura foram concluídas;
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
 - Fases 10a–10f concluídas: **todo o código de produção e todos os 18 arquivos de teste em Kotlin** (PR #33, #36/#37, #38, #39, #41, #43)
-- Zero shims de interop Java (`@JvmField`, `@get:JvmName`, `public @JvmStatic`) nas classes de produção
+- Zero shims de interop Java (`@JvmField`, `@get:JvmName`, visibilidade `public` desnecessária) nas classes de produção
 
 **Próximo passo:** Cleanup pós-migração — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity`.

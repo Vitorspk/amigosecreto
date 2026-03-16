@@ -486,6 +486,7 @@ app/src/test/java/activity/amigosecreto/
 ├── ParticipantesViewModelTest.kt      # ViewModel — Robolectric + InstantTaskExecutorRule
 ├── db/
 │   ├── DesejoDAOBatchQueryTest.kt     # contarDesejosPorGrupo / listarDesejosPorGrupo (Robolectric)
+│   ├── DesejoDAOTest.kt               # CRUD de desejos (Robolectric)
 │   ├── DesejoModelTest.kt             # model Desejo — Serializable
 │   ├── DesejoParcelableTest.kt        # Parcelable round-trip — @Parcelize via reflexão
 │   ├── GrupoDAOTest.kt                # CRUD de grupos (Robolectric)
@@ -643,7 +644,7 @@ No Java original, `trim()` era usado apenas na validação (`isEmpty()` após `t
 
 ### tentarSorteio(list, random) — visibilidade internal (PR #43)
 
-O overload com `Random` é agora `internal @VisibleForTesting` — `SorteioEngineTest.kt` (Kotlin) acessa diretamente. Encapsulamento restabelecido: o overload não faz parte da API pública do módulo.
+O overload com `Random` era `public` (para ser acessível de `SorteioEngineTest.java`); agora é `internal @VisibleForTesting` — `SorteioEngineTest.kt` (Kotlin) acessa diretamente. Encapsulamento restabelecido. O overload público `tentarSorteio(list)` mantém `@JvmStatic` e continua `public` — não era shim e não foi alterado.
 
 ### java.util.Random em SorteioEngine
 
