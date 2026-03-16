@@ -41,6 +41,9 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_participante_desejos)
 
+        desejoDAO = DesejoDAO(this)
+        desejoDAO.open()
+
         @Suppress("DEPRECATION")
         val p = intent.getSerializableExtra("participante") as? Participante
         if (p == null) {
@@ -49,9 +52,6 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             return
         }
         participante = p
-
-        desejoDAO = DesejoDAO(this)
-        desejoDAO.open()
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.title = "${participante.nome} 🎁"
@@ -203,14 +203,22 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             val desejo = desejos[position]
 
             view.findViewById<TextView>(R.id.tv_item_produto).text = desejo.produto
-            view.findViewById<TextView>(R.id.tv_item_categoria).text = desejo.categoria
+
+            val tvCategoria = view.findViewById<TextView>(R.id.tv_item_categoria)
+            if (!desejo.categoria.isNullOrEmpty()) {
+                tvCategoria.text = desejo.categoria
+                tvCategoria.visibility = View.VISIBLE
+            } else {
+                tvCategoria.visibility = View.GONE
+            }
 
             val tvPreco = view.findViewById<TextView>(R.id.tv_item_preco)
             if (desejo.precoMinimo > 0 || desejo.precoMaximo > 0) {
                 val nf = WindowInsetsUtils.numberFormatPtBr()
                 tvPreco.text = "R$ ${nf.format(desejo.precoMinimo)} - R$ ${nf.format(desejo.precoMaximo)}"
+                tvPreco.visibility = View.VISIBLE
             } else {
-                tvPreco.text = ""
+                tvPreco.visibility = View.GONE
             }
 
             view.setOnClickListener { mostrarOpcoesDesejo(desejo) }
