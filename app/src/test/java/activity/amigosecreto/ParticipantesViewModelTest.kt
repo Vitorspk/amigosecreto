@@ -188,7 +188,7 @@ class ParticipantesViewModelTest {
     fun carregarParticipantes_setsIsLoadingFalseAfterCompletion() {
         viewModel.init(grupoId)
         idleMainLooper()
-        assertFalse(true == viewModel.isLoading.value)
+        assertNotEquals(true, viewModel.isLoading.value)
     }
 
     @Test
@@ -320,7 +320,7 @@ class ParticipantesViewModelTest {
         viewModel.realizarSorteio()
         idleMainLooper()
 
-        assertFalse(true == viewModel.isLoading.value)
+        assertNotEquals(true, viewModel.isLoading.value)
     }
 
     // =========================================================

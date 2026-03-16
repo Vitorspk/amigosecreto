@@ -22,6 +22,8 @@ import activity.amigosecreto.util.SorteioEngine
 @HiltViewModel
 class ParticipantesViewModel @Inject constructor(
     application: Application,
+    // var (not val) — required by @VisibleForTesting setRepositories() for fake injection in tests.
+    // TODO: convert to val + remove setRepositories() when tests migrate to constructor injection or @TestInstallIn.
     private var participanteRepository: ParticipanteRepository,
     private var desejoRepository: DesejoRepository
 ) : AndroidViewModel(application) {

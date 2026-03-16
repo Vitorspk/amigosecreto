@@ -29,6 +29,11 @@ class DesejoParcelableTest {
         participanteId = 7
     }
 
+    // Desejo.CREATOR não resolve em compile-time no contexto Robolectric porque é
+    // gerado sinteticamente pelo plugin @Parcelize — acessível como campo estático de Java
+    // mas não como membro Kotlin reconhecido pelo compilador. Reflexão é a alternativa segura.
+    // Risco: se o nome do campo gerado mudar entre versões do plugin kotlinx.parcelize,
+    // o teste falha em runtime com NoSuchFieldException (sem erro de compile-time).
     @Suppress("UNCHECKED_CAST")
     private fun creator(): Parcelable.Creator<Desejo> {
         val field = Desejo::class.java.getField("CREATOR")
