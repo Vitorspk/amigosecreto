@@ -6,6 +6,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.repository.DesejoRepository
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -33,6 +34,8 @@ class InserirDesejoActivity : AppCompatActivity() {
         etPrecoMaximo = findViewById(R.id.et_preco_maximo_ins)
         etLojas = findViewById(R.id.et_lojas_ins)
 
+        // TODO: finish() still runs after inserir() even when DB fails (pre-existing issue).
+        //  Proper fix: move to ViewModel + LiveData so finish() is called from onSuccess only.
         findViewById<MaterialButton>(R.id.btn_salvar_ins)?.setOnClickListener {
             if (validar()) {
                 inserir()
@@ -67,25 +70,35 @@ class InserirDesejoActivity : AppCompatActivity() {
     }
 
     private fun inserir() {
-        try {
-            val desejo = Desejo()
-            desejo.produto = etProduto.text.toString().trim()
-            desejo.categoria = etCategoria.text.toString().trim()
-
-            val pMin = etPrecoMinimo.text.toString().trim().replace(",", ".")
-            desejo.precoMinimo = if (pMin.isEmpty()) 0.0 else pMin.toDouble()
-
-            val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
-            desejo.precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
-
-            desejo.lojas = etLojas.text.toString().trim()
-            DesejoRepository(this).inserir(desejo)
-            Toast.makeText(this, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
+        val desejo = try {
+            Desejo().apply {
+                produto = etProduto.text.toString().trim()
+                categoria = etCategoria.text.toString().trim()
+                val pMin = etPrecoMinimo.text.toString().trim().replace(",", ".")
+                precoMinimo = if (pMin.isEmpty()) 0.0 else pMin.toDouble()
+                val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
+                precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
+                lojas = etLojas.text.toString().trim()
+            }
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            val msg = e.message ?: getString(R.string.error_unknown)
-            Toast.makeText(this, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
+            return
         }
+
+        val repo = DesejoRepository(this)
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<Unit> {
+                override fun doInBackground() { repo.inserir(desejo) }
+            },
+            object : AsyncDatabaseHelper.ResultCallback<Unit> {
+                override fun onSuccess(result: Unit) {
+                    Toast.makeText(this@InserirDesejoActivity, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
+                }
+                override fun onError(e: Exception) {
+                    val msg = e.message ?: getString(R.string.error_unknown)
+                    Toast.makeText(this@InserirDesejoActivity, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
+                }
+            }
+        )
     }
 }
