@@ -11,7 +11,7 @@
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
 | Target / Compile SDK | 35 (Android 15) |
-| Linguagem | Java 17 → Kotlin (migração em andamento — Fase 10) |
+| Linguagem | Kotlin (migração concluída — Fase 10e, PR #41) |
 | Branch principal | `master` |
 
 ---
@@ -30,20 +30,20 @@
 
 ```
 app/src/main/java/activity/amigosecreto/
-├── AmigoSecretoApplication.java           # @HiltAndroidApp — ponto de entrada do Hilt
-├── GruposActivity.java                    # LAUNCHER — tela principal, gerenciar grupos
-├── ParticipantesActivity.java             # @AndroidEntryPoint — gerenciar participantes de um grupo
-├── ParticipantesViewModel.kt              # @HiltViewModel — lógica de negócio + LiveData — Kotlin
-├── RevelarAmigoActivity.java              # revelar amigo secreto interativamente
-├── ParticipanteDesejosActivity.java       # ver desejos de um participante
-├── VisualizarDesejosActivity.java         # ver todos os desejos de um grupo
-├── ListarDesejosActivity.java             # lista de desejos geral
-├── InserirDesejoActivity.java             # adicionar novo desejo
-├── AlterarDesejoActivity.java             # editar desejo existente
-├── DetalheDesejoActivity.java             # detalhes do desejo + busca Buscape
+├── AmigoSecretoApplication.kt             # @HiltAndroidApp — ponto de entrada do Hilt
+├── GruposActivity.kt                      # LAUNCHER — tela principal, gerenciar grupos
+├── ParticipantesActivity.kt               # @AndroidEntryPoint — gerenciar participantes de um grupo
+├── ParticipantesViewModel.kt              # @HiltViewModel — lógica de negócio + LiveData
+├── RevelarAmigoActivity.kt               # revelar amigo secreto interativamente
+├── ParticipanteDesejosActivity.kt         # ver desejos de um participante
+├── VisualizarDesejosActivity.kt           # ver todos os desejos de um grupo
+├── ListarDesejos.kt                       # lista de desejos geral
+├── InserirDesejoActivity.kt               # adicionar novo desejo
+├── AlterarDesejoActivity.kt               # editar desejo existente
+├── DetalheDesejoActivity.kt               # detalhes do desejo + busca Buscape
 │
 ├── adapter/
-│   └── ParticipantesRecyclerAdapter.java  # RecyclerView adapter para participantes
+│   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
 │
 ├── db/
 │   ├── MySQLiteOpenHelper.java            # schema SQLite v8 + migrações
@@ -55,7 +55,7 @@ app/src/main/java/activity/amigosecreto/
 │   └── DesejoDAO.kt                       # CRUD de desejos + batch queries (N+1 eliminado) — Kotlin
 │
 ├── di/
-│   └── DatabaseModule.java                # @Module @InstallIn(SingletonComponent) — provê Repositories
+│   └── DatabaseModule.kt                  # @Module @InstallIn(SingletonComponent) — provê Repositories
 │
 ├── repository/
 │   ├── ParticipanteRepository.kt          # encapsula ParticipanteDAO; síncrono, thread de BG — Kotlin
@@ -583,11 +583,11 @@ Pass 1 busca participantes em `LinkedHashMap` (preserva `ORDER BY nome`). Pass 2
 
 ### NOME_AMIGO_DESCONHECIDO em companion object
 
-`ParticipanteDAO.NOME_AMIGO_DESCONHECIDO = "Ninguém"` extraído para constante pública porque `RevelarAmigoActivity.java` chama o DAO diretamente e precisa comparar com o fallback. **TODO:** mover para `strings.xml` quando `RevelarAmigoActivity` migrar para Kotlin (Fase 10e) e `getNomeAmigoSorteado()` puder retornar `String?`.
+`ParticipanteDAO.NOME_AMIGO_DESCONHECIDO = "Ninguém"` extraído para constante pública porque `RevelarAmigoActivity` precisa comparar com o fallback. **TODO:** mover para `strings.xml` e fazer `getNomeAmigoSorteado()` retornar `String?` (Fase 10f — test cleanup).
 
 ### @Deprecated em proximoId()
 
-`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.java` e `ParticipanteDesejosActivity.java` que ainda chamam via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. **TODO:** remover quando essas Activities migrarem para Kotlin (Fase 10e).
+`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.kt` que ainda chama via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. `ParticipanteDesejosActivity` já foi migrado e não usa mais o método. **TODO:** remover quando o test cleanup PR migrar `InserirDesejoActivity` para não depender do método deprecated (Fase 10f).
 
 ### mapearDesejosCursor — helper privado
 
@@ -669,13 +669,14 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
 - [x] Migrar DAOs e Repositories para Kotlin — Fase 10c (PR #38)
 - [x] Migrar ViewModel para Kotlin — Fase 10d (PR #39)
-- [ ] Migrar Activities — Fase 10e
+- [x] Migrar Activities — Fase 10e (PR #41)
+- [ ] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
 - [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
 - [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
-- [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` no código Java (`MySQLiteOpenHelper`, schema v9)
+- [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` (`MySQLiteOpenHelper.kt`, schema v9)
 - [ ] Testes de UI com Espresso
 - [ ] Logs estruturados (Timber)
 
