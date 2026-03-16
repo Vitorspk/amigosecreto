@@ -104,20 +104,21 @@ class AlterarDesejoActivity : AppCompatActivity() {
     }
 
     private fun remover() {
+        val dao = DesejoDAO(this)
         try {
-            val dao = DesejoDAO(this)
             dao.open()
             dao.remover(oldDesejo)
-            dao.close()
             Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Log.e(TAG, "remover: failed for desejo id=${oldDesejo.id}", e)
+        } finally {
+            dao.close()
         }
     }
 
     private fun alterar() {
+        val dao = DesejoDAO(this)
         try {
-            val dao = DesejoDAO(this)
             dao.open()
             val newDesejo = Desejo()
             newDesejo.id = oldDesejo.id
@@ -136,13 +137,14 @@ class AlterarDesejoActivity : AppCompatActivity() {
             newDesejo.participanteId = oldDesejo.participanteId
 
             dao.alterar(oldDesejo, newDesejo)
-            dao.close()
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_update_wish_format, msg), Toast.LENGTH_LONG).show()
+        } finally {
+            dao.close()
         }
     }
 }

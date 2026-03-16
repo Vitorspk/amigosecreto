@@ -67,8 +67,8 @@ class InserirDesejoActivity : AppCompatActivity() {
     }
 
     private fun inserir() {
+        val dao = DesejoDAO(this)
         try {
-            val dao = DesejoDAO(this)
             dao.open()
             val desejo = Desejo()
             desejo.id = dao.proximoId()
@@ -83,13 +83,14 @@ class InserirDesejoActivity : AppCompatActivity() {
 
             desejo.lojas = etLojas.text.toString().trim()
             dao.inserir(desejo)
-            dao.close()
             Toast.makeText(this, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
+        } finally {
+            dao.close()
         }
     }
 }
