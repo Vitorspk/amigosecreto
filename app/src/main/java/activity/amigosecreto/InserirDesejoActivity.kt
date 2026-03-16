@@ -20,6 +20,9 @@ class InserirDesejoActivity : AppCompatActivity() {
     private lateinit var etPrecoMaximo: TextInputEditText
     private lateinit var etLojas: TextInputEditText
 
+    // Lazy to avoid re-creating on rapid taps; replaced by @Inject when migrating to ViewModel.
+    private val repo by lazy { DesejoRepository(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,13 +37,8 @@ class InserirDesejoActivity : AppCompatActivity() {
         etPrecoMaximo = findViewById(R.id.et_preco_maximo_ins)
         etLojas = findViewById(R.id.et_lojas_ins)
 
-        // TODO: finish() still runs after inserir() even when DB fails (pre-existing issue).
-        //  Proper fix: move to ViewModel + LiveData so finish() is called from onSuccess only.
         findViewById<MaterialButton>(R.id.btn_salvar_ins)?.setOnClickListener {
-            if (validar()) {
-                inserir()
-                finish()
-            }
+            if (validar()) inserir()
         }
     }
 
@@ -50,13 +48,7 @@ class InserirDesejoActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
-        R.id.menu_salvar -> {
-            if (validar()) {
-                inserir()
-                finish()
-            }
-            true
-        }
+        R.id.menu_salvar -> { if (validar()) inserir(); true }
         android.R.id.home -> { finish(); true }
         else -> super.onOptionsItemSelected(item)
     }
@@ -79,13 +71,15 @@ class InserirDesejoActivity : AppCompatActivity() {
                 val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
                 precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
                 lojas = etLojas.text.toString().trim()
+                // participanteId intentionally not set: this screen is reached from ListarDesejos
+                // (global wish list) without a participant context. FK allows NULL per schema v8.
+                // TODO: pass participanteId via Intent extra when launching from ParticipanteDesejosActivity.
             }
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
             return
         }
 
-        val repo = DesejoRepository(this)
         AsyncDatabaseHelper.execute(
             object : AsyncDatabaseHelper.BackgroundTask<Unit> {
                 override fun doInBackground() { repo.inserir(desejo) }
@@ -93,6 +87,7 @@ class InserirDesejoActivity : AppCompatActivity() {
             object : AsyncDatabaseHelper.ResultCallback<Unit> {
                 override fun onSuccess(result: Unit) {
                     Toast.makeText(this@InserirDesejoActivity, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
+                    finish()
                 }
                 override fun onError(e: Exception) {
                     val msg = e.message ?: getString(R.string.error_unknown)
