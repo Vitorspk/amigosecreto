@@ -16,8 +16,6 @@ import activity.amigosecreto.db.ParticipanteDAO
  * TODO: fase10-dao — quando migrarem para Room, trocar var por val nos models e
  *  construir via construtor primário, eliminando setters.
  */
-// open: ParticipantesViewModelTest.java creates anonymous subclasses to stub individual methods.
-// TODO: fase10d — when ViewModel migrates to Kotlin + coroutines, replace subclassing with Mockito/Fake.
 open class ParticipanteRepository private constructor(private val dao: ParticipanteDAO) {
 
     constructor(context: Context) : this(ParticipanteDAO(context))

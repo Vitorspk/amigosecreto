@@ -22,8 +22,8 @@ import activity.amigosecreto.util.SorteioEngine
 @HiltViewModel
 class ParticipantesViewModel @Inject constructor(
     application: Application,
-    // var (not val) — required by @VisibleForTesting setRepositories() used in ParticipantesViewModelTest.java.
-    // TODO: convert to val once ParticipantesViewModelTest migrates to Kotlin (test cleanup PR).
+    // var (not val) — required by @VisibleForTesting setRepositories() for fake injection in tests.
+    // TODO: convert to val + remove setRepositories() when tests migrate to constructor injection or @TestInstallIn.
     private var participanteRepository: ParticipanteRepository,
     private var desejoRepository: DesejoRepository
 ) : AndroidViewModel(application) {
@@ -32,22 +32,21 @@ class ParticipantesViewModel @Inject constructor(
         private const val TAG = "ParticipantesViewModel"
     }
 
-    /** Resultado do sorteio — substitui sealed class (mantido compatível com Java).
-     *  TODO: convert to sealed class once ParticipantesViewModelTest migrates to Kotlin (test cleanup PR). */
-    class SorteioResultado(@JvmField val status: Status) {
+    /** Resultado do sorteio. */
+    class SorteioResultado(val status: Status) {
         enum class Status { SUCCESS, FAILURE_NOT_ENOUGH, FAILURE_IMPOSSIBLE }
     }
 
     /** Resultado de prepararMensagensSms — lista de participantes com telefone + mapa de mensagens. */
     class MensagensSmsResultado(
-        @JvmField val participantesComTelefone: List<Participante>,
-        @JvmField val mensagens: Map<Int, String>
+        val participantesComTelefone: List<Participante>,
+        val mensagens: Map<Int, String>
     )
 
     /** Resultado de prepararMensagemCompartilhamento — mensagem formatada para um participante. */
     class MensagemCompartilhamentoResultado(
-        @JvmField val participante: Participante,
-        @JvmField val mensagem: String
+        val participante: Participante,
+        val mensagem: String
     )
 
     private val _participants = MutableLiveData<List<Participante>>(emptyList())
@@ -59,13 +58,8 @@ class ParticipantesViewModel @Inject constructor(
     private val _mensagemCompartilhamentoResult = MutableLiveData<MensagemCompartilhamentoResultado?>(null)
     private val _atualizarSucesso = MutableLiveData<Boolean?>(null)
 
-    // Kotlin properties — Kotlin compiler auto-generates get*() accessors for Java interop.
-    // ParticipantesActivity.java and ParticipantesViewModelTest.java call these via getXxx().
     val participants: LiveData<List<Participante>> get() = _participants
     val wishCounts: LiveData<Map<Int, Int>> get() = _wishCounts
-    // @JvmName forces the getter to be named getIsLoading() instead of isLoading()
-    // so that ParticipantesActivity.java and ParticipantesViewModelTest.java can call it.
-    @get:JvmName("getIsLoading")
     val isLoading: LiveData<Boolean> get() = _isLoading
     val sorteioResult: LiveData<SorteioResultado?> get() = _sorteioResult
     val errorMessage: LiveData<String?> get() = _errorMessage
