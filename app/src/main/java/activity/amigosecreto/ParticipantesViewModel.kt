@@ -23,7 +23,7 @@ import activity.amigosecreto.util.SorteioEngine
 class ParticipantesViewModel @Inject constructor(
     application: Application,
     // var (not val) — required by @VisibleForTesting setRepositories() used in ParticipantesViewModelTest.java.
-    // TODO: Fase 10e — convert to val once ParticipantesViewModelTest migrates to Kotlin.
+    // TODO: convert to val once ParticipantesViewModelTest migrates to Kotlin (test cleanup PR).
     private var participanteRepository: ParticipanteRepository,
     private var desejoRepository: DesejoRepository
 ) : AndroidViewModel(application) {
@@ -33,7 +33,7 @@ class ParticipantesViewModel @Inject constructor(
     }
 
     /** Resultado do sorteio — substitui sealed class (mantido compatível com Java).
-     *  TODO: Fase 10e — convert to sealed class once ParticipantesActivity migrates to Kotlin. */
+     *  TODO: convert to sealed class once ParticipantesViewModelTest migrates to Kotlin (test cleanup PR). */
     class SorteioResultado(@JvmField val status: Status) {
         enum class Status { SUCCESS, FAILURE_NOT_ENOUGH, FAILURE_IMPOSSIBLE }
     }

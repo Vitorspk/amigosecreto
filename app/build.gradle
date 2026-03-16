@@ -133,6 +133,9 @@ dependencies {
     // kotlin-stdlib is added automatically by the kotlin-android plugin (since 1.4)
 
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    // Explicit activity dep — EdgeToEdge is in activity:1.8.0 but was only a transitive
+    // dep via appcompat in the Java build. Kotlin requires an explicit declaration.
+    implementation 'androidx.activity:activity-ktx:1.9.3'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 

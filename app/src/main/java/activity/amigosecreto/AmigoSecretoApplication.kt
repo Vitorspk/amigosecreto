@@ -1,8 +1,7 @@
-package activity.amigosecreto;
+package activity.amigosecreto
 
-import android.app.Application;
-
-import dagger.hilt.android.HiltAndroidApp;
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 
 /**
  * Application class required by Hilt for component generation.
@@ -10,5 +9,4 @@ import dagger.hilt.android.HiltAndroidApp;
  * Registered in AndroidManifest.xml via android:name=".AmigoSecretoApplication".
  */
 @HiltAndroidApp
-public class AmigoSecretoApplication extends Application {
-}
+class AmigoSecretoApplication : Application()
