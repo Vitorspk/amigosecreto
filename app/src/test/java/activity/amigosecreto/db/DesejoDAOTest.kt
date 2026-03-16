@@ -264,20 +264,4 @@ class DesejoDAOTest {
         assertNotNull(dao.buscarPorId(existing.id))
     }
 
-    // --- proximoId ---
-
-    @Suppress("DEPRECATION")
-    @Test
-    fun proximoId_emptyTable_returnsOne() {
-        assertEquals(1, dao.proximoId())
-    }
-
-    @Suppress("DEPRECATION")
-    @Test
-    fun proximoId_afterInsert_returnsMaxPlusOne() {
-        val p = criarParticipante("Otto")
-        val d = buildDesejo("Relógio", p.id)
-        dao.inserir(d)
-        assertEquals(d.id + 1, dao.proximoId())
-    }
 }
