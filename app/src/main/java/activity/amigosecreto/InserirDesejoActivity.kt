@@ -1,6 +1,7 @@
 package activity.amigosecreto
 
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -19,8 +20,9 @@ class InserirDesejoActivity : AppCompatActivity() {
     private lateinit var etPrecoMinimo: TextInputEditText
     private lateinit var etPrecoMaximo: TextInputEditText
     private lateinit var etLojas: TextInputEditText
+    private lateinit var btnSalvar: MaterialButton
 
-    // Lazy to avoid re-creating on rapid taps; replaced by @Inject when migrating to ViewModel.
+    // Replaced by @Inject when migrating to ViewModel.
     private val repo by lazy { DesejoRepository(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,9 +38,13 @@ class InserirDesejoActivity : AppCompatActivity() {
         etPrecoMinimo = findViewById(R.id.et_preco_minimo_ins)
         etPrecoMaximo = findViewById(R.id.et_preco_maximo_ins)
         etLojas = findViewById(R.id.et_lojas_ins)
+        btnSalvar = findViewById(R.id.btn_salvar_ins)
 
-        findViewById<MaterialButton>(R.id.btn_salvar_ins)?.setOnClickListener {
-            if (validar()) inserir()
+        btnSalvar.setOnClickListener {
+            if (validar()) {
+                btnSalvar.isEnabled = false
+                inserir()
+            }
         }
     }
 
@@ -47,9 +53,18 @@ class InserirDesejoActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
-        R.id.menu_salvar -> { if (validar()) inserir(); true }
-        android.R.id.home -> { finish(); true }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menu_salvar -> {
+            if (validar()) {
+                item.isEnabled = false
+                inserir()
+            }
+            true
+        }
+        android.R.id.home -> {
+            finish()
+            true
+        }
         else -> super.onOptionsItemSelected(item)
     }
 
@@ -76,6 +91,7 @@ class InserirDesejoActivity : AppCompatActivity() {
                 // TODO: pass participanteId via Intent extra when launching from ParticipanteDesejosActivity.
             }
         } catch (e: NumberFormatException) {
+            btnSalvar.isEnabled = true
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
             return
         }
@@ -86,10 +102,13 @@ class InserirDesejoActivity : AppCompatActivity() {
             },
             object : AsyncDatabaseHelper.ResultCallback<Unit> {
                 override fun onSuccess(result: Unit) {
+                    if (isDestroyed || isFinishing) return
                     Toast.makeText(this@InserirDesejoActivity, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
                     finish()
                 }
                 override fun onError(e: Exception) {
+                    if (isDestroyed || isFinishing) return
+                    btnSalvar.isEnabled = true
                     val msg = e.message ?: getString(R.string.error_unknown)
                     Toast.makeText(this@InserirDesejoActivity, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
                 }
