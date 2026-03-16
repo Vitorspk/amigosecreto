@@ -619,7 +619,7 @@ Todos os catch blocks chamam `handleDbError(e, logMsg, errorStringRes)` que: (1)
 
 ### realizarSorteio — inline try/catch
 
-`realizarSorteio` usa try/catch inline (não `handleDbError`) porque o resultado drive um bloco `postMain` tri-state: sucesso recarrega + posta SUCCESS, falha posta `error_save_draw`. `handleDbError` postaria `errorMessage` diretamente via `Handler.post`, criando race condition com o bloco `postMain` e deixando `_isLoading` preso em `true`.
+`realizarSorteio` usa try/catch inline (não `handleDbError`) porque o resultado conduz um bloco `postMain` tri-state: sucesso recarrega + posta SUCCESS, falha posta `error_save_draw`. `handleDbError` postaria `errorMessage` diretamente via `Handler.post`, criando race condition com o bloco `postMain` e deixando `_isLoading` preso em `true`.
 
 ### takeIf { it > 0 } para amigoSorteadoId
 
