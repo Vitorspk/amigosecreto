@@ -178,15 +178,11 @@ class ParticipantesViewModel @Inject constructor(
     /**
      * Carrega participantes e contagens de desejos do banco em background.
      * Pode ser chamado a qualquer momento para forçar atualização (ex: após voltar de outra tela).
-     *
-     * MUST be called from the main thread: sets _isLoading.value = true via setValue(),
-     * which requires the main thread. All current call sites satisfy this — either called
-     * directly from the Activity (main thread) or via postMain(::carregarParticipantes).
-     * TODO: Fase 10e — replace setValue with postValue to make this thread-safe from any caller.
+     * Thread-safe: usa postValue para _isLoading, pode ser chamado de qualquer thread.
      */
     fun carregarParticipantes() {
         if (grupoId == -1) return
-        _isLoading.value = true
+        _isLoading.postValue(true)
         executor.execute {
             try {
                 val lista = participanteRepository.listarPorGrupo(grupoId)

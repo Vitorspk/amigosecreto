@@ -86,13 +86,15 @@ app/build/outputs/apk/release/app-release.apk
 ## 7. Versioning
 
 O projeto usa semantic versioning:
-- **versionCode**: Número inteiro incremental (atual: 8)
-- **versionName**: Versão legível (atual: 2.0)
+- **versionCode**: Calculado automaticamente: `100 + git rev-list --count HEAD` (produção ~157+)
+- **versionName**: Extraído da tag de release (ex: tag `v3.0` → versionName `3.0`)
+
+Não é necessário editar versionCode ou versionName manualmente — o CI faz isso via workflow.
 
 Incrementar a cada nova versão:
-- **Patch** (2.0.1): Correções de bugs
-- **Minor** (2.1.0): Novas funcionalidades
-- **Major** (3.0.0): Mudanças significativas
+- **Patch** (3.0.1): Correções de bugs
+- **Minor** (3.1.0): Novas funcionalidades
+- **Major** (4.0.0): Mudanças significativas
 
 ## 8. Tamanho do App
 
