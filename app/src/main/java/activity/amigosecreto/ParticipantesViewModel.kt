@@ -129,6 +129,7 @@ class ParticipantesViewModel @Inject constructor(
             val sucesso = try {
                 participanteRepository.atualizar(participante)
             } catch (e: Exception) {
+                Log.e(TAG, "atualizarParticipante: failed for id=${participante.id}", e)
                 false
             }
             postMain {
