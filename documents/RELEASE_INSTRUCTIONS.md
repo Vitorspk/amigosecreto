@@ -65,7 +65,7 @@ app/build/outputs/apk/release/app-release.apk
 
 ## 5. Checklist antes de publicar
 
-- [ ] Versão atualizada no build.gradle (versionCode e versionName)
+- [ ] Tag de release criada com o formato correto (ex: `v3.1`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7)
 - [ ] Testado em diferentes dispositivos e versões do Android
 - [ ] Ícone do app configurado
 - [ ] Screenshots preparados (mínimo 2, máximo 8)

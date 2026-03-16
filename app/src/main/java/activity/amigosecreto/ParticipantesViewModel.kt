@@ -75,7 +75,7 @@ class ParticipantesViewModel @Inject constructor(
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var executor: ExecutorService = Executors.newSingleThreadExecutor()
-    private var grupoId = -1
+    @Volatile private var grupoId = -1
 
     /**
      * Deve ser chamado uma vez em onCreate() após obter o ViewModel.
@@ -245,6 +245,8 @@ class ParticipantesViewModel @Inject constructor(
             postMain {
                 _isLoading.value = false
                 if (salvo) {
+                    // TODO: Fase 10e (coroutines) — carregarParticipantes() here causes a brief
+                    // _isLoading flicker: false → true (reload) → false. Pre-existing from Java version.
                     carregarParticipantes()
                     _sorteioResult.value = SorteioResultado(SorteioResultado.Status.SUCCESS)
                 } else {
@@ -287,7 +289,7 @@ class ParticipantesViewModel @Inject constructor(
                 val resultado = MensagensSmsResultado(comTelefone, mensagens)
                 postMain { _mensagensSmsResult.value = resultado }
             } catch (e: Exception) {
-                postMain { _errorMessage.value = getApplication<Application>().getString(R.string.error_prepare_messages_failed) }
+                handleDbError(e, "prepararMensagensSms: failed for grupoId=$grupoId", R.string.error_prepare_messages_failed)
             }
         }
     }
@@ -319,7 +321,7 @@ class ParticipantesViewModel @Inject constructor(
                 participanteRepository.marcarComoEnviado(participante.id)
                 postMain { _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem) }
             } catch (e: Exception) {
-                postMain { _errorMessage.value = getApplication<Application>().getString(R.string.error_load_share_data) }
+                handleDbError(e, "prepararMensagemCompartilhamento: failed for participanteId=${participante.id}", R.string.error_load_share_data)
             }
         }
     }
