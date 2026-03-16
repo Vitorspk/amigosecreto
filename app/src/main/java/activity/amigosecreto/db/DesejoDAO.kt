@@ -5,8 +5,6 @@ import android.content.Context
 import android.database.Cursor
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteException
-import android.util.Log
 
 class DesejoDAO(ctx: Context) {
 
@@ -173,33 +171,6 @@ class DesejoDAO(ctx: Context) {
             }
         }
         return mapa
-    }
-
-    /**
-     * Retorna MAX(id)+1 para uso pré-inserção em InserirDesejoActivity.
-     * ParticipanteDesejosActivity já foi migrado para Kotlin e não usa mais este método.
-     * Mantido por compatibilidade com InserirDesejoActivity (Java) — remover quando migrar.
-     * Nota: inserir() já seta desejo.id via AUTOINCREMENT; este método tem race condition potencial
-     * em ambiente multi-thread. Migrar call sites para depender apenas de inserir() quando possível.
-     *
-     * @deprecated Use [inserir] instead — it sets [Desejo.id] from AUTOINCREMENT without a race condition.
-     *   This method is kept until InserirDesejoActivity migrates to Kotlin (test cleanup PR).
-     */
-    @Deprecated(
-        message = "Use inserir() instead — sets Desejo.id via AUTOINCREMENT without race condition.",
-        replaceWith = ReplaceWith("inserir(desejo)")
-    )
-    fun proximoId(): Int {
-        return try {
-            val cursor = database.rawQuery("SELECT MAX(${MySQLiteOpenHelper.COLUMN_ID}) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
-            cursor.use {
-                it.moveToFirst()
-                it.getInt(0) + 1
-            }
-        } catch (e: SQLiteException) {
-            Log.e("DesejoDAO", "proximoId failed", e)
-            1
-        }
     }
 
     fun buscarPorId(id: Int): Desejo? {

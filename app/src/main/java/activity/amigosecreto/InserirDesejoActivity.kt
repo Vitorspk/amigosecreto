@@ -5,7 +5,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -67,11 +67,8 @@ class InserirDesejoActivity : AppCompatActivity() {
     }
 
     private fun inserir() {
-        val dao = DesejoDAO(this)
         try {
-            dao.open()
             val desejo = Desejo()
-            desejo.id = dao.proximoId()
             desejo.produto = etProduto.text.toString().trim()
             desejo.categoria = etCategoria.text.toString().trim()
 
@@ -82,15 +79,13 @@ class InserirDesejoActivity : AppCompatActivity() {
             desejo.precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
 
             desejo.lojas = etLojas.text.toString().trim()
-            dao.inserir(desejo)
+            DesejoRepository(this).inserir(desejo)
             Toast.makeText(this, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
-        } finally {
-            dao.close()
         }
     }
 }
