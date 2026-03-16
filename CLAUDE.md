@@ -611,7 +611,11 @@ Ao remover participante/grupo: exclusao → desejo → participante → grupo. S
 
 ### private var repositories
 
-`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `ParticipantesViewModelTest.java` chama `setRepositories()` anotado com `@VisibleForTesting` para injetar fakes. Kotlin classes requerem `var` para reassignment. **TODO:** Fase 10e — converter para `val` quando `ParticipantesViewModelTest` migrar para Kotlin.
+`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `ParticipantesViewModelTest.java` chama `setRepositories()` anotado com `@VisibleForTesting` para injetar fakes. Kotlin classes requerem `var` para reassignment. **TODO:** Fase 10e — converter para `val`, remover `setRepositories()` e migrar injeção de fakes para construtor ou `@TestInstallIn` do Hilt.
+
+### ExecutorService + Handler em vez de coroutines
+
+A Fase 10d manteve `ExecutorService` + `Handler(Looper.getMainLooper())` em vez de migrar para coroutines — a migração de threading é independente da migração de linguagem e tem escopo maior (requer `viewModelScope`, `Dispatchers.IO`, suspending repositories). **TODO:** Fase 10e ou posterior — avaliar migrar para coroutines após a migração das Activities, quando `ParticipantesViewModelTest` também estiver em Kotlin e puder usar `TestCoroutineDispatcher`/`UnconfinedTestDispatcher`.
 
 ### handleDbError() — padrão de tratamento de erros
 
