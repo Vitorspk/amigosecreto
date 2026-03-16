@@ -588,7 +588,7 @@ Pass 1 busca participantes em `LinkedHashMap` (preserva `ORDER BY nome`). Pass 2
 
 ### @Deprecated em proximoId()
 
-`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.kt` que ainda chama via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. `ParticipanteDesejosActivity` já foi migrado e não usa mais o método. **TODO:** remover quando o test cleanup PR migrar `InserirDesejoActivity` para não depender do método deprecated (Fase 10f).
+`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.kt` que ainda chama via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. `ParticipanteDesejosActivity` já foi migrado e não usa mais o método. **TODO (Roadmap #1):** remover `proximoId()` de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity` para usar `inserir()` diretamente.
 
 ### mapearDesejosCursor — helper privado
 
@@ -660,7 +660,17 @@ Mantido `java.util.Random` por ora. **TODO:** substituir por `kotlin.random.Rand
 
 Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizado.
 
-### Arquitetura
+### Roadmap Priorizado
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | **Cleanup pós-migração** — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` + refatorar `InserirDesejoActivity` | 🔄 Próximo |
+| 2 | **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` (`MySQLiteOpenHelper.kt`) | ⏳ |
+| 3 | **Coroutines** — substituir `ExecutorService` + `Handler.post` no ViewModel por `viewModelScope` + `Dispatchers.IO` | ⏳ |
+| 4 | **Testes de UI** — Espresso | ⏳ |
+| 5 | **Funcionalidades novas** — backup/restore, histórico de sorteios, etc. | ⏳ |
+
+### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
 - [x] Migrar para MVVM com ViewModel e LiveData (PR #18)
 - [x] Implementar Repository pattern (PR #19)
@@ -677,8 +687,10 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
 - [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
 - [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
-- [ ] Implementar `FOREIGN KEY ... ON DELETE CASCADE` na tabela `exclusao` (`MySQLiteOpenHelper.kt`, schema v9)
-- [ ] Testes de UI com Espresso
+- [ ] **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` ← **#1**
+- [ ] **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` ← **#2**
+- [ ] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel ← **#3**
+- [ ] Testes de UI com Espresso ← **#4**
 - [ ] Logs estruturados (Timber)
 
 ### UI/UX
@@ -686,7 +698,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Suporte a tablets
 - [ ] Transições entre Activities com shared elements
 
-### Funcionalidades
+### Funcionalidades ← **#5**
 - [ ] Backup/restore de dados (Google Drive)
 - [ ] Histórico de sorteios anteriores
 - [ ] Notificações de lembrete
