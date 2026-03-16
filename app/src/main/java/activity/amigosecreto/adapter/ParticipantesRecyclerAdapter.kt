@@ -37,7 +37,7 @@ class ParticipantesRecyclerAdapter(
         return ViewHolder(view)
     }
 
-    @Suppress("RecyclerView")
+    @Suppress("NotifyDataSetChanged")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val participante = participantes[position]
         holder.bind(participante)

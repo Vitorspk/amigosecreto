@@ -107,7 +107,6 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             }
             try {
                 val desejo = Desejo()
-                desejo.id = desejoDAO.proximoId()
                 desejo.produto = produto
                 desejo.categoria = etCategoria.text?.toString()?.trim() ?: ""
 
