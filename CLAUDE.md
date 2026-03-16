@@ -11,7 +11,7 @@
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
 | Target / Compile SDK | 35 (Android 15) |
-| Linguagem | Kotlin (migração concluída — Fase 10e, PR #41) |
+| Linguagem | Kotlin (migração completa — Fase 10f, PR #43) |
 | Branch principal | `master` |
 
 ---
@@ -287,10 +287,8 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Todas as operações de banco executadas via `ExecutorService` (thread de background)
 - Resultados postados de volta ao main thread via `Handler(Looper.getMainLooper())` ou `postValue`
 - Activity apenas observa LiveData e não toca diretamente nos repositórios
-- `InstantTaskExecutorRule` + `syncExecutor` para testes determinísticos
-- `@JvmField` nos campos dos result classes — acesso direto de `ParticipantesActivity.java`
-- `@get:JvmName("getIsLoading")` — Kotlin gera `isLoading()` para Boolean; Java espera `getIsLoading()`
-- `private var` repositories — requerido por `@VisibleForTesting setRepositories()` usado nos testes Java
+- `InstantTaskExecutorRule` + `syncExecutor` para testes determinísticos (PR #43)
+- `private var` repositories — requerido por `@VisibleForTesting setRepositories()` — TODO: converter para `val` com constructor injection
 - `@Volatile grupoId` — escrito no main thread, lido em background threads do executor
 
 ### Repository Pattern (ParticipantesActivity)
@@ -480,28 +478,30 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 
 ### Estrutura
 
+Todos os 18 arquivos de teste estão em Kotlin (Fase 10f — PR #43).
+
 ```
 app/src/test/java/activity/amigosecreto/
-├── FormatarPrecoTest.java               # formatação de preço pt-BR
-├── ParticipantesViewModelTest.java      # ViewModel — Robolectric + InstantTaskExecutorRule
+├── FormatarPrecoTest.kt               # formatação de preço pt-BR
+├── ParticipantesViewModelTest.kt      # ViewModel — Robolectric + InstantTaskExecutorRule
 ├── db/
-│   ├── DesejoDAOBatchQueryTest.java     # contarDesejosPorGrupo / listarDesejosPorGrupo (Robolectric)
-│   ├── DesejoModelTest.java             # model Desejo — Serializable
-│   ├── DesejoParcelableTest.java        # Parcelable round-trip — contrato pré-migração @Parcelize
-│   ├── GrupoDAOTest.java                # CRUD de grupos (Robolectric)
-│   ├── GrupoModelTest.java              # model Grupo — Serializable
-│   ├── MySQLiteOpenHelperTest.java      # schema do banco (Robolectric)
-│   ├── ParticipanteDAOTest.java         # CRUD de participantes (Robolectric)
-│   ├── ParticipanteKotlinMigrationTest.java  # contratos equals/hashCode/mutabilidade pré-migração
-│   └── ParticipanteModelTest.java       # model Participante — Serializable
+│   ├── DesejoDAOBatchQueryTest.kt     # contarDesejosPorGrupo / listarDesejosPorGrupo (Robolectric)
+│   ├── DesejoModelTest.kt             # model Desejo — Serializable
+│   ├── DesejoParcelableTest.kt        # Parcelable round-trip — @Parcelize via reflexão
+│   ├── GrupoDAOTest.kt                # CRUD de grupos (Robolectric)
+│   ├── GrupoModelTest.kt              # model Grupo — Serializable
+│   ├── MySQLiteOpenHelperTest.kt      # schema do banco (Robolectric)
+│   ├── ParticipanteDAOTest.kt         # CRUD de participantes (Robolectric)
+│   ├── ParticipanteKotlinMigrationTest.kt  # contratos equals/hashCode/mutabilidade
+│   └── ParticipanteModelTest.kt       # model Participante — Serializable
 ├── repository/
-│   ├── DesejoRepositoryTest.java        # DesejoRepository — integração real SQLite
-│   ├── ParticipanteRepositoryTest.java  # ParticipanteRepository — integração real SQLite
-│   └── ParticipanteRepositorySalvarExclusoesTest.java  # salvarExclusoes() transação atômica
+│   ├── DesejoRepositoryTest.kt        # DesejoRepository — integração real SQLite
+│   ├── ParticipanteRepositoryTest.kt  # ParticipanteRepository — integração real SQLite
+│   └── ParticipanteRepositorySalvarExclusoesTest.kt  # salvarExclusoes() transação atômica
 └── util/
-    ├── MensagemSecretaBuilderTest.java  # formatação de mensagem de compartilhamento
-    ├── SorteioEngineTest.java           # algoritmo de sorteio — propriedades e exclusões
-    └── ValidationUtilsTest.java         # validações de input e regex
+    ├── MensagemSecretaBuilderTest.kt  # formatação de mensagem de compartilhamento
+    ├── SorteioEngineTest.kt           # algoritmo de sorteio — propriedades e exclusões
+    └── ValidationUtilsTest.kt         # validações de input e regex
 ```
 
 ### Cobertura Atual (285 testes — BUILD SUCCESSFUL)
@@ -571,7 +571,7 @@ DAOs já migraram para Kotlin (Fase 10c — PR #38). Fields podem virar `val` co
 
 ### open class + open fun em ParticipanteRepository
 
-`ParticipanteRepository` é `open class` com todos os métodos `open` porque `ParticipantesViewModelTest.java` cria subclasses anônimas para injetar comportamento nos testes. Kotlin classes são `final` por padrão — sem `open`, a compilação falha com "cannot inherit from final". **TODO:** quando `ParticipantesViewModelTest` migrar para Kotlin (Fase 10e), converter para `internal` + `@VisibleForTesting` e remover `open`.
+`ParticipanteRepository` é `open class` com todos os métodos `open` porque os testes Kotlin (`ParticipantesViewModelTest.kt`) criam subclasses anônimas para injetar comportamento. Kotlin classes são `final` por padrão — sem `open`, a compilação falha com "cannot inherit from final". **TODO:** converter para `internal` + `@VisibleForTesting` e remover `open` quando migrar injeção de fakes para constructor injection ou `@TestInstallIn`.
 
 ### Construtor triplo em Repositories
 
@@ -601,17 +601,17 @@ Ao remover participante/grupo: exclusao → desejo → participante → grupo. S
 
 ## ViewModel Layer — Decisões de Design (PR #39)
 
-### Java interop — result classes com @JvmField
+### Java interop removido — result classes (PR #43)
 
-`SorteioResultado`, `MensagensSmsResultado` e `MensagemCompartilhamentoResultado` são inner classes com `@JvmField val` nos campos. `@JvmField` elimina o getter gerado pelo Kotlin, permitindo acesso direto de `ParticipantesActivity.java` (`resultado.participante`, `resultado.mensagem` sem `.getParticipante()`). **TODO:** Fase 10e — remover `@JvmField` ao migrar a Activity para Kotlin.
+`@JvmField` removido de `SorteioResultado`, `MensagensSmsResultado` e `MensagemCompartilhamentoResultado` — não há mais callers Java. Campos acessados diretamente via property Kotlin (`resultado.participante`, `resultado.mensagem`).
 
-### @get:JvmName("getIsLoading")
+### @get:JvmName removido (PR #43)
 
-`isLoading: LiveData<Boolean>` gera `isLoading()` por padrão em Kotlin. `ParticipantesActivity.java` e `ParticipantesViewModelTest.java` esperam `getIsLoading()` (convenção JavaBean para Boolean). `@get:JvmName("getIsLoading")` força o nome correto sem alterar a API Kotlin.
+`@get:JvmName("getIsLoading")` removido — `ParticipantesActivity` e os testes estão em Kotlin; acesso via property `isLoading` funciona diretamente.
 
 ### private var repositories
 
-`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `ParticipantesViewModelTest.java` chama `setRepositories()` anotado com `@VisibleForTesting` para injetar fakes. Kotlin classes requerem `var` para reassignment. **TODO:** Fase 10e — converter para `val`, remover `setRepositories()` e migrar injeção de fakes para construtor ou `@TestInstallIn` do Hilt.
+`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `setRepositories()` (`@VisibleForTesting`) ainda é usado nos testes para injetar fakes. **TODO:** converter para `val`, remover `setRepositories()` e migrar para constructor injection ou `@TestInstallIn` do Hilt.
 
 ### ExecutorService + Handler em vez de coroutines
 
@@ -641,13 +641,13 @@ Todos os catch blocks chamam `handleDbError(e, logMsg, errorStringRes)` que: (1)
 
 No Java original, `trim()` era usado apenas na validação (`isEmpty()` após `trim()`), mas o valor bruto era appendado. Em Kotlin, o valor trimado é appendado diretamente. Comportamento intencionalmente melhorado: espaços acidentais não aparecem na mensagem final. Documentado com três testes em `MensagemSecretaBuilderTest`.
 
-### tentarSorteio(list, random) — visibilidade public (SorteioEngine)
+### tentarSorteio(list, random) — visibilidade internal (PR #43)
 
-O overload com `Random` é `public` em vez de `internal` porque `SorteioEngineTest.java` o chama diretamente com seed fixa para testes determinísticos. `internal` em Kotlin compila com nome mangled inacessível do Java. **TODO:** quando `SorteioEngineTest` migrar para Kotlin (Fase 10f), converter de `public` para `internal` + `@VisibleForTesting` — padrão já adotado em `ParticipanteRepository`.
+O overload com `Random` é agora `internal @VisibleForTesting` — `SorteioEngineTest.kt` (Kotlin) acessa diretamente. Encapsulamento restabelecido: o overload não faz parte da API pública do módulo.
 
 ### java.util.Random em SorteioEngine
 
-Mantido `java.util.Random` (em vez de `kotlin.random.Random`) para preservar o call site Java com `new Random(seed)` em `SorteioEngineTest`. **TODO:** ao migrar o teste para Kotlin, substituir por `kotlin.random.Random(seed)` e remover o import `java.util.Random`.
+Mantido `java.util.Random` por ora. **TODO:** substituir por `kotlin.random.Random(seed)` e remover o import `java.util.Random` em cleanup futuro.
 
 ### formatarPreco / numberFormatPtBr (MensagemSecretaBuilder → WindowInsetsUtils)
 
@@ -670,7 +670,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar DAOs e Repositories para Kotlin — Fase 10c (PR #38)
 - [x] Migrar ViewModel para Kotlin — Fase 10d (PR #39)
 - [x] Migrar Activities — Fase 10e (PR #41)
-- [ ] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f
+- [x] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f (PR #43)
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
