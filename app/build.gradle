@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-parcelize'
-    id 'kotlin-kapt'
+    id 'com.google.devtools.ksp'
     id 'com.google.dagger.hilt.android'
 }
 
@@ -122,17 +122,13 @@ android {
     }
 }
 
-// kapt uses the K2 compiler stub generation in Kotlin 2.x. If Hilt annotation processing
-// breaks after a Kotlin upgrade, migrate to KSP (kotlin-symbol-processing) as kapt
-// is in maintenance mode. See: https://kotlinlang.org/docs/ksp-overview.html
-kapt {
-    correctErrorTypes = true
-}
+// Migrated from kapt to KSP (Kotlin 2.0 + Hilt — kapt's kotlinx-metadata-jvm no longer
+// supports Kotlin 2.x metadata). KSP is faster and fully supported by Hilt 2.51+.
 
 dependencies {
     // Dependency Injection — Hilt
-    implementation 'com.google.dagger:hilt-android:2.51.1'
-    kapt 'com.google.dagger:hilt-compiler:2.51.1'
+    implementation 'com.google.dagger:hilt-android:2.56.1'
+    ksp 'com.google.dagger:hilt-compiler:2.56.1'
 
     // kotlin-stdlib is added automatically by the kotlin-android plugin (since 1.4)
 
