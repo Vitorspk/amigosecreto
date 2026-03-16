@@ -311,8 +311,8 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 **Desbloqueado por:** migração de `ParticipantesViewModelTest`
 - Remover shims: `@JvmField`, `open class`, `@get:JvmName("getIsLoading")`, `setRepositories()` em `ParticipantesViewModel.kt`
 - Remover `@JvmField` de `ParticipanteRepository.kt`
-- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` após migrar `InserirDesejoActivity` para não usar o método deprecated
-- Converter `SorteioEngine.tentarSorteio` de `@JvmStatic` para `internal`
+- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` — requer refatorar `InserirDesejoActivity.kt` para depender apenas de `inserir()` (que já seta `desejo.id` via AUTOINCREMENT) em vez do método deprecated
+- Converter `SorteioEngine.tentarSorteio(list, random)` de `public` para `internal` — atualmente `public` só por ser chamado de `SorteioEngineTest.java`
 
 **Benefícios da migração completa:**
 - Null safety em tempo de compilação

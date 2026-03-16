@@ -46,7 +46,7 @@ app/src/main/java/activity/amigosecreto/
 │   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
 │
 ├── db/
-│   ├── MySQLiteOpenHelper.java            # schema SQLite v8 + migrações
+│   ├── MySQLiteOpenHelper.kt              # schema SQLite v8 + migrações
 │   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
 │   ├── GrupoDAO.kt                        # CRUD de grupos — Kotlin
 │   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
@@ -643,7 +643,7 @@ No Java original, `trim()` era usado apenas na validação (`isEmpty()` após `t
 
 ### tentarSorteio(list, random) — visibilidade public (SorteioEngine)
 
-O overload com `Random` é `public` em vez de `internal` porque `SorteioEngineTest.java` o chama diretamente com seed fixa para testes determinísticos. `internal` em Kotlin compila com nome mangled inacessível do Java. **TODO:** quando `SorteioEngineTest` migrar para Kotlin (Fase 10e), converter para `internal` + `@VisibleForTesting` — padrão já adotado em `ParticipanteRepository`.
+O overload com `Random` é `public` em vez de `internal` porque `SorteioEngineTest.java` o chama diretamente com seed fixa para testes determinísticos. `internal` em Kotlin compila com nome mangled inacessível do Java. **TODO:** quando `SorteioEngineTest` migrar para Kotlin (Fase 10f), converter de `public` para `internal` + `@VisibleForTesting` — padrão já adotado em `ParticipanteRepository`.
 
 ### java.util.Random em SorteioEngine
 
