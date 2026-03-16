@@ -37,7 +37,7 @@ class ParticipantesRecyclerAdapter(
         return ViewHolder(view)
     }
 
-    @Suppress("NotifyDataSetChanged")
+    @Suppress("RecyclerView")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val participante = participantes[position]
         holder.bind(participante)
@@ -51,6 +51,7 @@ class ParticipantesRecyclerAdapter(
 
     override fun getItemCount() = participantes.size
 
+    @Suppress("NotifyDataSetChanged")
     fun updateList(newList: List<Participante>) {
         participantes = newList
         notifyDataSetChanged()
