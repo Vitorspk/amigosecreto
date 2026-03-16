@@ -18,6 +18,8 @@ class RevelarAmigoActivity : AppCompatActivity() {
 
     private var amigoSorteado: Participante? = null
     private var revelado = false
+    private lateinit var dao: ParticipanteDAO
+    private lateinit var desejoDAO: DesejoDAO
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,10 +44,11 @@ class RevelarAmigoActivity : AppCompatActivity() {
             }
         }
 
+        dao = ParticipanteDAO(this)
+        desejoDAO = DesejoDAO(this)
+
         @Suppress("DEPRECATION")
         val participante = intent.getSerializableExtra("participante") as? Participante
-        val dao = ParticipanteDAO(this)
-        val desejoDAO = DesejoDAO(this)
 
         val tvNomeUsuario = findViewById<TextView>(R.id.tv_nome_usuario)
         val tvAmigoSorteado = findViewById<TextView>(R.id.tv_amigo_sorteado)
@@ -108,5 +111,11 @@ class RevelarAmigoActivity : AppCompatActivity() {
         }
 
         btnVoltar.setOnClickListener { finish() }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dao.close()
+        desejoDAO.close()
     }
 }

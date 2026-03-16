@@ -1,6 +1,7 @@
 package activity.amigosecreto
 
 import android.Manifest
+import android.util.Log
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -19,7 +20,6 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.NonNull
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -39,6 +39,7 @@ import activity.amigosecreto.util.ValidationUtils
 class ParticipantesActivity : AppCompatActivity() {
 
     private companion object {
+        private const val TAG = "ParticipantesActivity"
         const val PERMISSIONS_REQUEST_READ_CONTACTS = 100
         const val REQUEST_CONTACT_PICKER = 200
     }
@@ -141,7 +142,7 @@ class ParticipantesActivity : AppCompatActivity() {
 
         // Inicializar ViewModel e observar LiveData.
         // init() dispara o primeiro carregamento; rotação reutiliza o ViewModel existente.
-        viewModel = ViewModelProvider(this).get(ParticipantesViewModel::class.java)
+        viewModel = ViewModelProvider(this)[ParticipantesViewModel::class.java]
         viewModel.init(grupoAtual.id)
 
         viewModel.participants.observe(this) { participantes ->
@@ -187,7 +188,7 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel.errorMessage.observe(this) { msg ->
             if (msg == null) return@observe
             viewModel.clearErrorMessage()
-            Toast.makeText(this, msg!!, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
         }
 
         // Mensagens SMS prontas — iniciar (ou retomar) sequência de envio.
@@ -366,7 +367,7 @@ class ParticipantesActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "onActivityResult: failed to read contact", e)
             }
         }
     }
@@ -581,8 +582,7 @@ class ParticipantesActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        @Suppress("DEPRECATION")
-        onBackPressed()
+        onBackPressedDispatcher.onBackPressed()
         return true
     }
 

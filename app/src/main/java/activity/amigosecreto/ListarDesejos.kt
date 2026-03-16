@@ -1,6 +1,7 @@
 package activity.amigosecreto
 
 import android.content.Context
+import android.util.Log
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,6 +26,8 @@ import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
+
+    private companion object { const val TAG = "ListarDesejos" }
 
     private lateinit var lvDesejos: ListView
     private lateinit var adapter: ListarDesejosAdapter
@@ -77,7 +80,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
             dao.close()
             adapter.notifyDataSetChanged()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "carregarLista: failed", e)
         }
     }
 
@@ -156,8 +159,20 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
             val desejo = produtos[position]
             holder.tvProduto?.text = desejo.produto
-            holder.tvCategoria?.text = desejo.categoria
-            holder.tvPreco?.text = "${nf.format(desejo.precoMinimo)} - ${nf.format(desejo.precoMaximo)}"
+
+            if (!desejo.categoria.isNullOrEmpty()) {
+                holder.tvCategoria?.text = desejo.categoria
+                holder.tvCategoria?.visibility = View.VISIBLE
+            } else {
+                holder.tvCategoria?.visibility = View.GONE
+            }
+
+            if (desejo.precoMinimo > 0 || desejo.precoMaximo > 0) {
+                holder.tvPreco?.text = "${nf.format(desejo.precoMinimo)} - ${nf.format(desejo.precoMaximo)}"
+                holder.tvPreco?.visibility = View.VISIBLE
+            } else {
+                holder.tvPreco?.visibility = View.GONE
+            }
 
             return view
         }

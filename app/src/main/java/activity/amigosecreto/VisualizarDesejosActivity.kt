@@ -34,7 +34,7 @@ class VisualizarDesejosActivity : AppCompatActivity() {
         @Suppress("DEPRECATION")
         val p = intent.getSerializableExtra("participante") as? Participante
         if (p == null) {
-            Toast.makeText(this, "Erro: participante não encontrado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.error_participant_not_found, Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -44,7 +44,7 @@ class VisualizarDesejosActivity : AppCompatActivity() {
         desejoDAO.open()
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.title = "Lista de Desejos de ${participante.nome}"
+        toolbar.title = getString(R.string.title_wish_list_of, participante.nome)
         toolbar.setNavigationOnClickListener { finish() }
 
         lvDesejos = findViewById(R.id.lv_desejos)

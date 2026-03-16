@@ -1,6 +1,7 @@
 package activity.amigosecreto
 
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
@@ -15,6 +16,7 @@ import com.google.android.material.button.MaterialButton
 class DetalheDesejoActivity : AppCompatActivity() {
 
     companion object {
+        private const val TAG = "DetalheDesejoActivity"
         const val RESULT_REMOVE = 1000
         const val RESULT_SAVE = 2000
     }
@@ -105,7 +107,7 @@ class DetalheDesejoActivity : AppCompatActivity() {
                 carregarCampos(atualizado)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "recarregarDesejo: failed for desejo id=${d.id}", e)
         }
     }
 }

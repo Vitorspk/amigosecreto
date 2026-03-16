@@ -25,9 +25,9 @@ import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.HapticFeedbackUtils
+import activity.amigosecreto.util.WindowInsetsUtils
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 class GruposActivity : AppCompatActivity() {
 
@@ -145,11 +145,17 @@ class GruposActivity : AppCompatActivity() {
             .setTitle(R.string.dialog_clear_all_title)
             .setMessage(R.string.dialog_clear_all_message)
             .setPositiveButton(R.string.button_clear_all_yes) { _, _ ->
-                dao.open()
-                dao.limparTudo()
-                dao.close()
-                atualizarLista()
-                Toast.makeText(this, R.string.toast_all_data_cleared, Toast.LENGTH_LONG).show()
+                AsyncDatabaseHelper.executeSimple(
+                    {
+                        dao.open()
+                        dao.limparTudo()
+                        dao.close()
+                    },
+                    {
+                        atualizarLista()
+                        Toast.makeText(this, R.string.toast_all_data_cleared, Toast.LENGTH_LONG).show()
+                    }
+                )
             }
             .setNegativeButton(R.string.button_cancel, null)
             .show()
@@ -196,7 +202,7 @@ class GruposActivity : AppCompatActivity() {
             if (nome.isNotEmpty()) {
                 val g = Grupo()
                 g.nome = nome
-                g.data = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+                g.data = SimpleDateFormat("dd/MM/yyyy", WindowInsetsUtils.LOCALE_PT_BR).format(Date())
                 dao.open()
                 dao.inserir(g)
                 dao.close()

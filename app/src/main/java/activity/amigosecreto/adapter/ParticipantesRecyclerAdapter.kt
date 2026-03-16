@@ -72,7 +72,7 @@ class ParticipantesRecyclerAdapter(
             tvAvatar.text = participante.nome?.substring(0, 1)?.uppercase() ?: "?"
 
             // Status
-            tvEmail.text = if (participante.isEnviado) "✓ Enviado" else "Pendente"
+            tvEmail.text = if (participante.isEnviado) context.getString(R.string.status_item_sent) else context.getString(R.string.status_item_pending)
 
             // Click listeners
             itemView.setOnClickListener {

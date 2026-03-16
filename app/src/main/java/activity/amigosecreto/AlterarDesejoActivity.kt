@@ -1,6 +1,7 @@
 package activity.amigosecreto
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +13,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 class AlterarDesejoActivity : AppCompatActivity() {
+
+    private companion object { const val TAG = "AlterarDesejoActivity" }
 
     private lateinit var oldDesejo: Desejo
 
@@ -108,7 +111,7 @@ class AlterarDesejoActivity : AppCompatActivity() {
             dao.close()
             Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "remover: failed for desejo id=${oldDesejo.id}", e)
         }
     }
 
