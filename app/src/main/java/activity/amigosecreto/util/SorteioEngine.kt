@@ -1,6 +1,7 @@
 package activity.amigosecreto.util
 
 import activity.amigosecreto.db.Participante
+import androidx.annotation.VisibleForTesting
 import java.util.Random
 
 /**
@@ -18,10 +19,8 @@ object SorteioEngine {
     fun tentarSorteio(participantes: List<Participante>): List<Participante>? =
         tentarSorteio(participantes, Random())
 
-    // Package-private equivalent: visible to Java tests in the same package (JvmSynthetic not used
-    // because the Java test SorteioEngineTest calls this overload directly with a fixed seed).
-    @JvmStatic
-    fun tentarSorteio(participantes: List<Participante>, random: Random): List<Participante>? {
+    @VisibleForTesting
+    internal fun tentarSorteio(participantes: List<Participante>, random: Random): List<Participante>? {
         val disponiveis = participantes.toMutableList()
         val resultado = mutableListOf<Participante>()
 
