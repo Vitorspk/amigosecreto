@@ -144,7 +144,11 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 8** | **Overdraw residual (9 warnings lintDebug)** | **✅ Concluído** | **#27** |
 | **Fase 9** | **Dependency Injection (Hilt)** | **✅ Concluído** | **#28/#29** |
 | **Fase 10a** | **Migração para Kotlin — Models** | **✅ Concluído** | **#33** |
-| **Fase 10b** | **Migração para Kotlin — Utilitários** | **🔄 Próximo** | — |
+| **Fase 10b** | **Migração para Kotlin — Utilitários** | **✅ Concluído** | **#36/#37** |
+| **Fase 10c** | **Migração para Kotlin — DAOs e Repositories** | **✅ Concluído** | **#38** |
+| **Fase 10d** | **Migração para Kotlin — ViewModel** | **✅ Concluído** | **#39** |
+| **Fase 10e** | **Migração para Kotlin — Activities** | **✅ Concluído** | **#41** |
+| **Fase 10f** | **Limpeza de testes — migrar 18 arquivos Java de teste para Kotlin** | **🔄 Próximo** | — |
 
 ---
 
@@ -268,38 +272,51 @@ Cursor leak, `DefaultLocale`, Overdraw crítico — resolvidos. `lintRelease` se
 
 Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de Design (PR #33)".
 
-#### Fase 10b — Utilitários 🔄 Próximo
+#### Fase 10b — Utilitários ✅ Concluído (PR #36/#37)
 
-**Escopo:** Migrar as 8 classes em `util/` para Kotlin puro:
-- `MensagemSecretaBuilder.java` — lógica pura, sem Android, ideal para começar
-- `ValidationUtils.java` — lógica pura, regex e validações
-- `SorteioEngine.java` — algoritmo de sorteio, sem Android
-- `AnimationUtils.java` — depende de `Context`/`View`
-- `SnackbarHelper.java` — depende de `View`
-- `HapticFeedbackUtils.java` — depende de `View`
-- `AsyncDatabaseHelper.java` — depende de `Handler`/threads
-- `WindowInsetsUtils.java` — depende de `Window`/`View`
+8 classes em `util/` migradas para Kotlin puro: `MensagemSecretaBuilder`, `ValidationUtils`, `SorteioEngine`, `AnimationUtils`, `SnackbarHelper`, `HapticFeedbackUtils`, `AsyncDatabaseHelper`, `WindowInsetsUtils`.
 
-**Estratégia:** converter por risco crescente (lógica pura primeiro, Android depois).
-
-#### Fase 10c — DAOs e Repositories (futuro)
+#### Fase 10c — DAOs e Repositories ✅ Concluído (PR #38)
 
 - `GrupoDAO.java`, `ParticipanteDAO.java`, `DesejoDAO.java` → Kotlin
 - `ParticipanteRepository.java`, `DesejoRepository.java` → Kotlin
-- Após migração: trocar `var` por `val` nos models (ver [Issue #35](https://github.com/Vitorspk/amigosecreto/issues/35))
+- `MySQLiteOpenHelper.java` → Kotlin
 
-#### Fase 10d — ViewModel (futuro)
+#### Fase 10d — ViewModel ✅ Concluído (PR #39)
 
-- `ParticipantesViewModel.java` → coroutines (substituir `ExecutorService` + `Handler.post`)
+- `ParticipantesViewModel.java` → Kotlin (mantendo `ExecutorService` + `Handler.post` — coroutines ficam para Fase 10f+)
+- Java interop shims necessários: `@JvmField`, `open class`, `@get:JvmName`, `setRepositories()` — bloqueados em `ParticipantesViewModelTest.java`
 
-#### Fase 10e — Activities (futuro)
+#### Fase 10e — Activities ✅ Concluído (PR #41)
 
-- 9 Activities — maior superfície, maior risco, por último
+9 Activities + 1 adapter + `DatabaseModule` migradas para Kotlin. Zero arquivos `.java` em produção.
 
-**Benefícios:**
+- `GruposActivity`, `ParticipantesActivity`, `RevelarAmigoActivity`, `ParticipanteDesejosActivity`
+- `VisualizarDesejosActivity`, `ListarDesejos`, `InserirDesejoActivity`, `AlterarDesejoActivity`, `DetalheDesejoActivity`
+- `adapter/ParticipantesRecyclerAdapter`, `di/DatabaseModule`, `AmigoSecretoApplication`
+
+**Bugs corrigidos no PR #41:**
+- `UninitializedPropertyAccessException` em `ParticipanteDesejosActivity.onDestroy()` — `desejoDAO` inicializado após null guard
+- Visibilidade estale em `DesejosAdapter` por recycling de `convertView` — adicionado `View.VISIBLE`/`View.GONE` explícito
+- `@Suppress("RecyclerView")` era ID de lint inválido (no-op) — corrigido para `"NotifyDataSetChanged"`
+- Double-close em `RevelarAmigoActivity.onDestroy()` — DAOs abertos/fechados inline, `onDestroy` fechava novamente
+- `dao.close()` fora de `finally` em `AlterarDesejoActivity` e `InserirDesejoActivity` — corrigido
+
+#### Fase 10f — Limpeza de Testes 🔄 Próximo
+
+**Escopo:** 18 arquivos Java de teste → Kotlin
+- `ParticipantesViewModelTest.java` — bloqueador principal dos shims Java interop
+- 17 demais arquivos: DAOs, models, repositories, utilitários
+
+**Desbloqueado por:** migração de `ParticipantesViewModelTest`
+- Remover shims: `@JvmField`, `open class`, `@get:JvmName("getIsLoading")`, `setRepositories()` em `ParticipantesViewModel.kt`
+- Remover `@JvmField` de `ParticipanteRepository.kt`
+- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` — requer refatorar `InserirDesejoActivity.kt` para depender apenas de `inserir()` (que já seta `desejo.id` via AUTOINCREMENT) em vez do método deprecated
+- Converter `SorteioEngine.tentarSorteio(list, random)` de `public` para `internal` — atualmente `public` só por ser chamado de `SorteioEngineTest.java`
+
+**Benefícios da migração completa:**
 - Null safety em tempo de compilação
-- Coroutines — elimina boilerplate de `ExecutorService` + `Handler.post`
-- Data classes — `equals`/`hashCode`/`toString` automáticos (aplicável em Fase 10c+ onde não há restrição de var fields)
+- Coroutines (pode substituir `ExecutorService` + `Handler.post` no ViewModel)
 - Extension functions — simplifica utilitários
 - Hilt mais ergonômico com Kotlin (`@Inject constructor`)
 
@@ -415,18 +432,33 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 | `hilt-android-testing` removido (PR #29) | Dep prematura — sem testes `@HiltAndroidTest` ainda |
 | Testes | 224 (sem regressão) |
 
+### PR #41 — Migração Activities para Kotlin (Fase 10e)
+
+| Item | Situação |
+|------|---------|
+| Activities migradas | 9 Activities + `AmigoSecretoApplication` |
+| Adapter migrado | `ParticipantesRecyclerAdapter` |
+| `DatabaseModule` migrado | `di/DatabaseModule.java` → `.kt` |
+| Arquivos `.java` em produção | 0 (zero) |
+| Bug: `UninitializedPropertyAccessException` em `onDestroy` | Corrigido — `desejoDAO` inicializado antes do null guard |
+| Bug: visibilidade estale em `DesejosAdapter` (ListView recycling) | Corrigido — `View.VISIBLE`/`View.GONE` explícito |
+| Bug: `@Suppress("RecyclerView")` (ID inválido, no-op) | Corrigido → `"NotifyDataSetChanged"` |
+| Bug: double-close em `RevelarAmigoActivity.onDestroy()` | Corrigido — `onDestroy` removido |
+| Bug: `dao.close()` fora de `finally` em `AlterarDesejoActivity`/`InserirDesejoActivity` | Corrigido |
+| Testes | 285 (sem regressão) |
+
 ---
 
 ## Conclusão
 
-O app atingiu nível profissional. As fases de infraestrutura foram concluídas; a Fase 10 (migração para Kotlin) está em andamento:
-- 263 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
+O app atingiu nível profissional. As fases de infraestrutura foram concluídas; a **Fase 10 (migração para Kotlin) está concluída em produção** — zero arquivos `.java` em `app/src/main/`:
+- 285 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
 - `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
-- Fase 10a concluída: models migrados para Kotlin (PR #33)
+- Fases 10a–10e concluídas: todo o código de produção em Kotlin (PR #33, #36/#37, #38, #39, #41)
 
-**Próximo passo:** Fase 10b — Migrar utilitários (`util/`) para Kotlin.
+**Próximo passo:** Fase 10f — Migrar 18 arquivos Java de teste para Kotlin e remover shims de interop Java (`@JvmField`, `open class`, `setRepositories()`).
