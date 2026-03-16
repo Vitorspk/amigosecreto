@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 14/03/2026 — PR #32 merged)
+**Data:** Março/2026 (última atualização: 16/03/2026 — PR #43 merged)
 **Versão Analisada:** 3.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -10,9 +10,9 @@
 
 O app **atingiu nível profissional** com progresso consistente desde a análise inicial.
 
-É um app funcional, com pipeline de CI/CD real, testes unitários (260 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. As Fases 1–9 do roadmap foram concluídas. O PR #21 finalizou a extração de strings e acessibilidade; PR #28/#29 introduziu Dependency Injection com Hilt; PR #31 adicionou testes de contrato pré-migração.
+É um app funcional, com pipeline de CI/CD real, testes unitários (285 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. A migração completa para Kotlin foi concluída na Fase 10f (PR #43) — todo o código de produção e todos os 18 arquivos de teste estão em Kotlin, sem nenhum shim de interop Java.
 
-O app está em nível profissional. O `lintDebug` está zerado — PR #22 eliminou os 47 `UnusedResources` e PR #27 eliminou os 9 `Overdraw`. PR #28 introduziu Dependency Injection com Hilt. O próximo passo é a migração para Kotlin.
+O app está em nível profissional. O `lintRelease` está zerado. PR #22 eliminou os 47 `UnusedResources`; PR #27 eliminou os 9 `Overdraw`; PR #28 introduziu Dependency Injection com Hilt. A migração completa para Kotlin (Fases 10a–10f) foi concluída.
 
 ---
 
@@ -148,7 +148,7 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 10c** | **Migração para Kotlin — DAOs e Repositories** | **✅ Concluído** | **#38** |
 | **Fase 10d** | **Migração para Kotlin — ViewModel** | **✅ Concluído** | **#39** |
 | **Fase 10e** | **Migração para Kotlin — Activities** | **✅ Concluído** | **#41** |
-| **Fase 10f** | **Limpeza de testes — migrar 18 arquivos Java de teste para Kotlin** | **🔄 Próximo** | — |
+| **Fase 10f** | **Limpeza de testes — migrar 18 arquivos Java de teste para Kotlin** | **✅ Concluído** | **#43** |
 
 ---
 
@@ -302,23 +302,21 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 - Double-close em `RevelarAmigoActivity.onDestroy()` — DAOs abertos/fechados inline, `onDestroy` fechava novamente
 - `dao.close()` fora de `finally` em `AlterarDesejoActivity` e `InserirDesejoActivity` — corrigido
 
-#### Fase 10f — Limpeza de Testes 🔄 Próximo
+#### Fase 10f — Limpeza de Testes ✅ Concluído (PR #43)
 
-**Escopo:** 18 arquivos Java de teste → Kotlin
-- `ParticipantesViewModelTest.java` — bloqueador principal dos shims Java interop
-- 17 demais arquivos: DAOs, models, repositories, utilitários
+**Escopo entregue:** 18 arquivos Java de teste → Kotlin
+- `ParticipantesViewModelTest.kt`, `SorteioEngineTest.kt`, `DesejoParcelableTest.kt` (novos)
+- 15 demais arquivos: DAOs, models, repositories, utilitários (migrados em PR anteriores)
 
-**Desbloqueado por:** migração de `ParticipantesViewModelTest`
-- Remover shims: `@JvmField`, `open class`, `@get:JvmName("getIsLoading")`, `setRepositories()` em `ParticipantesViewModel.kt`
-- Remover `@JvmField` de `ParticipanteRepository.kt`
-- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` — requer refatorar `InserirDesejoActivity.kt` para depender apenas de `inserir()` (que já seta `desejo.id` via AUTOINCREMENT) em vez do método deprecated
-- Converter `SorteioEngine.tentarSorteio(list, random)` de `public` para `internal` — atualmente `public` só por ser chamado de `SorteioEngineTest.java`
+**Shims Java interop removidos:**
+- `@JvmField` de `SorteioResultado`, `MensagensSmsResultado`, `MensagemCompartilhamentoResultado` em `ParticipantesViewModel.kt`
+- `@get:JvmName("getIsLoading")` de `ParticipantesViewModel.kt`
+- `SorteioEngine.tentarSorteio(list, random)` convertido de `public` para `internal @VisibleForTesting` (a anotação `@JvmStatic` pertence ao overload público `tentarSorteio(list)`, que não era shim e permanece inalterado)
 
-**Benefícios da migração completa:**
-- Null safety em tempo de compilação
-- Coroutines (pode substituir `ExecutorService` + `Handler.post` no ViewModel)
-- Extension functions — simplifica utilitários
-- Hilt mais ergonômico com Kotlin (`@Inject constructor`)
+**TODOs pendentes pós-Fase 10f:**
+- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` (requer refatorar `InserirDesejoActivity.kt`)
+- Substituir `java.util.Random` por `kotlin.random.Random` em `SorteioEngine.kt`
+- Converter `private var` repositories para `val` + remover `setRepositories()` quando usar constructor injection ou `@TestInstallIn`
 
 ---
 
@@ -459,6 +457,7 @@ O app atingiu nível profissional. As fases de infraestrutura foram concluídas;
 - `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
-- Fases 10a–10e concluídas: todo o código de produção em Kotlin (PR #33, #36/#37, #38, #39, #41)
+- Fases 10a–10f concluídas: **todo o código de produção e todos os 18 arquivos de teste em Kotlin** (PR #33, #36/#37, #38, #39, #41, #43)
+- Zero shims de interop Java (`@JvmField`, `@get:JvmName`, visibilidade `public` desnecessária) nas classes de produção
 
-**Próximo passo:** Fase 10f — Migrar 18 arquivos Java de teste para Kotlin e remover shims de interop Java (`@JvmField`, `open class`, `setRepositories()`).
+**Próximo passo:** Cleanup pós-migração — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity`.
