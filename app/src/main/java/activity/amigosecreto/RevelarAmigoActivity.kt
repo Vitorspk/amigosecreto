@@ -112,9 +112,4 @@ class RevelarAmigoActivity : AppCompatActivity() {
 
         btnVoltar.setOnClickListener { finish() }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // dao and desejoDAO are opened and closed inline per-operation; no persistent state to release here.
-    }
 }

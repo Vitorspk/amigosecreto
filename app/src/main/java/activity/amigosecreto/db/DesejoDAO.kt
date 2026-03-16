@@ -176,13 +176,14 @@ class DesejoDAO(ctx: Context) {
     }
 
     /**
-     * Retorna MAX(id)+1 para uso pré-inserção em InserirDesejoActivity e ParticipanteDesejosActivity.
-     * Mantido por compatibilidade com Activities Java ainda não migradas — não remover até Fase 10e.
+     * Retorna MAX(id)+1 para uso pré-inserção em InserirDesejoActivity.
+     * ParticipanteDesejosActivity já foi migrado para Kotlin e não usa mais este método.
+     * Mantido por compatibilidade com InserirDesejoActivity (Java) — remover quando migrar.
      * Nota: inserir() já seta desejo.id via AUTOINCREMENT; este método tem race condition potencial
      * em ambiente multi-thread. Migrar call sites para depender apenas de inserir() quando possível.
      *
      * @deprecated Use [inserir] instead — it sets [Desejo.id] from AUTOINCREMENT without a race condition.
-     *   This method is kept until InserirDesejoActivity and ParticipanteDesejosActivity migrate to Kotlin (Fase 10e).
+     *   This method is kept until InserirDesejoActivity migrates to Kotlin (test cleanup PR).
      */
     @Deprecated(
         message = "Use inserir() instead — sets Desejo.id via AUTOINCREMENT without race condition.",
