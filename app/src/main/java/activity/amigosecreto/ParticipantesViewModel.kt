@@ -182,6 +182,7 @@ class ParticipantesViewModel @Inject constructor(
      * MUST be called from the main thread: sets _isLoading.value = true via setValue(),
      * which requires the main thread. All current call sites satisfy this — either called
      * directly from the Activity (main thread) or via postMain(::carregarParticipantes).
+     * TODO: Fase 10e — replace setValue with postValue to make this thread-safe from any caller.
      */
     fun carregarParticipantes() {
         if (grupoId == -1) return
