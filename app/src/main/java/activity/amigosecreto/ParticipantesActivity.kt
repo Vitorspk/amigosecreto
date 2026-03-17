@@ -4,6 +4,8 @@ import android.Manifest
 import android.util.Log
 import android.content.Context
 import android.content.Intent
+import android.view.Menu
+import android.view.MenuItem
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
@@ -598,6 +600,24 @@ class ParticipantesActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.button_cancel, null)
             .show()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_participantes, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_historico -> {
+                startActivity(
+                    Intent(this, HistoricoSorteiosActivity::class.java)
+                        .putExtra("grupo", grupoAtual)
+                )
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

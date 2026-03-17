@@ -724,8 +724,12 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 4 | **Estados de UI** — loading/empty/content via `StateViewHelper` + `ViewStub` | ✅ Concluído | #49 |
 | 5 | **Testes Espresso** — `ParticipantesActivity` | ✅ Concluído | #51 |
 | 6 | **kotlin.random.Random** — substituir `java.util.Random` em `SorteioEngine` | ✅ Concluído | #53 |
-| — | **Testes de UI adicionais** — Espresso (GruposActivity, mais casos) | ⏳ Próximo | — |
-| — | **Funcionalidades novas** — backup/restore, histórico de sorteios, etc. | ⏳ | — |
+| 7 | **Testes de UI adicionais** — Espresso (GruposActivity + IdlingResource) | ✅ Concluído | #55 |
+| 8 | **Histórico de sorteios** — persistir resultados por sorteio com data/hora | ⏳ Em andamento | — |
+| 9 | **Backup/restore** — exportar/importar dados via Google Drive ou arquivo local | ⏳ | — |
+| 10 | **Notificações de lembrete** — lembrar organizador sobre sorteio pendente | ⏳ | — |
+| 11 | **Compartilhar via Telegram/Email** — além de WhatsApp/SMS | ⏳ | — |
+| 12 | **QR Code** — gerar QR Code para cada participante revelar seu amigo secreto | ⏳ | — |
 
 ### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
@@ -741,6 +745,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f (PR #43)
 - [x] Estados de UI loading/empty/content via `StateViewHelper` + `ViewStub` (PR #49)
 - [x] Testes Espresso para `ParticipantesActivity` (PR #51)
+- [x] Testes Espresso para `GruposActivity` + `CountingIdlingResource` em `AsyncDatabaseHelper` (PR #55)
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
@@ -750,7 +755,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] **Schema v9** — `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` — PR #47
 - [x] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel — PR #48
 - [x] `kotlin.random.Random` em `SorteioEngine` — PR #53
-- [ ] Testes de UI com Espresso adicionais (GruposActivity, mais casos ParticipantesActivity)
+- [x] Testes Espresso adicionais — `GruposActivity` + `CountingIdlingResource` — PR #55
 - [ ] Logs estruturados (Timber)
 
 ### UI/UX
@@ -758,9 +763,9 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] Suporte a tablets
 - [ ] Transições entre Activities com shared elements
 
-### Funcionalidades ← **#5**
-- [ ] Backup/restore de dados (Google Drive)
-- [ ] Histórico de sorteios anteriores
+### Funcionalidades ← **#8 em andamento**
+- [ ] **Histórico de sorteios** — persistir resultados por sorteio com data/hora
+- [ ] Backup/restore de dados (Google Drive ou arquivo local)
 - [ ] Notificações de lembrete
 - [ ] Compartilhar via Telegram/Email
 - [ ] QR Code para compartilhamento

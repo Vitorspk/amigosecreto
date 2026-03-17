@@ -8,6 +8,7 @@ import activity.amigosecreto.db.Participante
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
+import activity.amigosecreto.repository.SorteioRepository
 import android.database.sqlite.SQLiteException
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
@@ -47,6 +48,7 @@ class ParticipantesViewModelTest {
     private lateinit var participanteDao: ParticipanteDAO
     private lateinit var participanteRepository: ParticipanteRepository
     private lateinit var desejoRepository: DesejoRepository
+    private lateinit var sorteioRepository: SorteioRepository
     private var grupoId = 0
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -68,8 +70,9 @@ class ParticipantesViewModelTest {
 
         desejoRepository = DesejoRepository(app)
         participanteRepository = ParticipanteRepository(app)
+        sorteioRepository = SorteioRepository(app)
 
-        viewModel = ParticipantesViewModel(app, participanteRepository, desejoRepository)
+        viewModel = ParticipantesViewModel(app, participanteRepository, desejoRepository, sorteioRepository)
         viewModel.ioDispatcher = testDispatcher
     }
 

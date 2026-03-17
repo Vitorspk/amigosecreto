@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 17/03/2026 — PRs #49 e #51 merged)
+**Data:** Março/2026 (última atualização: 17/03/2026 — PRs #46–#53)
 **Versão Analisada:** 3.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -153,6 +153,10 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 10f** | **Limpeza de testes — migrar 18 arquivos Java de teste para Kotlin** | **✅ Concluído** | **#43** |
 | **Estados de UI** | **`StateViewHelper` + `ViewStub` lazy inflation em todas as telas de lista** | **✅ Concluído** | **#49** |
 | **Espresso** | **Testes instrumentados para `ParticipantesActivity`** | **✅ Concluído** | **#51** |
+| **Cleanup pós-migração** | **Remover `proximoId()` + refatorar `InserirDesejoActivity`** | **✅ Concluído** | **#46** |
+| **Schema v9** | **`ON DELETE CASCADE` nas FKs de `exclusao` e `desejo`** | **✅ Concluído** | **#47** |
+| **Coroutines** | **`viewModelScope` + `Dispatchers.IO` no `ParticipantesViewModel`** | **✅ Concluído** | **#48** |
+| **kotlin.random.Random** | **Substituir `java.util.Random` em `SorteioEngine`** | **✅ Concluído** | **#53** |
 
 ---
 
@@ -318,8 +322,8 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 - `SorteioEngine.tentarSorteio(list, random)` convertido de `public` para `internal @VisibleForTesting` (a anotação `@JvmStatic` pertence ao overload público `tentarSorteio(list)`, que não era shim e permanece inalterado)
 
 **TODOs pendentes pós-Fase 10f:**
-- Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` (requer refatorar `InserirDesejoActivity.kt`)
-- Substituir `java.util.Random` por `kotlin.random.Random` em `SorteioEngine.kt`
+- ~~Remover `proximoId()` de `DesejoDAO.kt` e `DesejoRepository.kt` (requer refatorar `InserirDesejoActivity.kt`)~~ — ✅ concluído no PR #46
+- ~~Substituir `java.util.Random` por `kotlin.random.Random` em `SorteioEngine.kt`~~ — ✅ concluído no PR #53
 - Converter `private var` repositories para `val` + remover `setRepositories()` quando usar constructor injection ou `@TestInstallIn`
 
 ---
@@ -482,6 +486,50 @@ O ViewModel posta `_participants` via `postValue()` antes de `_isLoading=false`.
 | Bug: `dao.close()` fora de `finally` em `AlterarDesejoActivity`/`InserirDesejoActivity` | Corrigido |
 | Testes | 285 (sem regressão) |
 
+### PR #46 — Cleanup pós-migração: remover proximoId() e migrar InserirDesejoActivity
+
+| Item | Situação |
+|------|---------|
+| `proximoId()` removido de `DesejoDAO.kt` | Método deprecated eliminado |
+| `proximoId()` removido de `DesejoRepository.kt` | Encapsulamento limpo |
+| `InserirDesejoActivity.kt` refatorada | Usa `repo.inserir(desejo)` diretamente via `AsyncDatabaseHelper` |
+| Roadmap item #1 | ✅ Concluído |
+
+---
+
+### PR #47 — Schema v9: ON DELETE CASCADE nas FKs de exclusao e desejo
+
+| Item | Situação |
+|------|---------|
+| `MySQLiteOpenHelper`: schema v9, `amigosecreto_v9.db`, `DATABASE_VERSION = 9` | Versão de banco atualizada |
+| `ON DELETE CASCADE` em `exclusao.participante_id → participante.id` | FK com cascade |
+| `ON DELETE CASCADE` em `exclusao.excluido_id → participante.id` | FK com cascade |
+| `ON DELETE CASCADE` em `desejo.participante_id → participante.id` | FK com cascade |
+| `onUpgrade` v8→v9 | Recria tabelas afetadas com CASCADE |
+| `GrupoDAO.remover()` e `ParticipanteDAO.remover()` simplificados | SQLite gerencia deleção em cascade — ordem manual de filhos antes do pai não é mais necessária para exclusao/desejo |
+| Roadmap item #2 | ✅ Concluído |
+
+---
+
+### PR #48 — Migração de ParticipantesViewModel para coroutines
+
+| Item | Situação |
+|------|---------|
+| `ExecutorService` + `Handler(Looper.getMainLooper())` removidos | Substituídos por coroutines |
+| Operações de banco via `viewModelScope.launch { withContext(Dispatchers.IO) { ... } }` | Todas as ops em background usam coroutines Kotlin |
+| `var ioDispatcher: CoroutineDispatcher = Dispatchers.IO` adicionado | Permite injeção de dispatcher nos testes |
+| Roadmap item #3 | ✅ Concluído |
+
+---
+
+### PR #50 — Fix de testes ViewModel após migração para coroutines
+
+| Item | Situação |
+|------|---------|
+| `Dispatchers.setMain(UnconfinedTestDispatcher())` em `setUp` | Substitui o dispatcher Main para testes determinísticos |
+| `Dispatchers.resetMain()` em `tearDown` | Restaura dispatcher após cada teste |
+| Testes de ViewModel estabilizados após PR #48 | Sem regressão |
+
 ---
 
 ## Conclusão
@@ -498,5 +546,9 @@ O app atingiu nível profissional. As fases de infraestrutura foram concluídas;
 - Zero shims de interop Java (`@JvmField`, `@get:JvmName`, visibilidade `public` desnecessária) nas classes de produção
 - Estados de UI (loading/empty/content) via `StateViewHelper` + `ViewStub` em todas as telas de lista (PR #49)
 - Testes Espresso para `ParticipantesActivity` (PR #51)
+- `proximoId()` removido de `DesejoDAO`/`DesejoRepository`; `InserirDesejoActivity` refatorada (PR #46)
+- Schema v9 com `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` — banco `amigosecreto_v9.db` (PR #47)
+- `ParticipantesViewModel` migrado de `ExecutorService`+`Handler` para `viewModelScope` + `Dispatchers.IO` (PR #48)
+- `java.util.Random` substituído por `kotlin.random.Random` em `SorteioEngine` (PR #53)
 
-**Próximo passo:** Cleanup pós-migração — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity`.
+**Próximo passo:** Testes de UI adicionais com Espresso (GruposActivity, mais casos de ParticipantesActivity) e novas funcionalidades.
