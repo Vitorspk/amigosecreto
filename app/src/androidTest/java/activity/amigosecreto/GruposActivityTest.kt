@@ -1,7 +1,9 @@
 package activity.amigosecreto
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.longClick
@@ -15,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.GrupoDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -28,6 +31,10 @@ class GruposActivityTest {
 
     @Before
     fun setUp() {
+        // Registrar IdlingResource para sincronizar com operacoes assincronas do AsyncDatabaseHelper.
+        // Sem isso, assertions apos acoes de delete/reload podem rodar antes do adapter ser atualizado.
+        IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         dao = GrupoDAO(ctx)
         dao.open()
@@ -39,6 +46,7 @@ class GruposActivityTest {
 
     @After
     fun tearDown() {
+        IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
         try {
             scenario.close()
         } finally {
@@ -182,6 +190,9 @@ class GruposActivityTest {
 
         // ParticipantesActivity exibe o FAB de adicionar participante
         onView(withId(R.id.fab_add_participante)).check(matches(isDisplayed()))
+
+        // Voltar para GruposActivity para evitar interferência entre testes (back stack limpo)
+        Espresso.pressBack()
     }
 
     // --- Helpers ---
