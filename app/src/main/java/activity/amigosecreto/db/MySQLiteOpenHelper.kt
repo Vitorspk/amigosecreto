@@ -34,8 +34,21 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         const val COLUMN_LOJAS = "lojas"
         const val COLUMN_DESEJO_PARTICIPANTE_ID = "participante_id"
 
-        private const val DATABASE_NAME = "amigosecreto_v9.db"
-        private const val DATABASE_VERSION = 9
+        const val TABLE_SORTEIO = "sorteio"
+        const val COLUMN_SORTEIO_ID = "id"
+        const val COLUMN_SORTEIO_GRUPO_ID = "grupo_id"
+        const val COLUMN_SORTEIO_DATA_HORA = "data_hora"
+
+        const val TABLE_SORTEIO_PAR = "sorteio_par"
+        const val COLUMN_SORTEIO_PAR_SORTEIO_ID = "sorteio_id"
+        const val COLUMN_SORTEIO_PAR_PARTICIPANTE_ID = "participante_id"
+        const val COLUMN_SORTEIO_PAR_SORTEADO_ID = "sorteado_id"
+        const val COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE = "nome_participante"
+        const val COLUMN_SORTEIO_PAR_NOME_SORTEADO = "nome_sorteado"
+        const val COLUMN_SORTEIO_PAR_ENVIADO = "enviado"
+
+        private const val DATABASE_NAME = "amigosecreto_v10.db"
+        private const val DATABASE_VERSION = 10
     }
 
     override fun onOpen(db: SQLiteDatabase) {
@@ -50,6 +63,8 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         db.execSQL(sqlCreateParticipante())
         db.execSQL(sqlCreateExclusao())
         db.execSQL(sqlCreateDesejo())
+        db.execSQL(sqlCreateSorteio())
+        db.execSQL(sqlCreateSorteioPar())
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -91,6 +106,32 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
 
             db.execSQL("PRAGMA foreign_keys = ON")
         }
+
+        if (oldVersion < 10) {
+            // Adicionar tabelas de histórico de sorteios (v10)
+            db.execSQL(sqlCreateSorteio().replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"))
+            db.execSQL(sqlCreateSorteioPar().replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"))
+
+            // Recuperar dados históricos: grupos com sorteio ativo viram um registro retroativo
+            db.execSQL(
+                "INSERT INTO $TABLE_SORTEIO ($COLUMN_SORTEIO_GRUPO_ID, $COLUMN_SORTEIO_DATA_HORA) " +
+                "SELECT DISTINCT $COLUMN_FK_GRUPO_ID, 'Sorteio anterior' " +
+                "FROM $TABLE_PARTICIPANTE " +
+                "WHERE $COLUMN_AMIGO_SORTEADO_ID IS NOT NULL"
+            )
+            db.execSQL(
+                "INSERT INTO $TABLE_SORTEIO_PAR (" +
+                "$COLUMN_SORTEIO_PAR_SORTEIO_ID, $COLUMN_SORTEIO_PAR_PARTICIPANTE_ID, " +
+                "$COLUMN_SORTEIO_PAR_SORTEADO_ID, $COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE, " +
+                "$COLUMN_SORTEIO_PAR_NOME_SORTEADO, $COLUMN_SORTEIO_PAR_ENVIADO) " +
+                "SELECT s.$COLUMN_SORTEIO_ID, p.$COLUMN_ID, p.$COLUMN_AMIGO_SORTEADO_ID, " +
+                "p.$COLUMN_NOME, sorteado.$COLUMN_NOME, p.$COLUMN_ENVIADO " +
+                "FROM $TABLE_PARTICIPANTE p " +
+                "INNER JOIN $TABLE_SORTEIO s ON s.$COLUMN_SORTEIO_GRUPO_ID = p.$COLUMN_FK_GRUPO_ID " +
+                "INNER JOIN $TABLE_PARTICIPANTE sorteado ON sorteado.$COLUMN_ID = p.$COLUMN_AMIGO_SORTEADO_ID " +
+                "WHERE p.$COLUMN_AMIGO_SORTEADO_ID IS NOT NULL"
+            )
+        }
     }
 
     private fun sqlCreateGrupo() =
@@ -128,4 +169,22 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         "$COLUMN_LOJAS TEXT, " +
         "$COLUMN_DESEJO_PARTICIPANTE_ID INTEGER, " +
         "FOREIGN KEY($COLUMN_DESEJO_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE)"
+
+    internal fun sqlCreateSorteio() =
+        "CREATE TABLE $TABLE_SORTEIO(" +
+        "$COLUMN_SORTEIO_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "$COLUMN_SORTEIO_GRUPO_ID INTEGER NOT NULL, " +
+        "$COLUMN_SORTEIO_DATA_HORA TEXT NOT NULL, " +
+        "FOREIGN KEY($COLUMN_SORTEIO_GRUPO_ID) REFERENCES $TABLE_GRUPO($COLUMN_GRUPO_ID) ON DELETE CASCADE)"
+
+    internal fun sqlCreateSorteioPar() =
+        "CREATE TABLE $TABLE_SORTEIO_PAR(" +
+        "$COLUMN_SORTEIO_PAR_SORTEIO_ID INTEGER NOT NULL, " +
+        "$COLUMN_SORTEIO_PAR_PARTICIPANTE_ID INTEGER NOT NULL, " +
+        "$COLUMN_SORTEIO_PAR_SORTEADO_ID INTEGER NOT NULL, " +
+        "$COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE TEXT, " +
+        "$COLUMN_SORTEIO_PAR_NOME_SORTEADO TEXT, " +
+        "$COLUMN_SORTEIO_PAR_ENVIADO INTEGER DEFAULT 0, " +
+        "PRIMARY KEY ($COLUMN_SORTEIO_PAR_SORTEIO_ID, $COLUMN_SORTEIO_PAR_PARTICIPANTE_ID), " +
+        "FOREIGN KEY($COLUMN_SORTEIO_PAR_SORTEIO_ID) REFERENCES $TABLE_SORTEIO($COLUMN_SORTEIO_ID) ON DELETE CASCADE)"
 }

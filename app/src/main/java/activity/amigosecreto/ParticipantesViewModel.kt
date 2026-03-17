@@ -13,6 +13,7 @@ import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
+import activity.amigosecreto.repository.SorteioRepository
 import activity.amigosecreto.util.MensagemSecretaBuilder
 import activity.amigosecreto.util.SorteioEngine
 import kotlinx.coroutines.CoroutineDispatcher
@@ -26,7 +27,8 @@ class ParticipantesViewModel @Inject constructor(
     // var (not val) — required by @VisibleForTesting setRepositories() for fake injection in tests.
     // TODO: convert to val + remove setRepositories() when tests migrate to constructor injection or @TestInstallIn.
     private var participanteRepository: ParticipanteRepository,
-    private var desejoRepository: DesejoRepository
+    private var desejoRepository: DesejoRepository,
+    private var sorteioRepository: SorteioRepository
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -195,7 +197,11 @@ class ParticipantesViewModel @Inject constructor(
     }
 
     /**
-     * Executa o sorteio em background.
+     * Executa o sorteio em background e persiste o resultado no histórico.
+     * Usa [SorteioRepository.salvarSorteioCompleto] em transação atômica:
+     * insere o evento em `sorteio`, os pares em `sorteio_par` e atualiza
+     * `participante.amigo_sorteado_id` — tudo ou nada.
+     *
      * Posta o resultado em sorteioResult; a Activity observa e exibe o dialog/toast adequado.
      */
     fun realizarSorteio() {
@@ -228,7 +234,9 @@ class ParticipantesViewModel @Inject constructor(
             // Inline handling (not handleDbError) because the result drives a tri-state block below:
             // success reloads + posts SUCCESS, failure posts error_save_draw.
             val salvo = try {
-                withContext(ioDispatcher) { participanteRepository.salvarSorteio(sortableSnapshot, sorteados) }
+                withContext(ioDispatcher) {
+                    sorteioRepository.salvarSorteioCompleto(grupoId, sortableSnapshot, sorteados) > 0
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "realizarSorteio: failed to save draw result", e)
                 false
@@ -323,8 +331,13 @@ class ParticipantesViewModel @Inject constructor(
     }
 
     @VisibleForTesting
-    fun setRepositories(participanteRepository: ParticipanteRepository, desejoRepository: DesejoRepository) {
+    fun setRepositories(
+        participanteRepository: ParticipanteRepository,
+        desejoRepository: DesejoRepository,
+        sorteioRepository: SorteioRepository = this.sorteioRepository
+    ) {
         this.participanteRepository = participanteRepository
         this.desejoRepository = desejoRepository
+        this.sorteioRepository = sorteioRepository
     }
 }

@@ -257,4 +257,15 @@
     <string name="menu_rate_app">Avaliar na Play Store</string>
     <string name="menu_clear_all_data">Limpar Todos os Dados</string>
 
+    <!-- Histórico de Sorteios -->
+    <string name="historico_titulo">Histórico de Sorteios</string>
+    <string name="historico_expandir">Expandir sorteio</string>
+    <string name="historico_recolher">Recolher sorteio</string>
+    <string name="historico_empty_title">Nenhum sorteio realizado</string>
+    <string name="historico_empty_message">Realize um sorteio para ver o histórico aqui.</string>
+    <string name="historico_pares">%d par(es)</string>
+    <string name="historico_par_formato">%1$s → %2$s</string>
+    <string name="historico_sorteio_anterior">Sorteio anterior</string>
+    <string name="menu_historico">Histórico</string>
+
 </resources>

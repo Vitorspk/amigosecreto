@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
+import activity.amigosecreto.repository.SorteioRepository
 
 /**
  * Hilt module that provides repository instances for the entire application lifetime.
@@ -29,4 +30,9 @@ object DatabaseModule {
     @Singleton
     fun provideDesejoRepository(@ApplicationContext context: Context): DesejoRepository =
         DesejoRepository(context)
+
+    @Provides
+    @Singleton
+    fun provideSorteioRepository(@ApplicationContext context: Context): SorteioRepository =
+        SorteioRepository(context)
 }
