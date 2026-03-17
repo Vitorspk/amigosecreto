@@ -55,54 +55,13 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     fun remover(id: Int) {
-        val idStr = id.toString()
-        database.beginTransaction()
-        try {
-            // Delete child records before parent to be FK-safe (schema v9 will add ON DELETE CASCADE)
-            database.delete(
-                MySQLiteOpenHelper.TABLE_EXCLUSAO,
-                "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
-                arrayOf(idStr, idStr)
-            )
-            database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(idStr))
-            database.setTransactionSuccessful()
-        } finally {
-            database.endTransaction()
-        }
+        // ON DELETE CASCADE (schema v9) handles exclusao and desejo deletion automatically.
+        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(id.toString()))
     }
 
     fun deletarTodosDoGrupo(grupoId: Int) {
-        database.beginTransaction()
-        try {
-            val cursor = database.query(
-                MySQLiteOpenHelper.TABLE_PARTICIPANTE,
-                arrayOf(MySQLiteOpenHelper.COLUMN_ID),
-                "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?",
-                arrayOf(grupoId.toString()),
-                null, null, null
-            )
-            cursor.use {
-                if (it.moveToFirst()) {
-                    do {
-                        val idStr = it.getInt(0).toString()
-                        database.delete(
-                            MySQLiteOpenHelper.TABLE_EXCLUSAO,
-                            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
-                            arrayOf(idStr, idStr)
-                        )
-                        database.delete(
-                            MySQLiteOpenHelper.TABLE_DESEJO,
-                            "${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = ?",
-                            arrayOf(idStr)
-                        )
-                    } while (it.moveToNext())
-                }
-            }
-            database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()))
-            database.setTransactionSuccessful()
-        } finally {
-            database.endTransaction()
-        }
+        // ON DELETE CASCADE (schema v9) handles exclusao and desejo deletion automatically.
+        database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()))
     }
 
     fun limparSorteioDoGrupo(grupoId: Int) {

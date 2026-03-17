@@ -42,33 +42,7 @@ class GrupoDAO(ctx: Context) {
     fun remover(id: Int) {
         database.beginTransaction()
         try {
-            // Get all participant IDs to clean up their exclusion records
-            val cursor = database.query(
-                MySQLiteOpenHelper.TABLE_PARTICIPANTE,
-                arrayOf(MySQLiteOpenHelper.COLUMN_ID),
-                "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?",
-                arrayOf(id.toString()),
-                null, null, null
-            )
-            // TODO: when schema v9 adds ON DELETE CASCADE on exclusao and desejo FKs,
-            //  this per-participant loop becomes dead code and can be removed.
-            cursor.use {
-                if (it.moveToFirst()) {
-                    do {
-                        val pid = it.getInt(0).toString()
-                        database.delete(
-                            MySQLiteOpenHelper.TABLE_EXCLUSAO,
-                            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} = ? OR ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} = ?",
-                            arrayOf(pid, pid)
-                        )
-                        database.delete(
-                            MySQLiteOpenHelper.TABLE_DESEJO,
-                            "${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} = ?",
-                            arrayOf(pid)
-                        )
-                    } while (it.moveToNext())
-                }
-            }
+            // ON DELETE CASCADE (schema v9) handles exclusao and desejo deletion automatically.
             database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(id.toString()))
             database.delete(MySQLiteOpenHelper.TABLE_GRUPO, "${MySQLiteOpenHelper.COLUMN_GRUPO_ID} = ?", arrayOf(id.toString()))
             database.setTransactionSuccessful()
