@@ -45,9 +45,6 @@ app/src/main/java/activity/amigosecreto/
 ├── adapter/
 │   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
 │
-├── di/
-│   └── DatabaseModule.kt                  # @Module @InstallIn(SingletonComponent) — provê Repositories
-│
 ├── db/
 │   ├── MySQLiteOpenHelper.kt              # schema SQLite v8 + migrações
 │   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
@@ -678,7 +675,7 @@ Mantido `java.util.Random` por ora. **TODO:** substituir por `kotlin.random.Rand
 O ViewModel posta `_participants` via `postValue()` **antes** de `_isLoading = false`. Por isso, o observer de `isLoading` em `ParticipantesActivity` drive apenas o estado loading:
 
 ```kotlin
-// CORRETO — isLoading drive só o loading state
+// CORRETO — isLoading controla só o loading state
 viewModel.isLoading.observe(this) { loading ->
     if (loading) stateHelper.showLoading()
 }
@@ -692,7 +689,7 @@ viewModel.isLoading.observe(this) { loading ->
 }
 ```
 
-As transições empty/content são drivenadas exclusivamente pelo observer de `participants`, que já recebeu os dados quando dispara.
+As transições empty/content são controladas exclusivamente pelo observer de `participants`, que já recebeu os dados quando dispara.
 
 ### layout_height="match_parent" nos ViewStubs
 
