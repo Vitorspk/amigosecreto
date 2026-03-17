@@ -246,6 +246,36 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     /**
+     * Retorna o número de grupos que têm >= [minParticipantes] participantes mas onde
+     * nenhum participante possui amigo_sorteado_id definido (sorteio ainda não realizado).
+     *
+     * Usa uma única query com INNER JOIN + GROUP BY + HAVING, evitando N+1.
+     * Padrão equivalente a [contarPorGrupo] e ao batch de DesejoDAO.
+     */
+    /**
+     * Retorna o número de grupos que têm >= [minParticipantes] participantes mas onde
+     * nenhum participante possui amigo_sorteado_id definido (sorteio ainda não realizado).
+     *
+     * Usa uma única query com GROUP BY + HAVING, evitando N+1.
+     * Padrão equivalente a [contarPorGrupo] e ao batch de DesejoDAO.
+     */
+    fun contarGruposPendentes(minParticipantes: Int = 3): Int {
+        // Conta grupos onde:
+        //   - há >= minParticipantes participantes
+        //   - nenhum participante tem amigo_sorteado_id definido (todos NULL)
+        // Usa GROUP BY + HAVING numa única query para evitar N+1.
+        // COUNT(coluna) conta apenas valores não-NULL; se todos são NULL, COUNT = 0.
+        val sql =
+            "SELECT ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
+            " FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}" +
+            " GROUP BY ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
+            " HAVING COUNT(*) >= $minParticipantes" +
+            "   AND COUNT(${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID}) = 0"
+        val cursor = database.rawQuery(sql, null)
+        return cursor.use { it.count }
+    }
+
+    /**
      * Retorna o participante pelo id, ou null se não existir.
      * Nota: [Participante.idsExcluidos] NÃO é populado — use [listarPorGrupo] quando
      * as exclusões forem necessárias.

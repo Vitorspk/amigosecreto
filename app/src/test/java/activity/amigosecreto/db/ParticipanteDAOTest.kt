@@ -320,4 +320,60 @@ class ParticipanteDAOTest {
         dao.deletarTodosDoGrupo(grupoId)
         assertTrue(dao.listarPorGrupo(grupoId).isEmpty())
     }
+
+    // --- contarGruposPendentes ---
+
+    @Test
+    fun contarGruposPendentes_zero_quando_banco_vazio() {
+        assertEquals(0, dao.contarGruposPendentes())
+    }
+
+    @Test
+    fun contarGruposPendentes_zero_quando_grupo_tem_menos_de_3_participantes() {
+        criarParticipante("A", grupoId)
+        criarParticipante("B", grupoId)
+        assertEquals(0, dao.contarGruposPendentes())
+    }
+
+    @Test
+    fun contarGruposPendentes_conta_grupo_com_3_ou_mais_sem_sorteio() {
+        criarParticipante("A", grupoId)
+        criarParticipante("B", grupoId)
+        criarParticipante("C", grupoId)
+        assertEquals(1, dao.contarGruposPendentes())
+    }
+
+    @Test
+    fun contarGruposPendentes_ignora_grupo_com_sorteio_realizado() {
+        val a = criarParticipante("A", grupoId)
+        val b = criarParticipante("B", grupoId)
+        criarParticipante("C", grupoId)
+        // Simula sorteio realizado — a tira b
+        dao.atualizarAmigoSorteado(a.id, b.id)
+        assertEquals(0, dao.contarGruposPendentes())
+    }
+
+    @Test
+    fun contarGruposPendentes_conta_apenas_grupos_pendentes_quando_ha_mistura() {
+        // grupoId: 3 participantes sem sorteio → pendente
+        criarParticipante("A", grupoId)
+        criarParticipante("B", grupoId)
+        criarParticipante("C", grupoId)
+        // grupoId2: 3 participantes com sorteio → não pendente
+        val x = criarParticipante("X", grupoId2)
+        val y = criarParticipante("Y", grupoId2)
+        criarParticipante("Z", grupoId2)
+        dao.atualizarAmigoSorteado(x.id, y.id)
+
+        assertEquals(1, dao.contarGruposPendentes())
+    }
+
+    @Test
+    fun contarGruposPendentes_respeita_minParticipantes_customizado() {
+        criarParticipante("A", grupoId)
+        criarParticipante("B", grupoId)
+        // Com minParticipantes=2 deve contar; com 3 não deve
+        assertEquals(1, dao.contarGruposPendentes(minParticipantes = 2))
+        assertEquals(0, dao.contarGruposPendentes(minParticipantes = 3))
+    }
 }
