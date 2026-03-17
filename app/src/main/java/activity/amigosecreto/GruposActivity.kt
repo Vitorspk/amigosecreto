@@ -2,6 +2,7 @@ package activity.amigosecreto
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +15,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -23,12 +25,15 @@ import com.google.android.material.textfield.TextInputEditText
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.repository.BackupRepository
 import activity.amigosecreto.util.AsyncDatabaseHelper
+import activity.amigosecreto.util.BackupManager
 import activity.amigosecreto.util.HapticFeedbackUtils
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 class GruposActivity : AppCompatActivity() {
 
@@ -36,15 +41,25 @@ class GruposActivity : AppCompatActivity() {
         const val TAG = "GruposActivity"
         const val MENU_EDITAR = 1
         const val MENU_EXCLUIR = 2
+        const val BACKUP_MIME_TYPE = "application/json"
     }
 
     private lateinit var lvGrupos: android.widget.ListView
     private lateinit var btnCriarGrupo: MaterialButton
     private lateinit var dao: GrupoDAO
     private lateinit var participanteDao: ParticipanteDAO
+    private lateinit var backupRepository: BackupRepository
     private val listaGrupos = mutableListOf<Grupo>()
     private lateinit var adapter: GruposAdapter
     private lateinit var stateHelper: StateViewHelper
+
+    private val exportarLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE)
+    ) { uri -> uri?.let { escreverBackupNoUri(it) } }
+
+    private val importarLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let { confirmarEImportarBackup(it) } }
 
     // Arrays de emojis e gradientes para variar os cards
     private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
@@ -66,6 +81,7 @@ class GruposActivity : AppCompatActivity() {
 
         dao = GrupoDAO(this)
         participanteDao = ParticipanteDAO(this)
+        backupRepository = BackupRepository(this)
         lvGrupos = findViewById(R.id.lv_grupos)
         btnCriarGrupo = findViewById(R.id.btn_criar_grupo)
 
@@ -112,6 +128,8 @@ class GruposActivity : AppCompatActivity() {
                 R.id.action_compartilhar -> { compartilharApp(); true }
                 R.id.action_avaliar -> { abrirPlayStore(); true }
                 R.id.action_limpar_dados -> { confirmarLimparTodosDados(); true }
+                R.id.action_exportar_backup -> { iniciarExportacao(); true }
+                R.id.action_importar_backup -> { iniciarImportacao(); true }
                 else -> false
             }
         }
@@ -167,6 +185,81 @@ class GruposActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.button_cancel, null)
             .show()
+    }
+
+    private fun iniciarExportacao() {
+        val dataHora = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        exportarLauncher.launch("amigosecreto_backup_$dataHora.json")
+    }
+
+    private fun escreverBackupNoUri(uri: Uri) {
+        Toast.makeText(this, R.string.backup_exportando, Toast.LENGTH_SHORT).show()
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<String> {
+                override fun doInBackground(): String = backupRepository.exportar()
+            },
+            object : AsyncDatabaseHelper.ResultCallback<String> {
+                override fun onSuccess(result: String) {
+                    try {
+                        contentResolver.openOutputStream(uri)?.use { it.write(result.toByteArray()) }
+                        Toast.makeText(this@GruposActivity, R.string.backup_exportado_sucesso, Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "escreverBackupNoUri: falha ao escrever", e)
+                        Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
+                    }
+                }
+                override fun onError(e: Exception) {
+                    Log.e(TAG, "escreverBackupNoUri: erro no background", e)
+                    Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
+                }
+            }
+        )
+    }
+
+    private fun iniciarImportacao() {
+        importarLauncher.launch(arrayOf(BACKUP_MIME_TYPE))
+    }
+
+    private fun confirmarEImportarBackup(uri: Uri) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.backup_confirmar_titulo)
+            .setMessage(R.string.backup_confirmar_mensagem)
+            .setPositiveButton(R.string.backup_confirmar_sim) { _, _ -> lerEImportarBackup(uri) }
+            .setNegativeButton(R.string.button_cancel, null)
+            .show()
+    }
+
+    private fun lerEImportarBackup(uri: Uri) {
+        Toast.makeText(this, R.string.backup_importando, Toast.LENGTH_SHORT).show()
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<BackupManager.ImportResult> {
+                override fun doInBackground(): BackupManager.ImportResult {
+                    val json = contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+                        ?: return BackupManager.ImportResult.Failure("Não foi possível ler o arquivo")
+                    return backupRepository.importar(json)
+                }
+            },
+            object : AsyncDatabaseHelper.ResultCallback<BackupManager.ImportResult> {
+                override fun onSuccess(result: BackupManager.ImportResult) {
+                    when (result) {
+                        is BackupManager.ImportResult.Success -> {
+                            atualizarLista()
+                            Toast.makeText(this@GruposActivity,
+                                getString(R.string.backup_importado_sucesso, result.gruposImportados),
+                                Toast.LENGTH_LONG).show()
+                        }
+                        is BackupManager.ImportResult.Failure -> {
+                            Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
+                            Log.e(TAG, "lerEImportarBackup: ${result.reason}")
+                        }
+                    }
+                }
+                override fun onError(e: Exception) {
+                    Log.e(TAG, "lerEImportarBackup: erro no background", e)
+                    Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
+                }
+            }
+        )
     }
 
     private fun atualizarLista() {

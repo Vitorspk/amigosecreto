@@ -268,4 +268,17 @@
     <string name="historico_sorteio_anterior">Sorteio anterior</string>
     <string name="menu_historico">Histórico</string>
 
+    <!-- Backup / Restore -->
+    <string name="menu_exportar_backup">Exportar Backup</string>
+    <string name="menu_importar_backup">Importar Backup</string>
+    <string name="backup_exportando">Exportando dados…</string>
+    <string name="backup_exportado_sucesso">Backup exportado com sucesso</string>
+    <string name="backup_erro_exportar">Erro ao exportar backup</string>
+    <string name="backup_importando">Importando dados…</string>
+    <string name="backup_importado_sucesso">Dados importados: %1$d grupo(s)</string>
+    <string name="backup_erro_importar">Erro ao importar: arquivo inválido ou incompatível</string>
+    <string name="backup_confirmar_titulo">Importar Backup</string>
+    <string name="backup_confirmar_mensagem">Isso substituirá TODOS os dados atuais. Esta ação não pode ser desfeita. Deseja continuar?</string>
+    <string name="backup_confirmar_sim">Sim, importar</string>
+
 </resources>

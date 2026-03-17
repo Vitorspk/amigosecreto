@@ -64,6 +64,14 @@ class ParticipanteDAO(ctx: Context) {
         database.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, "${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID} = ?", arrayOf(grupoId.toString()))
     }
 
+    fun atualizarAmigoSorteado(participanteId: Int, amigoSorteadoId: Int) {
+        val values = ContentValues().apply {
+            put(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID, amigoSorteadoId)
+        }
+        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values,
+            "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(participanteId.toString()))
+    }
+
     fun limparSorteioDoGrupo(grupoId: Int) {
         val values = ContentValues().apply {
             putNull(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID)
