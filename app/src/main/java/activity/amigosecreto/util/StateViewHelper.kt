@@ -22,6 +22,11 @@ class StateViewHelper(
     private val stubEmpty: ViewStub,
     private val contentView: View
 ) {
+    init {
+        requireNotNull(stubLoading) { "stubLoading must not be null" }
+        requireNotNull(stubEmpty) { "stubEmpty must not be null" }
+    }
+
     private var loadingView: View? = null
     private var emptyView: View? = null
 

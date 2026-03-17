@@ -22,6 +22,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -78,23 +79,28 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     private fun carregarLista() {
         stateHelper.showLoading()
-        try {
-            val dao = DesejoDAO(this)
-            dao.open()
-            lista = dao.listar()
-            listaDesejos.clear()
-            listaDesejos.addAll(lista)
-            dao.close()
-            adapter.notifyDataSetChanged()
-            if (listaDesejos.isEmpty()) {
-                stateHelper.showEmpty()
-            } else {
-                stateHelper.showContent()
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<List<Desejo>> {
+                override fun doInBackground(): List<Desejo> {
+                    val dao = DesejoDAO(this@ListarDesejos)
+                    dao.open()
+                    return try { dao.listar() } finally { dao.close() }
+                }
+            },
+            object : AsyncDatabaseHelper.ResultCallback<List<Desejo>> {
+                override fun onSuccess(result: List<Desejo>) {
+                    lista = result
+                    listaDesejos.clear()
+                    listaDesejos.addAll(result)
+                    adapter.notifyDataSetChanged()
+                    if (listaDesejos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+                }
+                override fun onError(e: Exception) {
+                    Log.e(TAG, "carregarLista: failed", e)
+                    stateHelper.showEmpty()
+                }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "carregarLista: failed", e)
-            stateHelper.showEmpty()
-        }
+        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

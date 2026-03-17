@@ -67,14 +67,14 @@
             <ViewStub
                 android:id="@+id/stub_loading"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout="@layout/loading_state"
                 android:visibility="gone" />
 
             <ViewStub
                 android:id="@+id/stub_empty"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout="@layout/empty_state"
                 android:visibility="gone" />
 

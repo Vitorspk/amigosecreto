@@ -171,18 +171,27 @@ class GruposActivity : AppCompatActivity() {
 
     private fun atualizarLista() {
         stateHelper.showLoading()
-        dao.open()
-        listaGrupos.clear()
-        listaGrupos.addAll(dao.listar())
-        dao.close()
-        if (listaGrupos.isEmpty()) {
-            stateHelper.showEmpty()
-        } else {
-            stateHelper.showContent()
-        }
-        // Exibe lista imediatamente; contagens chegam via callback e disparam novo notify
-        adapter.notifyDataSetChanged()
-        adapter.recarregarContagensAsync()
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<List<activity.amigosecreto.db.Grupo>> {
+                override fun doInBackground(): List<activity.amigosecreto.db.Grupo> {
+                    dao.open()
+                    return try { dao.listar() } finally { dao.close() }
+                }
+            },
+            object : AsyncDatabaseHelper.ResultCallback<List<activity.amigosecreto.db.Grupo>> {
+                override fun onSuccess(result: List<activity.amigosecreto.db.Grupo>) {
+                    listaGrupos.clear()
+                    listaGrupos.addAll(result)
+                    if (listaGrupos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+                    adapter.notifyDataSetChanged()
+                    adapter.recarregarContagensAsync()
+                }
+                override fun onError(e: Exception) {
+                    Log.e(TAG, "atualizarLista: failed", e)
+                    stateHelper.showEmpty()
+                }
+            }
+        )
     }
 
     private fun exibirDialogAdd() {
