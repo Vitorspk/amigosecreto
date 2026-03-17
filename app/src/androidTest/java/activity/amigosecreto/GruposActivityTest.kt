@@ -166,7 +166,10 @@ class GruposActivityTest {
         onView(withText(R.string.grupo_menu_excluir)).perform(click())
         onView(withText(R.string.button_remove_yes)).perform(click())
 
-        onView(withText("Grupo Temporario")).check(doesNotExist())
+        // setUp insere 1 grupo; após excluir, a lista fica vazia e o empty state é exibido.
+        // Verificar o empty state é mais robusto que doesNotExist() com ListView, pois
+        // o ListView pode manter views recicladas na hierarquia após notifyDataSetChanged().
+        onView(withId(R.id.tv_empty_title)).check(matches(isDisplayed()))
     }
 
     @Test
