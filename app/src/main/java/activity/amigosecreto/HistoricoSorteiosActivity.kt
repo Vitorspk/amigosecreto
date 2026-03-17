@@ -1,32 +1,39 @@
 package activity.amigosecreto
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.adapter.SorteiosAdapter
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Sorteio
-import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.StateViewHelper
 
+@AndroidEntryPoint
 class HistoricoSorteiosActivity : AppCompatActivity() {
 
+    private val viewModel: HistoricoSorteiosViewModel by viewModels()
     private lateinit var grupoAtual: Grupo
     private lateinit var rvHistorico: RecyclerView
     private lateinit var stateHelper: StateViewHelper
     private val listaSorteios = mutableListOf<Sorteio>()
     private lateinit var adapter: SorteiosAdapter
-    private lateinit var sorteioRepository: activity.amigosecreto.repository.SorteioRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_historico_sorteios)
 
-        grupoAtual = intent.getSerializableExtra("grupo") as Grupo
-        sorteioRepository = activity.amigosecreto.repository.SorteioRepository(this)
+        @Suppress("DEPRECATION")
+        grupoAtual = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra("grupo", Grupo::class.java)!!
+        } else {
+            intent.getSerializableExtra("grupo") as Grupo
+        }
 
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar_historico)
         setSupportActionBar(toolbar)
@@ -46,31 +53,24 @@ class HistoricoSorteiosActivity : AppCompatActivity() {
             contentView = rvHistorico
         )
 
-        carregarHistorico()
+        observeViewModel()
+        viewModel.carregarHistorico(grupoAtual.id)
     }
 
-    private fun carregarHistorico() {
-        stateHelper.showLoading()
-        AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<List<Sorteio>> {
-                override fun doInBackground(): List<Sorteio> =
-                    sorteioRepository.listarPorGrupo(grupoAtual.id)
-            },
-            object : AsyncDatabaseHelper.ResultCallback<List<Sorteio>> {
-                override fun onSuccess(result: List<Sorteio>) {
-                    listaSorteios.clear()
-                    listaSorteios.addAll(result)
-                    if (listaSorteios.isEmpty()) stateHelper.showEmpty()
-                    else stateHelper.showContent()
-                    adapter.notifyDataSetChanged()
-                }
-
-                override fun onError(e: Exception) {
-                    android.util.Log.e("HistoricoSorteios", "Erro ao carregar histórico", e)
-                    stateHelper.showEmpty()
-                }
-            }
-        )
+    private fun observeViewModel() {
+        viewModel.isLoading.observe(this) { loading ->
+            if (loading) stateHelper.showLoading()
+        }
+        viewModel.sorteios.observe(this) { sorteios ->
+            listaSorteios.clear()
+            listaSorteios.addAll(sorteios)
+            if (listaSorteios.isEmpty()) stateHelper.showEmpty()
+            else stateHelper.showContent()
+            adapter.notifyDataSetChanged()
+        }
+        viewModel.hasError.observe(this) { error ->
+            if (error == true) stateHelper.showEmpty()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

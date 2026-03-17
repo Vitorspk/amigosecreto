@@ -91,7 +91,7 @@ class SorteioDAO(context: Context) {
 
     /**
      * Lista todos os sorteios de um grupo em ordem decrescente de data/hora.
-     * Os pares de cada sorteio são carregados juntos.
+     * Os pares são carregados em uma única query (evita N+1) e mapeados em memória.
      */
     fun listarPorGrupo(grupoId: Int): List<Sorteio> {
         val sorteios = mutableListOf<Sorteio>()
@@ -102,13 +102,29 @@ class SorteioDAO(context: Context) {
         )
         cursor.use {
             if (it.moveToFirst()) {
+                do { sorteios.add(mapearSorteioCursor(it)) } while (it.moveToNext())
+            }
+        }
+        if (sorteios.isEmpty()) return sorteios
+
+        // Busca todos os pares do grupo em uma única query — elimina N+1
+        val ids = sorteios.joinToString(",") { it.id.toString() }
+        val paresPorSorteio = mutableMapOf<Int, MutableList<SorteioPar>>()
+        val paresCursor = database.rawQuery(
+            "SELECT * FROM ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}" +
+                " WHERE ${MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID} IN ($ids)" +
+                " ORDER BY ${MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE}",
+            null
+        )
+        paresCursor.use {
+            if (it.moveToFirst()) {
                 do {
-                    val sorteio = mapearSorteioCursor(it)
-                    sorteio.pares = listarParesPorSorteio(sorteio.id)
-                    sorteios.add(sorteio)
+                    val par = mapearParCursor(it)
+                    paresPorSorteio.getOrPut(par.sorteioId) { mutableListOf() }.add(par)
                 } while (it.moveToNext())
             }
         }
+        sorteios.forEach { it.pares = paresPorSorteio[it.id] ?: emptyList() }
         return sorteios
     }
 

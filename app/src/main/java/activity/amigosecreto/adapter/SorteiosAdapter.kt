@@ -47,14 +47,12 @@ class SorteiosAdapter(
 
         if (expandido) {
             holder.layoutPares.removeAllViews()
+            val inflater = LayoutInflater.from(ctx)
             for (par in sorteio.pares) {
-                val tv = TextView(ctx).apply {
-                    text = ctx.getString(R.string.historico_par_formato, par.nomeParticipante, par.nomeSorteado)
-                    textSize = 14f
-                    setPadding(0, 4, 0, 4)
-                    setTextColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.text_primary))
-                }
-                holder.layoutPares.addView(tv)
+                val parView = inflater.inflate(R.layout.item_sorteio_par, holder.layoutPares, false)
+                parView.findViewById<TextView>(R.id.tv_par_item).text =
+                    ctx.getString(R.string.historico_par_formato, par.nomeParticipante, par.nomeSorteado)
+                holder.layoutPares.addView(parView)
             }
         }
 
