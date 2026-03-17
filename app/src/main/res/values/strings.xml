@@ -281,4 +281,14 @@
     <string name="backup_confirmar_mensagem">Isso substituirá TODOS os dados atuais. Esta ação não pode ser desfeita. Deseja continuar?</string>
     <string name="backup_confirmar_sim">Sim, importar</string>
 
+    <!-- Notificações de lembrete -->
+    <string name="notificacao_canal_nome">Lembretes de Sorteio</string>
+    <string name="notificacao_canal_descricao">Lembretes para realizar o sorteio de amigo secreto</string>
+    <string name="notificacao_lembrete_titulo">Amigo Secreto pendente</string>
+
+    <plurals name="notificacao_lembrete_mensagem">
+        <item quantity="one">Você tem 1 grupo aguardando o sorteio. Toque para realizar agora!</item>
+        <item quantity="other">Você tem %1$d grupos aguardando o sorteio. Toque para realizar agora!</item>
+    </plurals>
+
 </resources>
