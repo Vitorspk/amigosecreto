@@ -11,6 +11,9 @@ import activity.amigosecreto.repository.ParticipanteRepository
 import android.database.sqlite.SQLiteException
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -18,22 +21,15 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows
 import org.robolectric.annotation.Config
-import java.util.concurrent.Callable
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
-import kotlin.collections.Collection
 
 /**
  * Testes unitários de ParticipantesViewModel via Robolectric + InstantTaskExecutorRule.
  *
- * O executor do ViewModel é substituído por um executor síncrono (Runnable::run) para que
+ * O ioDispatcher do ViewModel é substituído por UnconfinedTestDispatcher para que
  * o background work complete antes das asserções, sem precisar de sleeps ou polling.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class ParticipantesViewModelTest {
@@ -50,29 +46,7 @@ class ParticipantesViewModelTest {
     private lateinit var desejoRepository: DesejoRepository
     private var grupoId = 0
 
-    /** Executor síncrono: executa Runnable diretamente na thread chamadora. */
-    private val syncExecutor: ExecutorService = object : ExecutorService {
-        override fun execute(command: Runnable) = command.run()
-        override fun shutdown() {}
-        override fun shutdownNow(): List<Runnable> = emptyList()
-        override fun isShutdown(): Boolean = false
-        override fun isTerminated(): Boolean = false
-        override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean = true
-        override fun <T> submit(task: Callable<T>): Future<T> =
-            try { CompletableFuture.completedFuture(task.call()) }
-            catch (e: Exception) { throw RuntimeException(e) }
-        override fun <T> submit(task: Runnable, result: T): Future<T> {
-            task.run(); return CompletableFuture.completedFuture(result)
-        }
-        override fun submit(task: Runnable): Future<*> {
-            task.run(); return CompletableFuture.completedFuture(null)
-        }
-        override fun <T> invokeAll(tasks: Collection<Callable<T>>): List<Future<T>> = emptyList()
-        override fun <T> invokeAll(tasks: Collection<Callable<T>>, timeout: Long, unit: TimeUnit): List<Future<T>> = emptyList()
-        // invokeAny não é chamado pelo código de produção; lança para tornar violação de contrato explícita.
-        override fun <T> invokeAny(tasks: Collection<Callable<T>>): T = throw UnsupportedOperationException("invokeAny não suportado pelo syncExecutor")
-        override fun <T> invokeAny(tasks: Collection<Callable<T>>, timeout: Long, unit: TimeUnit): T = throw UnsupportedOperationException("invokeAny não suportado pelo syncExecutor")
-    }
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
@@ -92,7 +66,7 @@ class ParticipantesViewModelTest {
         participanteRepository = ParticipanteRepository(app)
 
         viewModel = ParticipantesViewModel(app, participanteRepository, desejoRepository)
-        viewModel.setExecutorService(syncExecutor)
+        viewModel.ioDispatcher = testDispatcher
     }
 
     @After
@@ -104,41 +78,6 @@ class ParticipantesViewModelTest {
 
     // --- helpers ---
 
-    /** Drena o main looper do Robolectric para que Handler.post() complete antes das asserções. */
-    private fun idleMainLooper() {
-        Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-    }
-
-    /**
-     * Configura o ViewModel com repoQueLanca, executa acao via um executor real
-     * (necessário para que getApplication().getString() rode no main looper) e verifica que
-     * errorMessage foi postado com um valor não-nulo e não-vazio.
-     *
-     * Restaura syncExecutor antes das asserções para evitar
-     * RejectedExecutionException em tearDown.
-     */
-    private fun assertaErroComRealExecutor(repoQueLanca: ParticipanteRepository, acao: Runnable) {
-        val realExecutor = Executors.newSingleThreadExecutor()
-        viewModel.setExecutorService(realExecutor)
-        viewModel.setRepositories(repoQueLanca, desejoRepository)
-        viewModel.init(grupoId)
-
-        idleMainLooper()
-        viewModel.clearErrorMessage()
-        idleMainLooper()
-
-        acao.run()
-
-        realExecutor.shutdown()
-        assertTrue("Executor não terminou: background task travou",
-            realExecutor.awaitTermination(3, TimeUnit.SECONDS))
-        viewModel.setExecutorService(syncExecutor)
-        idleMainLooper()
-
-        assertNotNull(viewModel.errorMessage.value)
-        assertFalse(viewModel.errorMessage.value!!.isEmpty())
-    }
-
     private fun inserirParticipante(nome: String): Participante {
         val p = Participante().apply {
             this.nome = nome
@@ -148,18 +87,34 @@ class ParticipantesViewModelTest {
         return p
     }
 
+    /**
+     * Configura o ViewModel com repoQueLanca, executa acao e verifica que
+     * errorMessage foi postado com valor não-nulo e não-vazio.
+     * Com UnconfinedTestDispatcher, a coroutine roda de forma síncrona — sem executor real.
+     */
+    private fun assertaErro(repoQueLanca: ParticipanteRepository, acao: () -> Unit) {
+        viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel.ioDispatcher = testDispatcher
+        viewModel.init(grupoId)
+        viewModel.clearErrorMessage()
+
+        acao()
+
+        assertNotNull(viewModel.errorMessage.value)
+        assertFalse(viewModel.errorMessage.value!!.isEmpty())
+    }
+
     // =========================================================
     // carregarParticipantes / init
     // =========================================================
 
     @Test
-    fun carregarParticipantes_populatesParticipantsLiveData() {
+    fun carregarParticipantes_populatesParticipantsLiveData() = runTest(testDispatcher) {
         inserirParticipante("Ana")
         inserirParticipante("Bruno")
         inserirParticipante("Carla")
 
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
@@ -167,7 +122,7 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun carregarParticipantes_populatesWishCountsForEachParticipant() {
+    fun carregarParticipantes_populatesWishCountsForEachParticipant() = runTest(testDispatcher) {
         inserirParticipante("Diana")
         val apos = participanteDao.listarPorGrupo(grupoId)
         val pid = apos[0].id
@@ -179,7 +134,6 @@ class ParticipantesViewModelTest {
         desejoDAO.close()
 
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val counts = viewModel.wishCounts.value
         assertNotNull(counts)
@@ -187,34 +141,30 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun carregarParticipantes_setsIsLoadingFalseAfterCompletion() {
+    fun carregarParticipantes_setsIsLoadingFalseAfterCompletion() = runTest(testDispatcher) {
         viewModel.init(grupoId)
-        idleMainLooper()
         assertNotEquals(true, viewModel.isLoading.value)
     }
 
     @Test
-    fun init_calledTwiceWithSameId_doesNotDoubleLoad() {
+    fun init_calledTwiceWithSameId_doesNotDoubleLoad() = runTest(testDispatcher) {
         inserirParticipante("Eva")
         inserirParticipante("Felipe")
         inserirParticipante("Gabi")
 
         viewModel.init(grupoId)
-        idleMainLooper()
         val firstSize = viewModel.participants.value?.size ?: 0
 
         // Segunda chamada com mesmo grupoId — guarda interna impede reload
         viewModel.init(grupoId)
-        idleMainLooper()
         val secondSize = viewModel.participants.value?.size ?: 0
 
         assertEquals(firstSize, secondSize)
     }
 
     @Test
-    fun carregarParticipantes_emptyGroup_returnsEmptyList() {
+    fun carregarParticipantes_emptyGroup_returnsEmptyList() = runTest(testDispatcher) {
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
@@ -226,11 +176,10 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun realizarSorteio_withLessThan3Participants_emitsFailureNotEnough() {
+    fun realizarSorteio_withLessThan3Participants_emitsFailureNotEnough() = runTest(testDispatcher) {
         inserirParticipante("Hugo")
         inserirParticipante("Iris")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         viewModel.realizarSorteio()
 
@@ -240,15 +189,13 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun realizarSorteio_withValidParticipants_emitsSuccess() {
+    fun realizarSorteio_withValidParticipants_emitsSuccess() = runTest(testDispatcher) {
         inserirParticipante("João")
         inserirParticipante("Karen")
         inserirParticipante("Lucas")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         val resultado = viewModel.sorteioResult.value
         assertNotNull(resultado)
@@ -256,15 +203,13 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun realizarSorteio_successSavesToDatabase() {
+    fun realizarSorteio_successSavesToDatabase() = runTest(testDispatcher) {
         inserirParticipante("Maria")
         inserirParticipante("Nadia")
         inserirParticipante("Otto")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         // Após sucesso, carregarParticipantes() é chamado internamente; verifica via LiveData
         val lista = viewModel.participants.value
@@ -276,13 +221,12 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun realizarSorteio_withAllExclusionsBlocking_emitsFailureImpossible() {
+    fun realizarSorteio_withAllExclusionsBlocking_emitsFailureImpossible() = runTest(testDispatcher) {
         // 3 participantes onde cada um exclui os outros 2 → impossível
         inserirParticipante("Paulo")
         inserirParticipante("Quesia")
         inserirParticipante("Rita")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
@@ -301,10 +245,8 @@ class ParticipantesViewModelTest {
 
         // Recarrega lista com exclusões
         viewModel.carregarParticipantes()
-        idleMainLooper()
 
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         val resultado = viewModel.sorteioResult.value
         assertNotNull(resultado)
@@ -312,15 +254,13 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun realizarSorteio_setsIsLoadingFalseAfterCompletion() {
+    fun realizarSorteio_setsIsLoadingFalseAfterCompletion() = runTest(testDispatcher) {
         inserirParticipante("Sara")
         inserirParticipante("Tiago")
         inserirParticipante("Uma")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         assertNotEquals(true, viewModel.isLoading.value)
     }
@@ -330,10 +270,9 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun clearSorteioResult_setsValueToNull() {
+    fun clearSorteioResult_setsValueToNull() = runTest(testDispatcher) {
         // Forçar um resultado FAILURE_NOT_ENOUGH com 0 participantes
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.realizarSorteio()
         assertNotNull(viewModel.sorteioResult.value)
 
@@ -343,7 +282,7 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun clearErrorMessage_setsValueToNull() {
+    fun clearErrorMessage_setsValueToNull() = runTest(testDispatcher) {
         viewModel.realizarSorteio()
         viewModel.clearSorteioResult()
         assertNull(viewModel.sorteioResult.value)
@@ -358,27 +297,23 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun atualizarParticipante_sucesso_emiteTrue() {
+    fun atualizarParticipante_sucesso_emiteTrue() = runTest(testDispatcher) {
         inserirParticipante("Vera")
         val lista = participanteDao.listarPorGrupo(grupoId)
         val p = lista[0].apply { nome = "Vera Atualizada" }
 
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.atualizarParticipante(p)
-        idleMainLooper()
 
         assertEquals(true, viewModel.atualizarSucesso.value)
     }
 
     @Test
-    fun atualizarParticipante_idInvalido_emiteFalse() {
+    fun atualizarParticipante_idInvalido_emiteFalse() = runTest(testDispatcher) {
         val p = Participante().apply { id = 0; nome = "Fantasma" }
 
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.atualizarParticipante(p)
-        idleMainLooper()
 
         assertEquals(false, viewModel.atualizarSucesso.value)
     }
@@ -388,15 +323,13 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun marcarComoEnviado_setaFlagNoParticipante() {
+    fun marcarComoEnviado_setaFlagNoParticipante() = runTest(testDispatcher) {
         inserirParticipante("Xavier")
         val antes = participanteDao.listarPorGrupo(grupoId)
         val id = antes[0].id
 
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.marcarComoEnviado(id)
-        idleMainLooper()
 
         val apos = participanteDao.listarPorGrupo(grupoId)
         assertTrue(apos[0].isEnviado)
@@ -407,7 +340,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun salvarExclusoes_adicionaERemoveCorretamente() {
+    fun salvarExclusoes_adicionaERemoveCorretamente() = runTest(testDispatcher) {
         inserirParticipante("Yara")
         inserirParticipante("Zico")
         val lista = participanteDao.listarPorGrupo(grupoId)
@@ -415,11 +348,9 @@ class ParticipantesViewModelTest {
         val id2 = lista[1].id
 
         viewModel.init(grupoId)
-        idleMainLooper()
 
         // Adicionar exclusão
         viewModel.salvarExclusoes(id1, listOf(id2), emptyList())
-        idleMainLooper()
 
         val aposAdicionar = participanteDao.listarPorGrupo(grupoId)
         val p1 = aposAdicionar.firstOrNull { it.id == id1 }
@@ -428,7 +359,6 @@ class ParticipantesViewModelTest {
 
         // Remover exclusão
         viewModel.salvarExclusoes(id1, emptyList(), listOf(id2))
-        idleMainLooper()
 
         val aposRemover = participanteDao.listarPorGrupo(grupoId)
         val p1apos = aposRemover.firstOrNull { it.id == id1 }
@@ -441,7 +371,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun inserirParticipante_erroNoRepository_postaErrorMessage() {
+    fun inserirParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun inserir(participante: Participante, grupoId: Int) {
                 throw SQLiteException("falha simulada")
@@ -449,7 +379,7 @@ class ParticipantesViewModelTest {
             override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
         val p = Participante().apply { nome = "Erro" }
-        assertaErroComRealExecutor(repoQueLanca) { viewModel.inserirParticipante(p, grupoId) }
+        assertaErro(repoQueLanca) { viewModel.inserirParticipante(p, grupoId) }
     }
 
     // =========================================================
@@ -457,12 +387,11 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun removerParticipante_atualizaParticipantsLiveData() {
+    fun removerParticipante_atualizaParticipantsLiveData() = runTest(testDispatcher) {
         inserirParticipante("Ana")
         inserirParticipante("Bruno")
         inserirParticipante("Carla")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val antes = viewModel.participants.value
         assertNotNull(antes)
@@ -470,7 +399,6 @@ class ParticipantesViewModelTest {
         val idRemover = antes[0].id
 
         viewModel.removerParticipante(idRemover)
-        idleMainLooper()
 
         val apos = viewModel.participants.value
         assertNotNull(apos)
@@ -479,11 +407,10 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun inserirParticipante_atualizaParticipantsLiveData() {
+    fun inserirParticipante_atualizaParticipantsLiveData() = runTest(testDispatcher) {
         inserirParticipante("Diana")
         inserirParticipante("Eduardo")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val antes = viewModel.participants.value
         assertNotNull(antes)
@@ -491,7 +418,6 @@ class ParticipantesViewModelTest {
 
         val novo = Participante().apply { nome = "Fernanda"; telefone = "11988887777" }
         viewModel.inserirParticipante(novo, grupoId)
-        idleMainLooper()
 
         val apos = viewModel.participants.value
         assertNotNull(apos)
@@ -500,18 +426,16 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun deletarTodosDoGrupo_atualizaParticipantsLiveData() {
+    fun deletarTodosDoGrupo_atualizaParticipantsLiveData() = runTest(testDispatcher) {
         inserirParticipante("Gabi")
         inserirParticipante("Hugo")
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val antes = viewModel.participants.value
         assertNotNull(antes)
         assertFalse(antes!!.isEmpty())
 
         viewModel.deletarTodosDoGrupo(grupoId)
-        idleMainLooper()
 
         val apos = viewModel.participants.value
         assertNotNull(apos)
@@ -519,7 +443,7 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun salvarExclusoes_atualizaParticipantsLiveData() {
+    fun salvarExclusoes_atualizaParticipantsLiveData() = runTest(testDispatcher) {
         inserirParticipante("Ines")
         inserirParticipante("Jorge")
         val lista = participanteDao.listarPorGrupo(grupoId)
@@ -527,10 +451,8 @@ class ParticipantesViewModelTest {
         val id2 = lista[1].id
 
         viewModel.init(grupoId)
-        idleMainLooper()
 
         viewModel.salvarExclusoes(id1, listOf(id2), emptyList())
-        idleMainLooper()
 
         val apos = viewModel.participants.value
         assertNotNull(apos)
@@ -545,20 +467,17 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagensSms_participanteComTelefone_emiteResultadoComMensagem() {
+    fun prepararMensagensSms_participanteComTelefone_emiteResultadoComMensagem() = runTest(testDispatcher) {
         inserirParticipante("Alice")
         inserirParticipante("Bob")
         inserirParticipante("Carol")
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
 
         viewModel.prepararMensagensSms(lista!!)
-        idleMainLooper()
 
         val resultado = viewModel.mensagensSmsResult.value
         assertNotNull(resultado)
@@ -571,18 +490,16 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun prepararMensagensSms_nenhumComTelefone_emiteListaVazia() {
+    fun prepararMensagensSms_nenhumComTelefone_emiteListaVazia() = runTest(testDispatcher) {
         // Participante sem telefone
         participanteDao.inserir(Participante().apply { nome = "SemFone" }, grupoId)
 
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
 
         viewModel.prepararMensagensSms(lista!!)
-        idleMainLooper()
 
         val resultado = viewModel.mensagensSmsResult.value
         assertNotNull(resultado)
@@ -594,21 +511,18 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagemCompartilhamento_emiteMensagemEMarcaEnviado() {
+    fun prepararMensagemCompartilhamento_emiteMensagemEMarcaEnviado() = runTest(testDispatcher) {
         inserirParticipante("David")
         inserirParticipante("Elena")
         inserirParticipante("Fred")
         viewModel.init(grupoId)
-        idleMainLooper()
         viewModel.realizarSorteio()
-        idleMainLooper()
 
         val lista = viewModel.participants.value
         assertNotNull(lista)
         val primeiro = lista!![0]
 
         viewModel.prepararMensagemCompartilhamento(primeiro)
-        idleMainLooper()
 
         val resultado = viewModel.mensagemCompartilhamentoResult.value
         assertNotNull(resultado)
@@ -628,14 +542,14 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun marcarComoEnviado_erroNoRepository_postaErrorMessage() {
+    fun marcarComoEnviado_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun marcarComoEnviado(id: Int) {
                 throw SQLiteException("falha simulada")
             }
             override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        assertaErroComRealExecutor(repoQueLanca) { viewModel.marcarComoEnviado(1) }
+        assertaErro(repoQueLanca) { viewModel.marcarComoEnviado(1) }
     }
 
     // =========================================================
@@ -643,7 +557,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun atualizarParticipante_excecaoNoRepository_emiteFalse() {
+    fun atualizarParticipante_excecaoNoRepository_emiteFalse() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun atualizar(participante: Participante): Boolean {
                 throw SQLiteException("falha simulada")
@@ -652,12 +566,11 @@ class ParticipantesViewModelTest {
         }
 
         viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel.ioDispatcher = testDispatcher
         viewModel.init(grupoId)
-        idleMainLooper()
 
         val p = Participante().apply { id = 1; nome = "Teste" }
         viewModel.atualizarParticipante(p)
-        idleMainLooper()
 
         assertEquals(false, viewModel.atualizarSucesso.value)
     }
@@ -667,14 +580,14 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun removerParticipante_erroNoRepository_postaErrorMessage() {
+    fun removerParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun remover(id: Int) {
                 throw SQLiteException("falha simulada")
             }
             override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        assertaErroComRealExecutor(repoQueLanca) { viewModel.removerParticipante(1) }
+        assertaErro(repoQueLanca) { viewModel.removerParticipante(1) }
     }
 
     // =========================================================
@@ -682,14 +595,14 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun deletarTodosDoGrupo_erroNoRepository_postaErrorMessage() {
+    fun deletarTodosDoGrupo_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun deletarTodosDoGrupo(grupoId: Int) {
                 throw SQLiteException("falha simulada")
             }
             override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        assertaErroComRealExecutor(repoQueLanca) { viewModel.deletarTodosDoGrupo(grupoId) }
+        assertaErro(repoQueLanca) { viewModel.deletarTodosDoGrupo(grupoId) }
     }
 
     // =========================================================
@@ -697,14 +610,14 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun salvarExclusoes_erroNoRepository_postaErrorMessage() {
+    fun salvarExclusoes_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
                 throw SQLiteException("falha simulada")
             }
             override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        assertaErroComRealExecutor(repoQueLanca) {
+        assertaErro(repoQueLanca) {
             viewModel.salvarExclusoes(1, listOf(2), emptyList())
         }
     }
@@ -714,14 +627,14 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagensSms_erroNoRepository_postaErrorMessage() {
+    fun prepararMensagensSms_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção no listarPorGrupo que prepararMensagensSms chama internamente
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun listarPorGrupo(grupoId: Int): List<Participante> {
                 throw SQLiteException("falha simulada")
             }
         }
-        assertaErroComRealExecutor(repoQueLanca) {
+        assertaErro(repoQueLanca) {
             viewModel.prepararMensagensSms(emptyList())
         }
     }
@@ -731,7 +644,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage() {
+    fun prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção em marcarComoEnviado, que é sempre chamado
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun marcarComoEnviado(id: Int) {
@@ -741,7 +654,7 @@ class ParticipantesViewModelTest {
         }
         val p = Participante().apply { id = 1; nome = "Teste" }
         // amigoSorteadoId = null → getNomeAmigoSorteado não é chamado; marcarComoEnviado sempre é
-        assertaErroComRealExecutor(repoQueLanca) {
+        assertaErro(repoQueLanca) {
             viewModel.prepararMensagemCompartilhamento(p)
         }
     }

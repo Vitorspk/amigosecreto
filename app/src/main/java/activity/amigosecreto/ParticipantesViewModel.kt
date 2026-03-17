@@ -1,15 +1,12 @@
 package activity.amigosecreto
 
 import android.app.Application
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import androidx.lifecycle.viewModelScope
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import activity.amigosecreto.db.Desejo
@@ -18,6 +15,10 @@ import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.util.MensagemSecretaBuilder
 import activity.amigosecreto.util.SorteioEngine
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class ParticipantesViewModel @Inject constructor(
@@ -67,8 +68,12 @@ class ParticipantesViewModel @Inject constructor(
     val mensagemCompartilhamentoResult: LiveData<MensagemCompartilhamentoResultado?> get() = _mensagemCompartilhamentoResult
     val atualizarSucesso: LiveData<Boolean?> get() = _atualizarSucesso
 
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private var executor: ExecutorService = Executors.newSingleThreadExecutor()
+    // Overridable in tests via setIoDispatcher() to use UnconfinedTestDispatcher.
+    @VisibleForTesting
+    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    // @Volatile: written on main thread (init()), read inside withContext(ioDispatcher) on IO thread.
+    // TODO: convert to val via constructor injection when setRepositories() is removed.
     @Volatile private var grupoId = -1
 
     /**
@@ -89,9 +94,9 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Marca participante como enviado em background (evita ANR). */
     fun marcarComoEnviado(participanteId: Int) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                participanteRepository.marcarComoEnviado(participanteId)
+                withContext(ioDispatcher) { participanteRepository.marcarComoEnviado(participanteId) }
             } catch (e: Exception) {
                 handleDbError(e, "Erro ao marcar como enviado id=$participanteId", R.string.error_save_failed)
             }
@@ -100,10 +105,10 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Remove participante em background (evita ANR). */
     fun removerParticipante(participanteId: Int) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                participanteRepository.remover(participanteId)
-                postMain(::carregarParticipantes)
+                withContext(ioDispatcher) { participanteRepository.remover(participanteId) }
+                carregarParticipantes()
             } catch (e: Exception) {
                 handleDbError(e, "Erro ao remover participante id=$participanteId", R.string.error_save_failed)
             }
@@ -119,26 +124,24 @@ class ParticipantesViewModel @Inject constructor(
      * edição ou manter os campos preenchidos para o usuário corrigir.
      */
     fun atualizarParticipante(participante: Participante) {
-        executor.execute {
+        viewModelScope.launch {
             val sucesso = try {
-                participanteRepository.atualizar(participante)
+                withContext(ioDispatcher) { participanteRepository.atualizar(participante) }
             } catch (e: Exception) {
                 Log.e(TAG, "atualizarParticipante: failed for id=${participante.id}", e)
                 false
             }
-            postMain {
-                _atualizarSucesso.value = sucesso
-                if (sucesso) carregarParticipantes()
-            }
+            _atualizarSucesso.value = sucesso
+            if (sucesso) carregarParticipantes()
         }
     }
 
     /** Insere participante em background (evita ANR). */
     fun inserirParticipante(participante: Participante, grupoId: Int) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                participanteRepository.inserir(participante, grupoId)
-                postMain(::carregarParticipantes)
+                withContext(ioDispatcher) { participanteRepository.inserir(participante, grupoId) }
+                carregarParticipantes()
             } catch (e: Exception) {
                 handleDbError(e, "Erro ao inserir participante grupoId=$grupoId", R.string.error_save_failed)
             }
@@ -147,10 +150,10 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Deleta todos os participantes de um grupo em background (evita ANR). */
     fun deletarTodosDoGrupo(grupoId: Int) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                participanteRepository.deletarTodosDoGrupo(grupoId)
-                postMain(::carregarParticipantes)
+                withContext(ioDispatcher) { participanteRepository.deletarTodosDoGrupo(grupoId) }
+                carregarParticipantes()
             } catch (e: Exception) {
                 handleDbError(e, "Erro ao deletar todos do grupo id=$grupoId", R.string.error_save_failed)
             }
@@ -159,10 +162,10 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Salva exclusões de um participante em background em transação atômica (evita ANR e falha parcial). */
     fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                participanteRepository.salvarExclusoes(participanteId, adicionar, remover)
-                postMain(::carregarParticipantes)
+                withContext(ioDispatcher) { participanteRepository.salvarExclusoes(participanteId, adicionar, remover) }
+                carregarParticipantes()
             } catch (e: Exception) {
                 handleDbError(e, "Erro ao salvar exclusões participanteId=$participanteId", R.string.error_save_failed)
             }
@@ -172,25 +175,21 @@ class ParticipantesViewModel @Inject constructor(
     /**
      * Carrega participantes e contagens de desejos do banco em background.
      * Pode ser chamado a qualquer momento para forçar atualização (ex: após voltar de outra tela).
-     * Thread-safe: usa postValue para _isLoading, pode ser chamado de qualquer thread.
      */
     fun carregarParticipantes() {
         if (grupoId == -1) return
-        _isLoading.postValue(true)
-        executor.execute {
+        _isLoading.value = true
+        viewModelScope.launch {
             try {
-                val lista = participanteRepository.listarPorGrupo(grupoId)
-                val counts = desejoRepository.contarDesejosPorGrupo(grupoId)
-                postMain {
-                    _participants.value = lista
-                    _wishCounts.value = counts
-                    _isLoading.value = false
+                val (lista, counts) = withContext(ioDispatcher) {
+                    participanteRepository.listarPorGrupo(grupoId) to desejoRepository.contarDesejosPorGrupo(grupoId)
                 }
+                _participants.value = lista
+                _wishCounts.value = counts
+                _isLoading.value = false
             } catch (e: Exception) {
-                postMain {
-                    _isLoading.value = false
-                    _errorMessage.value = getApplication<Application>().getString(R.string.error_load_participants)
-                }
+                _isLoading.value = false
+                _errorMessage.value = getApplication<Application>().getString(R.string.error_load_participants)
             }
         }
     }
@@ -209,43 +208,41 @@ class ParticipantesViewModel @Inject constructor(
         _isLoading.value = true
         val sortableSnapshot = ArrayList(snapshot)
 
-        executor.execute {
-            var sorteados: List<Participante>? = null
-            var tentativas = 0
-            while (sorteados == null && tentativas < 100) {
-                tentativas++
-                sorteados = SorteioEngine.tentarSorteio(ArrayList(sortableSnapshot))
+        viewModelScope.launch {
+            val sorteados = withContext(ioDispatcher) {
+                var result: List<Participante>? = null
+                var tentativas = 0
+                while (result == null && tentativas < 100) {
+                    tentativas++
+                    result = SorteioEngine.tentarSorteio(ArrayList(sortableSnapshot))
+                }
+                result
             }
 
             if (sorteados == null) {
-                postMain {
-                    _isLoading.value = false
-                    _sorteioResult.value = SorteioResultado(SorteioResultado.Status.FAILURE_IMPOSSIBLE)
-                }
-                return@execute
+                _isLoading.value = false
+                _sorteioResult.value = SorteioResultado(SorteioResultado.Status.FAILURE_IMPOSSIBLE)
+                return@launch
             }
 
-            // Inline handling (not handleDbError) because the result drives a tri-state
-            // postMain block below: success reloads + posts SUCCESS, failure posts error_save_draw.
-            // handleDbError posts errorMessage directly via Handler.post, which would race with
-            // the postMain block and leave _isLoading stuck at true.
+            // Inline handling (not handleDbError) because the result drives a tri-state block below:
+            // success reloads + posts SUCCESS, failure posts error_save_draw.
             val salvo = try {
-                participanteRepository.salvarSorteio(sortableSnapshot, sorteados)
+                withContext(ioDispatcher) { participanteRepository.salvarSorteio(sortableSnapshot, sorteados) }
             } catch (e: Exception) {
                 Log.e(TAG, "realizarSorteio: failed to save draw result", e)
                 false
             }
 
-            postMain {
-                _isLoading.value = false
-                if (salvo) {
-                    // TODO: Fase 10e (coroutines) — carregarParticipantes() here causes a brief
-                    // _isLoading flicker: false → true (reload) → false. Pre-existing from Java version.
-                    carregarParticipantes()
-                    _sorteioResult.value = SorteioResultado(SorteioResultado.Status.SUCCESS)
-                } else {
-                    _errorMessage.value = getApplication<Application>().getString(R.string.error_save_draw)
-                }
+            _isLoading.value = false
+            if (salvo) {
+                // TODO: carregarParticipantes() here causes a brief _isLoading flicker:
+                // false → true (reload) → false. Pre-existing from Java version.
+                // Future fix: update _participants directly from sorteados instead of re-querying.
+                carregarParticipantes()
+                _sorteioResult.value = SorteioResultado(SorteioResultado.Status.SUCCESS)
+            } else {
+                _errorMessage.value = getApplication<Application>().getString(R.string.error_save_draw)
             }
         }
     }
@@ -256,17 +253,15 @@ class ParticipantesViewModel @Inject constructor(
      * Aceita uma lista de participantes para suportar tanto o fluxo normal (snapshot da lista)
      * quanto a reconstrução após rotação (lista restaurada do bundle).
      */
-    // TODO: consider toggling _isLoading while this runs (pre-existing omission, same as Java original).
     fun prepararMensagensSms(snapshot: List<Participante>) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                // Nomes frescos do banco — evita dados desatualizados se alguém editou um
-                // participante em outra tela após o snapshot ter sido capturado.
-                val participantesAtuais = participanteRepository.listarPorGrupo(grupoId)
+                val (participantesAtuais, desejosMap) = withContext(ioDispatcher) {
+                    val p = participanteRepository.listarPorGrupo(grupoId)
+                    val d = desejoRepository.listarDesejosPorGrupo(grupoId)
+                    p to d
+                }
                 val nomeMap = participantesAtuais.associate { it.id to it.nome }
-
-                // Uma única query traz todos os desejos do grupo de uma vez.
-                val desejosMap = desejoRepository.listarDesejosPorGrupo(grupoId)
 
                 val comTelefone = mutableListOf<Participante>()
                 val mensagens = mutableMapOf<Int, String>()
@@ -280,8 +275,7 @@ class ParticipantesViewModel @Inject constructor(
                         mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos)
                     }
                 }
-                val resultado = MensagensSmsResultado(comTelefone, mensagens)
-                postMain { _mensagensSmsResult.value = resultado }
+                _mensagensSmsResult.value = MensagensSmsResultado(comTelefone, mensagens)
             } catch (e: Exception) {
                 handleDbError(e, "prepararMensagensSms: failed for grupoId=$grupoId", R.string.error_prepare_messages_failed)
             }
@@ -293,66 +287,44 @@ class ParticipantesViewModel @Inject constructor(
      * Acessa o banco em background, marca como enviado e posta o resultado em
      * mensagemCompartilhamentoResult.
      *
-     * Nota: _isLoading não é alternado aqui (pré-existente, mesmo comportamento do Java original).
-     * TODO: considerar toggle de _isLoading em Fase 10e junto com a Activity.
-     *
      * Limitação conhecida: marcarComoEnviado é chamado antes do usuário confirmar
      * o share sheet (a API do ACTION_SEND não oferece callback de confirmação). Se o
      * usuário abrir o chooser e cancelar, o participante ficará marcado como enviado.
      *
      * Ordem: gerar() é chamado antes de marcarComoEnviado(). Se gerar() lançar exceção,
-     * o participante não é marcado. Se marcarComoEnviado() lançar depois de gerar()
-     * ter retornado com sucesso, o catch posta error_load_share_data mesmo que a mensagem
-     * estivesse pronta — edge case aceitável dado que falha no banco nesse ponto é rara.
+     * o participante não é marcado.
      */
     fun prepararMensagemCompartilhamento(participante: Participante) {
-        executor.execute {
+        viewModelScope.launch {
             try {
-                val validAmigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
-                val nomeAmigo = validAmigoId?.let { participanteRepository.getNomeAmigoSorteado(it) }
-                val desejos: List<Desejo> = validAmigoId?.let { desejoRepository.listarPorParticipante(it) } ?: emptyList()
-                val mensagem = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos)
-                participanteRepository.marcarComoEnviado(participante.id)
-                postMain { _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem) }
+                val mensagem = withContext(ioDispatcher) {
+                    val validAmigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
+                    val nomeAmigo = validAmigoId?.let { participanteRepository.getNomeAmigoSorteado(it) }
+                    val desejos: List<Desejo> = validAmigoId?.let { desejoRepository.listarPorParticipante(it) } ?: emptyList()
+                    val msg = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos)
+                    participanteRepository.marcarComoEnviado(participante.id)
+                    msg
+                }
+                _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem)
             } catch (e: Exception) {
                 handleDbError(e, "prepararMensagemCompartilhamento: failed for participanteId=${participante.id}", R.string.error_load_share_data)
             }
         }
     }
 
-    private fun postMain(r: () -> Unit) {
-        mainHandler.post(r)
-    }
-
     /**
      * Trata exceções de operações de banco:
      * - Loga sempre via Log.e (stack trace visível no adb logcat em debug e release)
-     * - Posta a mensagem de erro informada para o main thread em todos os casos
-     *
-     * Não relança a exceção: relançar de dentro de um Runnable submetido ao executor
-     * vai para o UncaughtExceptionHandler da thread de background — o processo
-     * não derruba de forma imediata e o postMain com a mensagem de erro nunca roda,
-     * deixando o usuário sem feedback.
+     * - Posta a mensagem de erro no main thread em todos os casos
      */
     private fun handleDbError(e: Exception, logMsg: String, errorStringRes: Int) {
         Log.e(TAG, logMsg, e)
-        postMain { _errorMessage.value = getApplication<Application>().getString(errorStringRes) }
-    }
-
-    @VisibleForTesting
-    fun setExecutorService(executor: ExecutorService) {
-        if (!this.executor.isShutdown) this.executor.shutdown()
-        this.executor = executor
+        _errorMessage.value = getApplication<Application>().getString(errorStringRes)
     }
 
     @VisibleForTesting
     fun setRepositories(participanteRepository: ParticipanteRepository, desejoRepository: DesejoRepository) {
         this.participanteRepository = participanteRepository
         this.desejoRepository = desejoRepository
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        executor.shutdown()
     }
 }
