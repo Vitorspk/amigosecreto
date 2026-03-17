@@ -72,7 +72,9 @@ class ParticipantesViewModel @Inject constructor(
     @VisibleForTesting
     var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    private var grupoId = -1
+    // @Volatile: written on main thread (init()), read inside withContext(ioDispatcher) on IO thread.
+    // TODO: convert to val via constructor injection when setRepositories() is removed.
+    @Volatile private var grupoId = -1
 
     /**
      * Deve ser chamado uma vez em onCreate() após obter o ViewModel.
@@ -179,8 +181,9 @@ class ParticipantesViewModel @Inject constructor(
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val lista = withContext(ioDispatcher) { participanteRepository.listarPorGrupo(grupoId) }
-                val counts = withContext(ioDispatcher) { desejoRepository.contarDesejosPorGrupo(grupoId) }
+                val (lista, counts) = withContext(ioDispatcher) {
+                    participanteRepository.listarPorGrupo(grupoId) to desejoRepository.contarDesejosPorGrupo(grupoId)
+                }
                 _participants.value = lista
                 _wishCounts.value = counts
                 _isLoading.value = false
@@ -233,6 +236,9 @@ class ParticipantesViewModel @Inject constructor(
 
             _isLoading.value = false
             if (salvo) {
+                // TODO: carregarParticipantes() here causes a brief _isLoading flicker:
+                // false → true (reload) → false. Pre-existing from Java version.
+                // Future fix: update _participants directly from sorteados instead of re-querying.
                 carregarParticipantes()
                 _sorteioResult.value = SorteioResultado(SorteioResultado.Status.SUCCESS)
             } else {

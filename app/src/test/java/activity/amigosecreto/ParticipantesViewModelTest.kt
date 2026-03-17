@@ -282,7 +282,7 @@ class ParticipantesViewModelTest {
     }
 
     @Test
-    fun clearErrorMessage_setsValueToNull() {
+    fun clearErrorMessage_setsValueToNull() = runTest(testDispatcher) {
         viewModel.realizarSorteio()
         viewModel.clearSorteioResult()
         assertNull(viewModel.sorteioResult.value)
@@ -371,7 +371,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun inserirParticipante_erroNoRepository_postaErrorMessage() {
+    fun inserirParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun inserir(participante: Participante, grupoId: Int) {
                 throw SQLiteException("falha simulada")
@@ -542,7 +542,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun marcarComoEnviado_erroNoRepository_postaErrorMessage() {
+    fun marcarComoEnviado_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun marcarComoEnviado(id: Int) {
                 throw SQLiteException("falha simulada")
@@ -580,7 +580,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun removerParticipante_erroNoRepository_postaErrorMessage() {
+    fun removerParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun remover(id: Int) {
                 throw SQLiteException("falha simulada")
@@ -595,7 +595,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun deletarTodosDoGrupo_erroNoRepository_postaErrorMessage() {
+    fun deletarTodosDoGrupo_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun deletarTodosDoGrupo(grupoId: Int) {
                 throw SQLiteException("falha simulada")
@@ -610,7 +610,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun salvarExclusoes_erroNoRepository_postaErrorMessage() {
+    fun salvarExclusoes_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
                 throw SQLiteException("falha simulada")
@@ -627,7 +627,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagensSms_erroNoRepository_postaErrorMessage() {
+    fun prepararMensagensSms_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção no listarPorGrupo que prepararMensagensSms chama internamente
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun listarPorGrupo(grupoId: Int): List<Participante> {
@@ -644,7 +644,7 @@ class ParticipantesViewModelTest {
     // =========================================================
 
     @Test
-    fun prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage() {
+    fun prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção em marcarComoEnviado, que é sempre chamado
         val repoQueLanca = object : ParticipanteRepository(app) {
             override fun marcarComoEnviado(id: Int) {
