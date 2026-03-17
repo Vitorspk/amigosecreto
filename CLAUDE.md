@@ -45,6 +45,9 @@ app/src/main/java/activity/amigosecreto/
 ├── adapter/
 │   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
 │
+├── di/
+│   └── DatabaseModule.kt                  # @Module @InstallIn(SingletonComponent) — provê Repositories
+│
 ├── db/
 │   ├── MySQLiteOpenHelper.kt              # schema SQLite v8 + migrações
 │   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
@@ -68,6 +71,7 @@ app/src/main/java/activity/amigosecreto/
     ├── MensagemSecretaBuilder.kt          # formata mensagem de compartilhamento do sorteio — Kotlin
     ├── SnackbarHelper.kt                  # mensagens padronizadas — Kotlin
     ├── SorteioEngine.kt                   # motor de sorteio (extraído para testabilidade) — Kotlin
+    ├── StateViewHelper.kt                 # gerencia estados loading/empty/content via ViewStub — Kotlin (PR #49)
     ├── ValidationUtils.kt                 # validação centralizada de inputs — Kotlin
     └── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
 ```
@@ -478,7 +482,7 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 
 ### Estrutura
 
-Todos os 18 arquivos de teste estão em Kotlin (Fase 10f — PR #43).
+Todos os 19 arquivos de teste unitário estão em Kotlin. Testes instrumentados (Espresso) em `androidTest/`.
 
 ```
 app/src/test/java/activity/amigosecreto/
@@ -502,16 +506,21 @@ app/src/test/java/activity/amigosecreto/
 └── util/
     ├── MensagemSecretaBuilderTest.kt  # formatação de mensagem de compartilhamento
     ├── SorteioEngineTest.kt           # algoritmo de sorteio — propriedades e exclusões
+    ├── StateViewHelperTest.kt         # estados de UI: loading/empty/content (PR #49)
     └── ValidationUtilsTest.kt         # validações de input e regex
+
+app/src/androidTest/java/activity/amigosecreto/
+└── ParticipantesActivityTest.kt       # Espresso — fluxos críticos de ParticipantesActivity (PR #51)
 ```
 
-### Cobertura Atual (285 testes — BUILD SUCCESSFUL)
+### Cobertura Atual (297 testes unitários — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
 | Util | `MensagemSecretaBuilderTest` | 24 |
 | Util | `ValidationUtilsTest` | 36 |
 | Util | `SorteioEngineTest` | 11 |
+| Util | `StateViewHelperTest` | 12 |
 | Util | `FormatarPrecoTest` | 12 |
 | Model | `DesejoModelTest` | 18 |
 | Model | `ParticipanteModelTest` | 11 |
@@ -527,6 +536,8 @@ app/src/test/java/activity/amigosecreto/
 | Repository | `DesejoRepositoryTest` | 16 |
 | Repository | `ParticipanteRepositorySalvarExclusoesTest` | 7 |
 | ViewModel | `ParticipantesViewModelTest` | 33 |
+
+**Espresso (androidTest):** `ParticipantesActivityTest` — testes instrumentados (PR #51)
 
 **Configuração Robolectric:** `testOptions.unitTests.includeAndroidResources = true` habilitado em `build.gradle` para permitir acesso a recursos compilados (`getString()`) nos testes unitários.
 
@@ -656,6 +667,52 @@ Mantido `java.util.Random` por ora. **TODO:** substituir por `kotlin.random.Rand
 
 ---
 
+## StateViewHelper — Decisões de Design (PR #49)
+
+### Por que ViewStub?
+
+`ViewStub` adia a inflação dos layouts de loading e empty até o primeiro uso. Telas que carregam rápido nunca pagam o custo de inflar esses layouts. A inflação é feita uma única vez — chamadas subsequentes ao mesmo estado apenas alteram `visibility`.
+
+### Observer ordering — isLoading vs participants
+
+O ViewModel posta `_participants` via `postValue()` **antes** de `_isLoading = false`. Por isso, o observer de `isLoading` em `ParticipantesActivity` drive apenas o estado loading:
+
+```kotlin
+// CORRETO — isLoading drive só o loading state
+viewModel.isLoading.observe(this) { loading ->
+    if (loading) stateHelper.showLoading()
+}
+
+// ERRADO — else causaria race condition: lista está vazia no momento
+// em que isLoading=false dispara, antes do observers de participants atualizar
+viewModel.isLoading.observe(this) { loading ->
+    if (loading) stateHelper.showLoading()
+    else if (participants.isEmpty()) stateHelper.showEmpty() // RACE CONDITION
+    else stateHelper.showContent()
+}
+```
+
+As transições empty/content são drivenadas exclusivamente pelo observer de `participants`, que já recebeu os dados quando dispara.
+
+### layout_height="match_parent" nos ViewStubs
+
+Dentro de `LinearLayout`, `ViewStub` com `layout_height="wrap_content"` herdaria essa altura para o filho inflado — loading spinners e empty states precisam de `match_parent` para centralizar corretamente. O `LayoutParams` do filho inflado herda do `ViewStub`.
+
+### Testes com Mockito (não ViewStub real)
+
+`ViewStub.inflate()` requer que o stub esteja attachado a uma janela. Em Robolectric, `ViewStub` real lança `IllegalStateException` se o parent não está no layout tree. A solução é mockar o `ViewStub` e retornar uma `View` real criada via `RuntimeEnvironment.getApplication()`:
+
+```kotlin
+stubLoading = mock(ViewStub::class.java)
+`when`(stubLoading.inflate()).thenReturn(loadingView)
+```
+
+### AsyncDatabaseHelper em GruposActivity e ListarDesejos
+
+`showLoading()` é chamado antes de `AsyncDatabaseHelper.execute()`. Sem async, `showLoading()` era imediatamente sobrescrito pelo resultado síncrono — o spinner nunca renderizava (Choreographer não tinha chance de desenhar). Com async, loading é visível enquanto o banco responde em background.
+
+---
+
 ## Próximas Melhorias
 
 Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizado.
@@ -667,7 +724,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 1 | **Cleanup pós-migração** — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` + refatorar `InserirDesejoActivity` | 🔄 Próximo |
 | 2 | **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` (`MySQLiteOpenHelper.kt`) | ⏳ |
 | 3 | **Coroutines** — substituir `ExecutorService` + `Handler.post` no ViewModel por `viewModelScope` + `Dispatchers.IO` | ⏳ |
-| 4 | **Testes de UI** — Espresso | ⏳ |
+| 4 | **Testes de UI** — Espresso adicionais (GruposActivity, mais casos de ParticipantesActivity) | ⏳ |
 | 5 | **Funcionalidades novas** — backup/restore, histórico de sorteios, etc. | ⏳ |
 
 ### Arquitetura (Concluído)
@@ -682,6 +739,8 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Migrar ViewModel para Kotlin — Fase 10d (PR #39)
 - [x] Migrar Activities — Fase 10e (PR #41)
 - [x] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f (PR #43)
+- [x] Estados de UI loading/empty/content via `StateViewHelper` + `ViewStub` (PR #49)
+- [x] Testes Espresso para `ParticipantesActivity` (PR #51)
 
 ### Qualidade
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
@@ -690,7 +749,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [ ] **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` ← **#1**
 - [ ] **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` ← **#2**
 - [ ] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel ← **#3**
-- [ ] Testes de UI com Espresso ← **#4**
+- [ ] Testes de UI com Espresso adicionais (GruposActivity, mais casos ParticipantesActivity) ← **#4**
 - [ ] Logs estruturados (Timber)
 
 ### UI/UX
