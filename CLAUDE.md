@@ -654,9 +654,9 @@ No Java original, `trim()` era usado apenas na validação (`isEmpty()` após `t
 
 O overload com `Random` era `public` (para ser acessível de `SorteioEngineTest.java`); agora é `internal @VisibleForTesting` — `SorteioEngineTest.kt` (Kotlin) acessa diretamente. Encapsulamento restabelecido. O overload público `tentarSorteio(list)` mantém `@JvmStatic` e continua `public` — não era shim e não foi alterado.
 
-### java.util.Random em SorteioEngine
+### kotlin.random.Random em SorteioEngine
 
-Mantido `java.util.Random` por ora. **TODO:** substituir por `kotlin.random.Random(seed)` e remover o import `java.util.Random` em cleanup futuro.
+Migrado de `java.util.Random` para `kotlin.random.Random` (PR #53). `Random(seed)` funciona identicamente para testes com seed fixa. A API `random.nextInt(n)` é a mesma.
 
 ### formatarPreco / numberFormatPtBr (MensagemSecretaBuilder → WindowInsetsUtils)
 

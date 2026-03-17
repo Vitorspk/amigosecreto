@@ -3,7 +3,7 @@ package activity.amigosecreto.util
 import activity.amigosecreto.db.Participante
 import org.junit.Assert.*
 import org.junit.Test
-import java.util.Random
+import kotlin.random.Random
 
 class SorteioEngineTest {
 
