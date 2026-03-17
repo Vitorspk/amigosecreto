@@ -51,6 +51,14 @@ object NotificationHelper {
     fun exibirLembreteSorteio(context: Context, gruposPendentes: Int) {
         if (gruposPendentes <= 0) return
 
+        val temPermissao = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        if (!temPermissao) return
+
         val intent = Intent(context, GruposActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -74,14 +82,6 @@ object NotificationHelper {
             .setContentIntent(pendingIntent)
             .build()
 
-        val temPermissao = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-        if (temPermissao) {
-            NotificationManagerCompat.from(context).notify(NOTIFICACAO_LEMBRETE_ID, notificacao)
-        }
+        NotificationManagerCompat.from(context).notify(NOTIFICACAO_LEMBRETE_ID, notificacao)
     }
 }

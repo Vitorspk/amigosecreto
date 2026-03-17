@@ -108,13 +108,17 @@ class GruposActivity : AppCompatActivity() {
         btnCriarGrupo.setOnClickListener { exibirDialogAdd() }
 
         atualizarLista()
+        // Solicitação de permissão e agendamento apenas em onCreate — evita dialog repetido em onResume
+        agendarLembreteSePermitido()
     }
 
     override fun onResume() {
         super.onResume()
         // Atualizar a lista sempre que voltar para esta tela
         atualizarLista()
-        agendarLembreteSePermitido()
+        // Re-agendamento idempotente (KEEP policy) — retoma lembrete se Worker se auto-cancelou
+        // quando não havia grupos pendentes e novos grupos foram criados
+        LembreteScheduler.agendar(this)
     }
 
     private fun agendarLembreteSePermitido() {
