@@ -34,8 +34,15 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         const val COLUMN_LOJAS = "lojas"
         const val COLUMN_DESEJO_PARTICIPANTE_ID = "participante_id"
 
-        private const val DATABASE_NAME = "amigosecreto_v8.db"
-        private const val DATABASE_VERSION = 8
+        private const val DATABASE_NAME = "amigosecreto_v9.db"
+        private const val DATABASE_VERSION = 9
+    }
+
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        if (!db.isReadOnly) {
+            db.execSQL("PRAGMA foreign_keys = ON")
+        }
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -61,7 +68,9 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         val sqlExclusao = "CREATE TABLE $TABLE_EXCLUSAO(" +
             "$COLUMN_PARTICIPANTE_ID INTEGER, " +
             "$COLUMN_EXCLUIDO_ID INTEGER, " +
-            "PRIMARY KEY ($COLUMN_PARTICIPANTE_ID, $COLUMN_EXCLUIDO_ID)" +
+            "PRIMARY KEY ($COLUMN_PARTICIPANTE_ID, $COLUMN_EXCLUIDO_ID), " +
+            "FOREIGN KEY($COLUMN_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE, " +
+            "FOREIGN KEY($COLUMN_EXCLUIDO_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE" +
             ")"
         db.execSQL(sqlExclusao)
 
@@ -73,7 +82,7 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
             "$COLUMN_PRECO_MAXIMO REAL, " +
             "$COLUMN_LOJAS TEXT, " +
             "$COLUMN_DESEJO_PARTICIPANTE_ID INTEGER, " +
-            "FOREIGN KEY($COLUMN_DESEJO_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID)" +
+            "FOREIGN KEY($COLUMN_DESEJO_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE" +
             ")"
         db.execSQL(sqlDesejo)
     }
@@ -94,6 +103,51 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         if (oldVersion < 8) {
             // Adicionar coluna participante_id na tabela desejo
             db.execSQL("ALTER TABLE $TABLE_DESEJO ADD COLUMN $COLUMN_DESEJO_PARTICIPANTE_ID INTEGER")
+        }
+
+        if (oldVersion < 9) {
+            // Adicionar ON DELETE CASCADE em exclusao e desejo.
+            // SQLite não suporta ALTER TABLE ADD CONSTRAINT — é necessário recriar as tabelas.
+            db.execSQL("PRAGMA foreign_keys = OFF")
+
+            // Recriar exclusao com FKs CASCADE
+            db.execSQL("ALTER TABLE $TABLE_EXCLUSAO RENAME TO ${TABLE_EXCLUSAO}_old")
+            db.execSQL(
+                "CREATE TABLE $TABLE_EXCLUSAO(" +
+                "$COLUMN_PARTICIPANTE_ID INTEGER, " +
+                "$COLUMN_EXCLUIDO_ID INTEGER, " +
+                "PRIMARY KEY ($COLUMN_PARTICIPANTE_ID, $COLUMN_EXCLUIDO_ID), " +
+                "FOREIGN KEY($COLUMN_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE, " +
+                "FOREIGN KEY($COLUMN_EXCLUIDO_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE" +
+                ")"
+            )
+            db.execSQL(
+                "INSERT INTO $TABLE_EXCLUSAO SELECT $COLUMN_PARTICIPANTE_ID, $COLUMN_EXCLUIDO_ID FROM ${TABLE_EXCLUSAO}_old"
+            )
+            db.execSQL("DROP TABLE ${TABLE_EXCLUSAO}_old")
+
+            // Recriar desejo com FK CASCADE
+            db.execSQL("ALTER TABLE $TABLE_DESEJO RENAME TO ${TABLE_DESEJO}_old")
+            db.execSQL(
+                "CREATE TABLE $TABLE_DESEJO(" +
+                "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "$COLUMN_PRODUTO TEXT NOT NULL, " +
+                "$COLUMN_CATEGORIA TEXT, " +
+                "$COLUMN_PRECO_MINIMO REAL, " +
+                "$COLUMN_PRECO_MAXIMO REAL, " +
+                "$COLUMN_LOJAS TEXT, " +
+                "$COLUMN_DESEJO_PARTICIPANTE_ID INTEGER, " +
+                "FOREIGN KEY($COLUMN_DESEJO_PARTICIPANTE_ID) REFERENCES $TABLE_PARTICIPANTE($COLUMN_ID) ON DELETE CASCADE" +
+                ")"
+            )
+            db.execSQL(
+                "INSERT INTO $TABLE_DESEJO SELECT $COLUMN_ID, $COLUMN_PRODUTO, $COLUMN_CATEGORIA, " +
+                "$COLUMN_PRECO_MINIMO, $COLUMN_PRECO_MAXIMO, $COLUMN_LOJAS, $COLUMN_DESEJO_PARTICIPANTE_ID " +
+                "FROM ${TABLE_DESEJO}_old"
+            )
+            db.execSQL("DROP TABLE ${TABLE_DESEJO}_old")
+
+            db.execSQL("PRAGMA foreign_keys = ON")
         }
     }
 }
