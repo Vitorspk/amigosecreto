@@ -90,6 +90,46 @@ class SorteioDAO(context: Context) {
     }
 
     /**
+     * Insere apenas o evento de sorteio (sem pares). Usado pela importação de backup.
+     * @return ID do sorteio inserido, ou -1 em falha
+     */
+    fun inserirSorteio(grupoId: Int, dataHora: String): Long {
+        return try {
+            val values = ContentValues().apply {
+                put(MySQLiteOpenHelper.COLUMN_SORTEIO_GRUPO_ID, grupoId)
+                put(MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA, dataHora)
+            }
+            database.insertOrThrow(MySQLiteOpenHelper.TABLE_SORTEIO, null, values)
+        } catch (e: android.database.sqlite.SQLiteException) {
+            Log.e("SorteioDAO", "inserirSorteio failed", e)
+            -1
+        }
+    }
+
+    /**
+     * Insere um par em um sorteio existente. Usado pela importação de backup.
+     */
+    fun inserirPar(
+        sorteioId: Long,
+        participanteId: Int,
+        sorteadoId: Int,
+        nomeParticipante: String,
+        nomeSorteado: String,
+        enviado: Int
+    ) {
+        val values = ContentValues().apply {
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID, sorteioId)
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_PARTICIPANTE_ID, participanteId)
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEADO_ID, sorteadoId)
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE, nomeParticipante)
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_SORTEADO, nomeSorteado)
+            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_ENVIADO, enviado)
+        }
+        database.insertWithOnConflict(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, values,
+            android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE)
+    }
+
+    /**
      * Lista todos os sorteios de um grupo em ordem decrescente de data/hora.
      * Os pares são carregados em uma única query (evita N+1) e mapeados em memória.
      */

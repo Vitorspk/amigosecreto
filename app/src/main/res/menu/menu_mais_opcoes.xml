@@ -21,4 +21,14 @@
         android:icon="@android:drawable/ic_menu_delete"
         android:title="@string/menu_clear_all_data" />
 
+    <item
+        android:id="@+id/action_exportar_backup"
+        android:icon="@android:drawable/ic_menu_save"
+        android:title="@string/menu_exportar_backup" />
+
+    <item
+        android:id="@+id/action_importar_backup"
+        android:icon="@android:drawable/ic_menu_revert"
+        android:title="@string/menu_importar_backup" />
+
 </menu>

@@ -47,8 +47,9 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         const val COLUMN_SORTEIO_PAR_NOME_SORTEADO = "nome_sorteado"
         const val COLUMN_SORTEIO_PAR_ENVIADO = "enviado"
 
+        const val DATABASE_VERSION_PUBLIC = 10
         private const val DATABASE_NAME = "amigosecreto_v10.db"
-        private const val DATABASE_VERSION = 10
+        private const val DATABASE_VERSION = DATABASE_VERSION_PUBLIC
     }
 
     override fun onOpen(db: SQLiteDatabase) {
