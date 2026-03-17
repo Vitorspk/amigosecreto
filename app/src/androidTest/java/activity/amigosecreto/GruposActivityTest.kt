@@ -148,6 +148,42 @@ class GruposActivityTest {
         onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_amigos)))
     }
 
+    // --- Excluir grupo ---
+
+    @Test
+    fun excluir_grupo_confirmado_remove_da_lista() {
+        criarGrupo("Grupo Temporario")
+
+        onView(withText("Grupo Temporario")).perform(longClick())
+        onView(withText(R.string.grupo_menu_excluir)).perform(click())
+        onView(withText(R.string.button_remove_yes)).perform(click())
+
+        onView(withText("Grupo Temporario")).check(doesNotExist())
+    }
+
+    @Test
+    fun excluir_grupo_cancelado_mantem_na_lista() {
+        criarGrupo("Grupo Permanente")
+
+        onView(withText("Grupo Permanente")).perform(longClick())
+        onView(withText(R.string.grupo_menu_excluir)).perform(click())
+        onView(withText(R.string.button_cancel)).perform(click())
+
+        onView(withText("Grupo Permanente")).check(matches(isDisplayed()))
+    }
+
+    // --- Navegação ---
+
+    @Test
+    fun clicar_grupo_abre_tela_de_participantes() {
+        criarGrupo("Grupo Nav")
+
+        onView(withText("Grupo Nav")).perform(click())
+
+        // ParticipantesActivity exibe o FAB de adicionar participante
+        onView(withId(R.id.fab_add_participante)).check(matches(isDisplayed()))
+    }
+
     // --- Helpers ---
 
     private fun criarGrupo(nome: String) {
