@@ -22,8 +22,10 @@ object AsyncDatabaseHelper {
      * IdlingResource that Espresso tests can register to synchronize with async DB operations.
      * Register via IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
      * in test setUp, and unregister in tearDown.
+     *
+     * espresso-idling-resource is declared as implementation (not androidTestImplementation)
+     * intentionally — this field lives in production code and must be visible at runtime.
      */
-    @JvmField
     val idlingResource = CountingIdlingResource("AsyncDatabaseHelper")
 
     @JvmStatic
@@ -55,7 +57,8 @@ object AsyncDatabaseHelper {
                 }
             } catch (e: Exception) {
                 Log.e("AsyncDatabaseHelper", "Background task failed", e)
-                idlingResource.decrement()
+                // Decrement on main thread for consistency with execute() and the happy path above.
+                mainHandler.post { idlingResource.decrement() }
                 // TODO: fase10d — com coroutines, a exceção propagará ao caller;
                 // por ora, executeSimple não tem callback de erro e o caller não recebe feedback.
             }
