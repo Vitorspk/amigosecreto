@@ -1,7 +1,9 @@
 package activity.amigosecreto
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.longClick
@@ -15,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.GrupoDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -28,6 +31,10 @@ class GruposActivityTest {
 
     @Before
     fun setUp() {
+        // Registrar IdlingResource para sincronizar com operacoes assincronas do AsyncDatabaseHelper.
+        // Sem isso, assertions apos acoes de delete/reload podem rodar antes do adapter ser atualizado.
+        IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         dao = GrupoDAO(ctx)
         dao.open()
@@ -39,6 +46,7 @@ class GruposActivityTest {
 
     @After
     fun tearDown() {
+        IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
         try {
             scenario.close()
         } finally {
@@ -146,6 +154,48 @@ class GruposActivityTest {
         onView(withId(R.id.btn_criar_grupo)).perform(click())
         onView(withId(R.id.chip_amigos)).perform(click())
         onView(withId(R.id.et_nome_grupo)).check(matches(withText(R.string.chip_sugestao_amigos)))
+    }
+
+    // --- Excluir grupo ---
+
+    @Test
+    fun excluir_grupo_confirmado_remove_da_lista() {
+        criarGrupo("Grupo Temporario")
+
+        onView(withText("Grupo Temporario")).perform(longClick())
+        onView(withText(R.string.grupo_menu_excluir)).perform(click())
+        onView(withText(R.string.button_remove_yes)).perform(click())
+
+        // setUp insere 1 grupo; após excluir, a lista fica vazia e o empty state é exibido.
+        // Verificar o empty state é mais robusto que doesNotExist() com ListView, pois
+        // o ListView pode manter views recicladas na hierarquia após notifyDataSetChanged().
+        onView(withId(R.id.tv_empty_title)).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun excluir_grupo_cancelado_mantem_na_lista() {
+        criarGrupo("Grupo Permanente")
+
+        onView(withText("Grupo Permanente")).perform(longClick())
+        onView(withText(R.string.grupo_menu_excluir)).perform(click())
+        onView(withText(R.string.button_cancel)).perform(click())
+
+        onView(withText("Grupo Permanente")).check(matches(isDisplayed()))
+    }
+
+    // --- Navegação ---
+
+    @Test
+    fun clicar_grupo_abre_tela_de_participantes() {
+        criarGrupo("Grupo Nav")
+
+        onView(withText("Grupo Nav")).perform(click())
+
+        // ParticipantesActivity exibe o FAB de adicionar participante
+        onView(withId(R.id.fab_add_participante)).check(matches(isDisplayed()))
+
+        // Voltar para GruposActivity para evitar interferência entre testes (back stack limpo)
+        Espresso.pressBack()
     }
 
     // --- Helpers ---

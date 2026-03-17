@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.scrollTo
@@ -17,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.GrupoDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -31,6 +33,8 @@ class ParticipantesActivityTest {
 
     @Before
     fun setUp() {
+        IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
 
         // Limpar banco completamente antes de cada teste para garantir isolamento.
@@ -54,6 +58,7 @@ class ParticipantesActivityTest {
 
     @After
     fun tearDown() {
+        IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
         try {
             scenario.close()
         } finally {
