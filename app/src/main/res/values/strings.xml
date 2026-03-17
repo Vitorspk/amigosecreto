@@ -102,6 +102,7 @@
     <string name="error_save_draw">Erro ao salvar sorteio. Tente novamente.</string>
     <string name="error_load_wish">Erro ao carregar desejo</string>
     <string name="error_load_wishes">Erro ao carregar lista de desejos. Tente novamente.</string>
+    <string name="error_load_groups">Erro ao carregar grupos. Tente novamente.</string>
     <string name="error_save_wish_format">Erro ao salvar desejo: %1$s</string>
     <string name="error_update_wish_format">Erro ao atualizar desejo: %1$s</string>
     <string name="error_generic_format">Erro: %1$s</string>

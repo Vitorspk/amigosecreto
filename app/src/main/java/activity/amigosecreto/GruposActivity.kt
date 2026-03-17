@@ -188,6 +188,7 @@ class GruposActivity : AppCompatActivity() {
                 }
                 override fun onError(e: Exception) {
                     Log.e(TAG, "atualizarLista: failed", e)
+                    Toast.makeText(this@GruposActivity, R.string.error_load_groups, Toast.LENGTH_LONG).show()
                     stateHelper.showEmpty()
                 }
             }
