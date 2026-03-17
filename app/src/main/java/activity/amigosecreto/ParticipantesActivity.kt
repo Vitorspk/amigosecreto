@@ -153,18 +153,13 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this)[ParticipantesViewModel::class.java]
         viewModel.init(grupoAtual.id)
 
-        // Ordering note: participants observer fires before isLoading=false (ViewModel posts
-        // _participants then _isLoading via sequential postValue calls). The else branch here
-        // handles the error path where isLoading becomes false but _participants is not
-        // re-posted (handleDbError only posts errorMessage, not participants).
+        // isLoading drives only the loading state. The empty/content transition is driven
+        // solely by the participants observer below, which fires before isLoading=false
+        // (ViewModel posts _participants then _isLoading). On error paths, handleDbError
+        // posts errorMessage (shown as Toast) but does not update _participants — the
+        // participants observer will re-fire when carregarParticipantes() is next called.
         viewModel.isLoading.observe(this) { loading ->
-            if (loading) {
-                stateHelper.showLoading()
-            } else if (listaParticipantes.isEmpty()) {
-                stateHelper.showEmpty()
-            } else {
-                stateHelper.showContent()
-            }
+            if (loading) stateHelper.showLoading()
         }
 
         viewModel.participants.observe(this) { participantes ->
