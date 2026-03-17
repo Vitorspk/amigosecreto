@@ -141,7 +141,7 @@ O `build.gradle` suporta dois modos:
 
 ## Banco de Dados
 
-### Nome: `amigosecreto_v8.db` (versão 8)
+### Nome: `amigosecreto_v9.db` (versão 9 — PR #47)
 
 ```sql
 CREATE TABLE grupo (
@@ -177,7 +177,7 @@ CREATE TABLE desejo (
     preco_maximo REAL,
     lojas TEXT,
     participante_id INTEGER,
-    FOREIGN KEY(participante_id) REFERENCES participante(id)
+    FOREIGN KEY(participante_id) REFERENCES participante(id) ON DELETE CASCADE
 );
 ```
 
@@ -185,6 +185,7 @@ CREATE TABLE desejo (
 
 - `< v7` → drop e recria tudo (versões muito antigas)
 - `v7 → v8` → adiciona coluna `participante_id` na tabela `desejo`
+- `v8 → v9` → adiciona `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` (PR #47)
 
 ---
 
