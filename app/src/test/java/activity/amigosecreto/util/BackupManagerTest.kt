@@ -30,16 +30,38 @@ class BackupManagerTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        grupoDao = GrupoDAO(ctx); grupoDao.open()
-        participanteDao = ParticipanteDAO(ctx); participanteDao.open()
-        desejoDao = DesejoDAO(ctx); desejoDao.open()
-        sorteioDao = SorteioDAO(ctx); sorteioDao.open()
+        abrirDaos()
     }
 
     @After
     fun tearDown() {
+        abrirDaos() // garantir que estão abertos para limpar
         grupoDao.limparTudo()
-        grupoDao.close(); participanteDao.close(); desejoDao.close(); sorteioDao.close()
+        fecharDaos()
+    }
+
+    private fun abrirDaos() {
+        grupoDao = GrupoDAO(ctx)
+        grupoDao.open()
+        participanteDao = ParticipanteDAO(ctx)
+        participanteDao.open()
+        desejoDao = DesejoDAO(ctx)
+        desejoDao.open()
+        sorteioDao = SorteioDAO(ctx)
+        sorteioDao.open()
+    }
+
+    private fun fecharDaos() {
+        grupoDao.close()
+        participanteDao.close()
+        desejoDao.close()
+        sorteioDao.close()
+    }
+
+    /** Fecha os DAOs, executa o bloco (import/export), e reabre os DAOs para verificações. */
+    private fun <T> semDaosAbertos(block: () -> T): T {
+        fecharDaos()
+        return try { block() } finally { abrirDaos() }
     }
 
     // --- Helpers ---
@@ -160,14 +182,14 @@ class BackupManagerTest {
 
     @Test
     fun importar_json_malformado_retorna_failure() {
-        val result = BackupManager.importarDeJson(ctx, "{ isso nao e json valido")
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, "{ isso nao e json valido") }
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
     @Test
     fun importar_json_sem_version_retorna_failure() {
         val json = """{"schema_version":10,"grupos":[]}"""
-        val result = BackupManager.importarDeJson(ctx, json)
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
@@ -175,14 +197,14 @@ class BackupManagerTest {
     fun importar_json_schema_version_maior_que_atual_retorna_failure() {
         val futureVersion = MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC + 1
         val json = """{"version":1,"schema_version":$futureVersion,"grupos":[]}"""
-        val result = BackupManager.importarDeJson(ctx, json)
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
     @Test
     fun importar_json_valido_sem_grupos_retorna_success_zero() {
         val json = """{"version":1,"schema_version":10,"grupos":[]}"""
-        val result = BackupManager.importarDeJson(ctx, json)
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         assertTrue(result is BackupManager.ImportResult.Success)
         assertEquals(0, (result as BackupManager.ImportResult.Success).gruposImportados)
     }
@@ -193,7 +215,7 @@ class BackupManagerTest {
             {"nome":"Família","data":"17/03/2026","participantes":[],"sorteios":[]},
             {"nome":"Trabalho","data":"17/03/2026","participantes":[],"sorteios":[]}
         ]}"""
-        val result = BackupManager.importarDeJson(ctx, json)
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         assertTrue(result is BackupManager.ImportResult.Success)
         assertEquals(2, (result as BackupManager.ImportResult.Success).gruposImportados)
         val grupos = grupoDao.listar()
@@ -209,7 +231,7 @@ class BackupManagerTest {
                 {"id":1,"nome":"Ana","email":"ana@x.com","telefone":"11999","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]},
                 {"id":2,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        BackupManager.importarDeJson(ctx, json)
+        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         val grupos = grupoDao.listar()
         val participantes = participanteDao.listarPorGrupo(grupos[0].id)
         assertEquals(2, participantes.size)
@@ -225,7 +247,7 @@ class BackupManagerTest {
         val json = """{"version":1,"schema_version":10,"grupos":[
             {"nome":"Novo","data":"","participantes":[],"sorteios":[]}
         ]}"""
-        BackupManager.importarDeJson(ctx, json)
+        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
 
         val grupos = grupoDao.listar()
         assertEquals(1, grupos.size)
@@ -239,7 +261,7 @@ class BackupManagerTest {
                 {"id":10,"nome":"Ana","email":"","telefone":"","amigo_sorteado_id":20,"enviado":0,"exclusoes":[],"desejos":[]},
                 {"id":20,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":10,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        BackupManager.importarDeJson(ctx, json)
+        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
 
         val grupos = grupoDao.listar()
         val participantes = participanteDao.listarPorGrupo(grupos[0].id)
@@ -257,7 +279,7 @@ class BackupManagerTest {
                 {"id":1,"nome":"Ana","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[2],"desejos":[]},
                 {"id":2,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        BackupManager.importarDeJson(ctx, json)
+        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
 
         val grupos = grupoDao.listar()
         val participantes = participanteDao.listarPorGrupo(grupos[0].id)
@@ -276,8 +298,8 @@ class BackupManagerTest {
         val sid = sorteioDao.inserirSorteio(g.id, "2026-03-17T19:00:00")
         sorteioDao.inserirPar(sid, p1.id, p2.id, "Ana", "Bob", 0)
 
-        val json = BackupManager.exportarParaJson(ctx)
-        val result = BackupManager.importarDeJson(ctx, json)
+        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
 
         assertTrue(result is BackupManager.ImportResult.Success)
         val grupos = grupoDao.listar()

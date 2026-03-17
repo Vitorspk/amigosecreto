@@ -1,15 +1,14 @@
 package activity.amigosecreto.util
 
+import android.content.ContentValues
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
-import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.DesejoDAO
-import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.MySQLiteOpenHelper
-import activity.amigosecreto.db.Participante
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.SorteioDAO
 import java.text.SimpleDateFormat
@@ -42,7 +41,10 @@ object BackupManager {
         val desejoDao = DesejoDAO(context)
         val sorteioDao = SorteioDAO(context)
 
-        grupoDao.open(); participanteDao.open(); desejoDao.open(); sorteioDao.open()
+        grupoDao.open()
+        participanteDao.open()
+        desejoDao.open()
+        sorteioDao.open()
         return try {
             val root = JSONObject()
             root.put("version", BACKUP_VERSION)
@@ -113,15 +115,19 @@ object BackupManager {
             root.put("grupos", gruposJson)
             root.toString(2)
         } finally {
-            grupoDao.close(); participanteDao.close(); desejoDao.close(); sorteioDao.close()
+            grupoDao.close()
+            participanteDao.close()
+            desejoDao.close()
+            sorteioDao.close()
         }
     }
 
     /**
      * Importa dados de uma string JSON, substituindo todos os dados existentes.
      *
-     * A operação é segura: o JSON é validado completamente em memória antes de qualquer
-     * modificação no banco. Se a validação falhar, os dados originais são preservados.
+     * A operação é completamente atômica: toda a limpeza e reinserção ocorre dentro de uma
+     * única transação SQLite. Se qualquer erro acontecer, a transação faz rollback automático
+     * e os dados originais são preservados.
      *
      * @return [ImportResult.Success] com o número de grupos importados, ou [ImportResult.Failure]
      */
@@ -148,53 +154,62 @@ object BackupManager {
         val gruposJson = root.optJSONArray("grupos")
             ?: return ImportResult.Failure("Campo 'grupos' ausente no JSON")
 
-        // Fase 2: inserção — limpa tudo e restaura
-        val grupoDao = GrupoDAO(context)
-        val participanteDao = ParticipanteDAO(context)
-        val desejoDao = DesejoDAO(context)
-        val sorteioDao = SorteioDAO(context)
-
-        grupoDao.open(); participanteDao.open(); desejoDao.open(); sorteioDao.open()
+        // Fase 2: inserção atômica em transação única — rollback automático em caso de erro
+        val helper = MySQLiteOpenHelper(context)
+        val db = helper.writableDatabase
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.beginTransaction()
         return try {
-            grupoDao.limparTudo()
+            // Limpar tudo dentro da transação — deletar em ordem inversa das FKs
+            // (PRAGMA foreign_keys pode não estar ativo antes do beginTransaction)
+            db.delete(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, null)
+            db.delete(MySQLiteOpenHelper.TABLE_SORTEIO, null, null)
+            db.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, null)
+            db.delete(MySQLiteOpenHelper.TABLE_DESEJO, null, null)
+            db.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, null)
+            db.delete(MySQLiteOpenHelper.TABLE_GRUPO, null, null)
 
             var gruposImportados = 0
             for (i in 0 until gruposJson.length()) {
                 val gJson = gruposJson.getJSONObject(i)
-                val grupo = Grupo()
-                grupo.nome = gJson.optString("nome", "")
-                grupo.data = gJson.optString("data", "")
-                grupo.id = grupoDao.inserir(grupo).toInt()
+
+                val grupoValues = ContentValues().apply {
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_NOME, gJson.optString("nome", ""))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA, gJson.optString("data", ""))
+                }
+                val novoGrupoId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_GRUPO, null, grupoValues)
 
                 // Mapa id_antigo -> id_novo para remapear referências FK
                 val idMap = mutableMapOf<Int, Int>()
 
                 val partJson = gJson.optJSONArray("participantes") ?: JSONArray()
 
-                // Primeira passagem: inserir participantes (sem amigo_sorteado_id ainda)
+                // Primeira passagem: inserir participantes e desejos
                 for (j in 0 until partJson.length()) {
                     val pJson = partJson.getJSONObject(j)
-                    val p = Participante()
-                    p.nome = pJson.optString("nome", "")
-                    p.email = pJson.optString("email", "")
-                    p.telefone = pJson.optString("telefone", "")
-                    participanteDao.inserir(p, grupo.id) // atualiza p.id
 
-                    val oldId = pJson.optInt("id", -1)
-                    idMap[oldId] = p.id
+                    val partValues = ContentValues().apply {
+                        put(MySQLiteOpenHelper.COLUMN_NOME, pJson.optString("nome", ""))
+                        put(MySQLiteOpenHelper.COLUMN_EMAIL, pJson.optString("email", ""))
+                        put(MySQLiteOpenHelper.COLUMN_TELEFONE, pJson.optString("telefone", ""))
+                        put(MySQLiteOpenHelper.COLUMN_ENVIADO, pJson.optInt("enviado", 0))
+                        put(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, novoGrupoId)
+                    }
+                    val novoPartId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, partValues)
+                    idMap[pJson.optInt("id", -1)] = novoPartId.toInt()
 
-                    // Desejos
                     val desejosJson = pJson.optJSONArray("desejos") ?: JSONArray()
                     for (k in 0 until desejosJson.length()) {
                         val dJson = desejosJson.getJSONObject(k)
-                        val d = Desejo()
-                        d.produto = dJson.optString("produto", "")
-                        d.categoria = dJson.optString("categoria", "")
-                        d.precoMinimo = dJson.optDouble("preco_minimo", 0.0)
-                        d.precoMaximo = dJson.optDouble("preco_maximo", 0.0)
-                        d.lojas = dJson.optString("lojas", "")
-                        d.participanteId = p.id
-                        desejoDao.inserir(d)
+                        val desejoValues = ContentValues().apply {
+                            put(MySQLiteOpenHelper.COLUMN_PRODUTO, dJson.optString("produto", ""))
+                            put(MySQLiteOpenHelper.COLUMN_CATEGORIA, dJson.optString("categoria", ""))
+                            put(MySQLiteOpenHelper.COLUMN_PRECO_MINIMO, dJson.optDouble("preco_minimo", 0.0))
+                            put(MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO, dJson.optDouble("preco_maximo", 0.0))
+                            put(MySQLiteOpenHelper.COLUMN_LOJAS, dJson.optString("lojas", ""))
+                            put(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID, novoPartId)
+                        }
+                        db.insertOrThrow(MySQLiteOpenHelper.TABLE_DESEJO, null, desejoValues)
                     }
                 }
 
@@ -207,17 +222,23 @@ object BackupManager {
                     if (oldAmigoId > 0) {
                         val novoAmigoId = idMap[oldAmigoId] ?: 0
                         if (novoAmigoId > 0) {
-                            participanteDao.atualizarAmigoSorteado(novoPartId, novoAmigoId)
+                            val v = ContentValues().apply {
+                                put(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID, novoAmigoId)
+                            }
+                            db.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, v,
+                                "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(novoPartId.toString()))
                         }
                     }
 
                     val excJson = pJson.optJSONArray("exclusoes") ?: JSONArray()
-                    if (excJson.length() > 0) {
-                        val adicionar = (0 until excJson.length())
-                            .mapNotNull { idMap[excJson.getInt(it)] }
-                        if (adicionar.isNotEmpty()) {
-                            participanteDao.salvarExclusoes(novoPartId, adicionar, emptyList())
+                    for (k in 0 until excJson.length()) {
+                        val novoExcId = idMap[excJson.getInt(k)] ?: continue
+                        val v = ContentValues().apply {
+                            put(MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID, novoPartId)
+                            put(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID, novoExcId)
                         }
+                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, v,
+                            SQLiteDatabase.CONFLICT_IGNORE)
                     }
                 }
 
@@ -225,33 +246,41 @@ object BackupManager {
                 val sorteiosJson = gJson.optJSONArray("sorteios") ?: JSONArray()
                 for (j in 0 until sorteiosJson.length()) {
                     val sJson = sorteiosJson.getJSONObject(j)
-                    val sorteioId = sorteioDao.inserirSorteio(grupo.id, sJson.optString("data_hora", ""))
-                    if (sorteioId < 0) continue
+                    val sorteioValues = ContentValues().apply {
+                        put(MySQLiteOpenHelper.COLUMN_SORTEIO_GRUPO_ID, novoGrupoId)
+                        put(MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA, sJson.optString("data_hora", ""))
+                    }
+                    val sorteioId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_SORTEIO, null, sorteioValues)
 
                     val paresJson = sJson.optJSONArray("pares") ?: JSONArray()
                     for (k in 0 until paresJson.length()) {
                         val parJson = paresJson.getJSONObject(k)
                         val novoPartId = idMap[parJson.optInt("participante_id", -1)] ?: continue
                         val novoSortId = idMap[parJson.optInt("sorteado_id", -1)] ?: continue
-                        sorteioDao.inserirPar(
-                            sorteioId = sorteioId,
-                            participanteId = novoPartId,
-                            sorteadoId = novoSortId,
-                            nomeParticipante = parJson.optString("nome_participante", ""),
-                            nomeSorteado = parJson.optString("nome_sorteado", ""),
-                            enviado = parJson.optInt("enviado", 0)
-                        )
+                        val parValues = ContentValues().apply {
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID, sorteioId)
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_PARTICIPANTE_ID, novoPartId)
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEADO_ID, novoSortId)
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE, parJson.optString("nome_participante", ""))
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_SORTEADO, parJson.optString("nome_sorteado", ""))
+                            put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_ENVIADO, parJson.optInt("enviado", 0))
+                        }
+                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, parValues,
+                            SQLiteDatabase.CONFLICT_IGNORE)
                     }
                 }
 
                 gruposImportados++
             }
+
+            db.setTransactionSuccessful()
             ImportResult.Success(gruposImportados)
         } catch (e: Exception) {
-            Log.e(TAG, "importarDeJson: falha na importação", e)
+            Log.e(TAG, "importarDeJson: falha na importação — rollback executado", e)
             ImportResult.Failure(e.message ?: "Erro desconhecido")
         } finally {
-            grupoDao.close(); participanteDao.close(); desejoDao.close(); sorteioDao.close()
+            db.endTransaction()
+            helper.close()
         }
     }
 
