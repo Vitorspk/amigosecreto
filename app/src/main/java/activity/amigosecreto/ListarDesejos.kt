@@ -13,6 +13,7 @@ import android.widget.AdapterView
 import android.widget.BaseAdapter
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.ShareActionProvider
@@ -22,6 +23,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
+import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -31,6 +34,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     private lateinit var lvDesejos: ListView
     private lateinit var adapter: ListarDesejosAdapter
+    private lateinit var stateHelper: StateViewHelper
     private val listaDesejos = mutableListOf<Desejo>()
     private var lista: List<Desejo> = emptyList()
 
@@ -41,10 +45,14 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         adapter = ListarDesejosAdapter(this, listaDesejos)
         lvDesejos = findViewById(R.id.lv_desejos)
-        val tvEmpty = findViewById<TextView>(R.id.tv_empty)
         val fabNovo = findViewById<FloatingActionButton>(R.id.fab_novo)
 
-        lvDesejos.emptyView = tvEmpty
+        stateHelper = StateViewHelper(
+            stubLoading = findViewById(R.id.stub_loading),
+            stubEmpty = findViewById(R.id.stub_empty),
+            contentView = lvDesejos
+        )
+
         lvDesejos.onItemClickListener = this
         lvDesejos.adapter = adapter
 
@@ -71,17 +79,30 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
     }
 
     private fun carregarLista() {
-        try {
-            val dao = DesejoDAO(this)
-            dao.open()
-            lista = dao.listar()
-            listaDesejos.clear()
-            listaDesejos.addAll(lista)
-            dao.close()
-            adapter.notifyDataSetChanged()
-        } catch (e: Exception) {
-            Log.e(TAG, "carregarLista: failed", e)
-        }
+        stateHelper.showLoading()
+        AsyncDatabaseHelper.execute(
+            object : AsyncDatabaseHelper.BackgroundTask<List<Desejo>> {
+                override fun doInBackground(): List<Desejo> {
+                    val dao = DesejoDAO(this@ListarDesejos)
+                    dao.open()
+                    return try { dao.listar() } finally { dao.close() }
+                }
+            },
+            object : AsyncDatabaseHelper.ResultCallback<List<Desejo>> {
+                override fun onSuccess(result: List<Desejo>) {
+                    lista = result
+                    listaDesejos.clear()
+                    listaDesejos.addAll(result)
+                    adapter.notifyDataSetChanged()
+                    if (listaDesejos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+                }
+                override fun onError(e: Exception) {
+                    Log.e(TAG, "carregarLista: failed", e)
+                    Toast.makeText(this@ListarDesejos, R.string.error_load_wishes, Toast.LENGTH_LONG).show()
+                    stateHelper.showEmpty()
+                }
+            }
+        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

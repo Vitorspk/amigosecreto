@@ -76,8 +76,9 @@ class ParticipantesActivityTest {
     }
 
     @Test
-    fun tela_exibe_lista_de_participantes() {
-        onView(withId(R.id.lv_participantes)).check(matches(isDisplayed()))
+    fun tela_vazia_exibe_estado_empty() {
+        // setUp insere grupo sem participantes — estado empty deve estar visível
+        onView(withId(R.id.scroll_participantes)).check(matches(isDisplayed()))
     }
 
     @Test
