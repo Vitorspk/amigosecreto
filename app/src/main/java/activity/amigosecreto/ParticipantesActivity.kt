@@ -154,7 +154,13 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel.init(grupoAtual.id)
 
         viewModel.isLoading.observe(this) { loading ->
-            if (loading == true) stateHelper.showLoading()
+            if (loading) {
+                stateHelper.showLoading()
+            } else if (listaParticipantes.isEmpty()) {
+                stateHelper.showEmpty()
+            } else {
+                stateHelper.showContent()
+            }
         }
 
         viewModel.participants.observe(this) { participantes ->

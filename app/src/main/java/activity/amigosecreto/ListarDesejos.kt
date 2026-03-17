@@ -13,6 +13,7 @@ import android.widget.AdapterView
 import android.widget.BaseAdapter
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.ShareActionProvider
@@ -97,6 +98,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
                 }
                 override fun onError(e: Exception) {
                     Log.e(TAG, "carregarLista: failed", e)
+                    Toast.makeText(this@ListarDesejos, R.string.error_load_wishes, Toast.LENGTH_LONG).show()
                     stateHelper.showEmpty()
                 }
             }
