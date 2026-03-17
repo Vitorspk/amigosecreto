@@ -153,6 +153,10 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this)[ParticipantesViewModel::class.java]
         viewModel.init(grupoAtual.id)
 
+        // Ordering note: participants observer fires before isLoading=false (ViewModel posts
+        // _participants then _isLoading via sequential postValue calls). The else branch here
+        // handles the error path where isLoading becomes false but _participants is not
+        // re-posted (handleDbError only posts errorMessage, not participants).
         viewModel.isLoading.observe(this) { loading ->
             if (loading) {
                 stateHelper.showLoading()
