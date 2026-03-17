@@ -2,7 +2,7 @@ package activity.amigosecreto.util
 
 import activity.amigosecreto.db.Participante
 import androidx.annotation.VisibleForTesting
-import java.util.Random
+import kotlin.random.Random
 
 /**
  * Motor de sorteio do Amigo Secreto.
@@ -17,7 +17,7 @@ object SorteioEngine {
 
     @JvmStatic
     fun tentarSorteio(participantes: List<Participante>): List<Participante>? =
-        tentarSorteio(participantes, Random())
+        tentarSorteio(participantes, Random)
 
     @VisibleForTesting
     internal fun tentarSorteio(participantes: List<Participante>, random: Random): List<Participante>? {
