@@ -1,6 +1,6 @@
 # Análise Técnica — AmigoSecreto Android
 
-**Data:** Março/2026 (última atualização: 16/03/2026 — PR #43 merged)
+**Data:** Março/2026 (última atualização: 17/03/2026 — PRs #49 e #51 merged)
 **Versão Analisada:** 3.0 (build ~157+)
 **Analista:** Revisão Senior Mobile
 
@@ -10,9 +10,11 @@
 
 O app **atingiu nível profissional** com progresso consistente desde a análise inicial.
 
-É um app funcional, com pipeline de CI/CD real, testes unitários (285 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. A migração completa para Kotlin foi concluída na Fase 10f (PR #43) — todo o código de produção e todos os 18 arquivos de teste estão em Kotlin, sem nenhum shim de interop Java.
+É um app funcional, com pipeline de CI/CD real, testes unitários (297 casos), segurança bem configurada (HTTPS, queries parametrizadas, ProGuard), arquitetura MVVM com Repository pattern e Dependency Injection implementados. A migração completa para Kotlin foi concluída na Fase 10f (PR #43) — todo o código de produção e todos os 19 arquivos de teste estão em Kotlin, sem nenhum shim de interop Java.
 
-O app está em nível profissional. O `lintRelease` está zerado. PR #22 eliminou os 47 `UnusedResources`; PR #27 eliminou os 9 `Overdraw`; PR #28 introduziu Dependency Injection com Hilt. A migração completa para Kotlin (Fases 10a–10f) foi concluída.
+Estados de UI (loading/empty/content) implementados via `StateViewHelper` + `ViewStub` em todas as telas de lista (PR #49). Testes Espresso para `ParticipantesActivity` adicionados (PR #51).
+
+O app está em nível profissional. O `lintRelease` está zerado. PR #22 eliminou os 47 `UnusedResources`; PR #27 eliminou os 9 `Overdraw`; PR #28 introduziu Dependency Injection com Hilt. A migração completa para Kotlin (Fases 10a–10f) foi concluída. Estados de UI (loading/empty/content) implementados (PR #49). Testes Espresso adicionados (PR #51).
 
 ---
 
@@ -149,6 +151,8 @@ Documentado no `CLAUDE.md`. Sem solução perfeita na API atual — mitigável c
 | **Fase 10d** | **Migração para Kotlin — ViewModel** | **✅ Concluído** | **#39** |
 | **Fase 10e** | **Migração para Kotlin — Activities** | **✅ Concluído** | **#41** |
 | **Fase 10f** | **Limpeza de testes — migrar 18 arquivos Java de teste para Kotlin** | **✅ Concluído** | **#43** |
+| **Estados de UI** | **`StateViewHelper` + `ViewStub` lazy inflation em todas as telas de lista** | **✅ Concluído** | **#49** |
+| **Espresso** | **Testes instrumentados para `ParticipantesActivity`** | **✅ Concluído** | **#51** |
 
 ---
 
@@ -320,6 +324,39 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 
 ---
 
+### PR #49 — Estados de UI: Loading / Empty / Content
+
+**Objetivo:** Exibir feedback visual de loading e estado vazio em todas as telas de lista, usando `ViewStub` para lazy inflation.
+
+| Item | Situação |
+|------|---------|
+| `StateViewHelper.kt` criado em `util/` | Gerencia 3 estados mutuamente exclusivos: loading, empty, content |
+| `ViewStub` em `activity_listar_grupos.xml` e `activity_listar_participantes.xml` | `stub_loading` + `stub_empty` com `layout_height="match_parent"` |
+| `GruposActivity.kt` — `atualizarLista()` reescrita com `AsyncDatabaseHelper` | Toast em caso de erro + transições loading→empty/content |
+| `ListarDesejos.kt` — `carregarLista()` reescrita com `AsyncDatabaseHelper` | Toast em caso de erro + transições loading→empty/content |
+| `ParticipantesActivity.kt` — observer `isLoading` corrigido | Observer drive apenas o estado loading; empty/content drivenados pelo observer de `participants` (evita race condition) |
+| `strings.xml` — `error_load_wishes` + `error_load_groups` adicionados | Mensagens de erro para Toast |
+| `StateViewHelperTest.kt` — 12 testes Robolectric + Mockito | Testa visibility de loading/empty/content e transições de estado |
+| Testes | 285 → 297 (12 novos casos) |
+
+**Decisão arquitetural — observer ordering:**
+O ViewModel posta `_participants` via `postValue()` antes de `_isLoading=false`. Por isso, o observer de `isLoading` drive apenas o estado loading; as transições empty/content são drivenadas exclusivamente pelo observer de `participants`, que já recebeu os dados atualizados. Adicionar `else` no observer de `isLoading` causava race condition (lista vazia no momento do disparo, mostrando empty mesmo quando havia dados).
+
+---
+
+### PR #51 — Testes Espresso para ParticipantesActivity
+
+**Objetivo:** Adicionar testes instrumentados cobrindo os fluxos críticos da tela de participantes.
+
+| Item | Situação |
+|------|---------|
+| `ParticipantesActivityTest.kt` criado em `androidTest/` | Espresso + `ActivityScenario` |
+| `tela_vazia_exibe_estado_empty` | Grupo vazio → `scroll_participantes` visível (lv_participantes GONE via showEmpty()) |
+| Casos de estado de UI com `StateViewHelper` | Verificação de visibilidade de `scroll_participantes` em vez de `lv_participantes` (GONE quando empty) |
+| CI checks | Unit Tests & Lint ✅, Espresso ✅, Build ✅, GitGuardian ✅ |
+
+---
+
 ## Histórico de Melhorias por PR
 
 ### PR #12 — UI/UX e EdgeToEdge
@@ -450,14 +487,16 @@ Decisões de design documentadas em CLAUDE.md § "Model Layer — Decisões de D
 ## Conclusão
 
 O app atingiu nível profissional. As fases de infraestrutura foram concluídas; a **Fase 10 (migração para Kotlin) está concluída em produção** — zero arquivos `.java` em `app/src/main/`:
-- 285 testes cobrindo DAOs, models, repositories, ViewModel, utilitários e contratos pré-migração Kotlin
+- 297 testes cobrindo DAOs, models, repositories, ViewModel, utilitários, contratos pré-migração Kotlin e `StateViewHelper`
 - MVVM com Repository pattern implementado
 - Dependency Injection com Hilt implementada (PR #28/#29)
 - `lintRelease` sem erros bloqueadores
 - `lintDebug` zerado — `UnusedResources` (PR #22) e `Overdraw` (PR #27)
 - Strings organizadas em `strings.xml`, acessibilidade corrigida
 - CI/CD funcional com deploy automático para Play Store
-- Fases 10a–10f concluídas: **todo o código de produção e todos os 18 arquivos de teste em Kotlin** (PR #33, #36/#37, #38, #39, #41, #43)
+- Fases 10a–10f concluídas: **todo o código de produção e todos os 19 arquivos de teste em Kotlin** (PR #33, #36/#37, #38, #39, #41, #43)
 - Zero shims de interop Java (`@JvmField`, `@get:JvmName`, visibilidade `public` desnecessária) nas classes de produção
+- Estados de UI (loading/empty/content) via `StateViewHelper` + `ViewStub` em todas as telas de lista (PR #49)
+- Testes Espresso para `ParticipantesActivity` (PR #51)
 
 **Próximo passo:** Cleanup pós-migração — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity`.
