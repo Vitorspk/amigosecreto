@@ -11,9 +11,12 @@ import activity.amigosecreto.repository.ParticipanteRepository
 import android.database.sqlite.SQLiteException
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -50,6 +53,7 @@ class ParticipantesViewModelTest {
 
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         app = ApplicationProvider.getApplicationContext()
 
         grupoDao = GrupoDAO(app)
@@ -71,6 +75,7 @@ class ParticipantesViewModelTest {
 
     @After
     fun tearDown() {
+        Dispatchers.resetMain()
         grupoDao.limparTudo()
         participanteDao.close()
         grupoDao.close()
