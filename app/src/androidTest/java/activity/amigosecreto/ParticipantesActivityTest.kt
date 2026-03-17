@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -120,9 +121,9 @@ class ParticipantesActivityTest {
         adicionarParticipante("Bruno")
         adicionarParticipante("Carlos")
 
-        onView(withText("Ana")).check(matches(isDisplayed()))
-        onView(withText("Bruno")).check(matches(isDisplayed()))
-        onView(withText("Carlos")).check(matches(isDisplayed()))
+        onView(withText("Ana")).perform(scrollTo()).check(matches(isDisplayed()))
+        onView(withText("Bruno")).perform(scrollTo()).check(matches(isDisplayed()))
+        onView(withText("Carlos")).perform(scrollTo()).check(matches(isDisplayed()))
     }
 
     @Test

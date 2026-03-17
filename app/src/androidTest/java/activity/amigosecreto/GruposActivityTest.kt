@@ -4,6 +4,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
@@ -112,9 +113,8 @@ class GruposActivityTest {
     fun editar_nome_grupo_atualiza_lista() {
         criarGrupo("Nome Antigo")
 
-        onView(withText("Nome Antigo")).perform(
-            androidx.test.espresso.action.ViewActions.longClick()
-        )
+        onView(withText("Nome Antigo")).perform(longClick())
+        onView(withText(R.string.grupo_menu_editar_nome)).check(matches(isDisplayed()))
         onView(withText(R.string.grupo_menu_editar_nome)).perform(click())
         onView(withId(R.id.et_nome_grupo)).perform(
             replaceText("Nome Novo"), closeSoftKeyboard()
