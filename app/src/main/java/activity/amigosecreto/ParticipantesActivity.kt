@@ -33,6 +33,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
 
 @AndroidEntryPoint
@@ -76,6 +77,7 @@ class ParticipantesActivity : AppCompatActivity() {
     private val listaParticipantes = mutableListOf<Participante>()
     private lateinit var adapter: ParticipantesAdapter
     private lateinit var grupoAtual: Grupo
+    private lateinit var stateHelper: StateViewHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,6 +135,12 @@ class ParticipantesActivity : AppCompatActivity() {
         btnSortear = findViewById(R.id.btn_sortear)
         btnLimpar = findViewById(R.id.btn_limpar)
 
+        stateHelper = StateViewHelper(
+            stubLoading = findViewById(R.id.stub_loading),
+            stubEmpty = findViewById(R.id.stub_empty),
+            contentView = lvParticipantes
+        )
+
         adapter = ParticipantesAdapter(this, listaParticipantes)
         lvParticipantes.adapter = adapter
 
@@ -145,13 +153,19 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this)[ParticipantesViewModel::class.java]
         viewModel.init(grupoAtual.id)
 
+        viewModel.isLoading.observe(this) { loading ->
+            if (loading == true) stateHelper.showLoading()
+        }
+
         viewModel.participants.observe(this) { participantes ->
             listaParticipantes.clear()
             listaParticipantes.addAll(participantes)
             adapter.notifyDataSetChanged()
             if (listaParticipantes.isEmpty()) {
+                stateHelper.showEmpty()
                 tvCount.setText(R.string.label_no_participants)
             } else {
+                stateHelper.showContent()
                 tvCount.text = resources.getQuantityString(
                     R.plurals.label_participants_in_group,
                     listaParticipantes.size,

@@ -22,6 +22,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -31,6 +32,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     private lateinit var lvDesejos: ListView
     private lateinit var adapter: ListarDesejosAdapter
+    private lateinit var stateHelper: StateViewHelper
     private val listaDesejos = mutableListOf<Desejo>()
     private var lista: List<Desejo> = emptyList()
 
@@ -41,10 +43,14 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         adapter = ListarDesejosAdapter(this, listaDesejos)
         lvDesejos = findViewById(R.id.lv_desejos)
-        val tvEmpty = findViewById<TextView>(R.id.tv_empty)
         val fabNovo = findViewById<FloatingActionButton>(R.id.fab_novo)
 
-        lvDesejos.emptyView = tvEmpty
+        stateHelper = StateViewHelper(
+            stubLoading = findViewById(R.id.stub_loading),
+            stubEmpty = findViewById(R.id.stub_empty),
+            contentView = lvDesejos
+        )
+
         lvDesejos.onItemClickListener = this
         lvDesejos.adapter = adapter
 
@@ -71,6 +77,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
     }
 
     private fun carregarLista() {
+        stateHelper.showLoading()
         try {
             val dao = DesejoDAO(this)
             dao.open()
@@ -79,8 +86,14 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
             listaDesejos.addAll(lista)
             dao.close()
             adapter.notifyDataSetChanged()
+            if (listaDesejos.isEmpty()) {
+                stateHelper.showEmpty()
+            } else {
+                stateHelper.showContent()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "carregarLista: failed", e)
+            stateHelper.showEmpty()
         }
     }
 

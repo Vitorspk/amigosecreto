@@ -25,6 +25,7 @@ import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.HapticFeedbackUtils
+import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,6 +44,7 @@ class GruposActivity : AppCompatActivity() {
     private lateinit var participanteDao: ParticipanteDAO
     private val listaGrupos = mutableListOf<Grupo>()
     private lateinit var adapter: GruposAdapter
+    private lateinit var stateHelper: StateViewHelper
 
     // Arrays de emojis e gradientes para variar os cards
     private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
@@ -66,6 +68,12 @@ class GruposActivity : AppCompatActivity() {
         participanteDao = ParticipanteDAO(this)
         lvGrupos = findViewById(R.id.lv_grupos)
         btnCriarGrupo = findViewById(R.id.btn_criar_grupo)
+
+        stateHelper = StateViewHelper(
+            stubLoading = findViewById(R.id.stub_loading),
+            stubEmpty = findViewById(R.id.stub_empty),
+            contentView = lvGrupos
+        )
 
         adapter = GruposAdapter(this, listaGrupos)
         lvGrupos.adapter = adapter
@@ -162,10 +170,16 @@ class GruposActivity : AppCompatActivity() {
     }
 
     private fun atualizarLista() {
+        stateHelper.showLoading()
         dao.open()
         listaGrupos.clear()
         listaGrupos.addAll(dao.listar())
         dao.close()
+        if (listaGrupos.isEmpty()) {
+            stateHelper.showEmpty()
+        } else {
+            stateHelper.showContent()
+        }
         // Exibe lista imediatamente; contagens chegam via callback e disparam novo notify
         adapter.notifyDataSetChanged()
         adapter.recarregarContagensAsync()

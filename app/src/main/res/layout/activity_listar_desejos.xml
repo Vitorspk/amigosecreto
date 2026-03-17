@@ -33,15 +33,20 @@
         android:dividerHeight="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <TextView
-        android:id="@+id/tv_empty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ViewStub
+        android:id="@+id/stub_loading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout="@layout/loading_state"
         android:layout_gravity="center"
-        android:text="@string/empty_state_no_wishes"
-        android:textAlignment="center"
-        android:textSize="18sp"
-        android:textColor="@color/text_secondary"
+        android:visibility="gone" />
+
+    <ViewStub
+        android:id="@+id/stub_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout="@layout/empty_state"
+        android:layout_gravity="center"
         android:visibility="gone" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

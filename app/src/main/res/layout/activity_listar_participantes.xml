@@ -64,6 +64,20 @@
             android:paddingTop="8dp"
             android:paddingBottom="200dp">
 
+            <ViewStub
+                android:id="@+id/stub_loading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout="@layout/loading_state"
+                android:visibility="gone" />
+
+            <ViewStub
+                android:id="@+id/stub_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout="@layout/empty_state"
+                android:visibility="gone" />
+
             <ListView
                 android:id="@+id/lv_participantes"
                 android:layout_width="match_parent"
