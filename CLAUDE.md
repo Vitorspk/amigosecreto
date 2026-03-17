@@ -46,7 +46,7 @@ app/src/main/java/activity/amigosecreto/
 │   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
 │
 ├── db/
-│   ├── MySQLiteOpenHelper.kt              # schema SQLite v8 + migrações
+│   ├── MySQLiteOpenHelper.kt              # schema SQLite v9 + migrações (ON DELETE CASCADE — PR #47)
 │   ├── Grupo.kt                           # model de grupo (Serializable) — Kotlin
 │   ├── GrupoDAO.kt                        # CRUD de grupos — Kotlin
 │   ├── Participante.kt                    # model de participante (Serializable) — Kotlin
@@ -58,8 +58,8 @@ app/src/main/java/activity/amigosecreto/
 │   └── DatabaseModule.kt                  # @Module @InstallIn(SingletonComponent) — provê Repositories
 │
 ├── repository/
-│   ├── ParticipanteRepository.kt          # encapsula ParticipanteDAO; síncrono, thread de BG — Kotlin
-│   └── DesejoRepository.kt               # encapsula DesejoDAO; síncrono, thread de BG — Kotlin
+│   ├── ParticipanteRepository.kt          # encapsula ParticipanteDAO; chamado de coroutine IO — Kotlin
+│   └── DesejoRepository.kt               # encapsula DesejoDAO; chamado de coroutine IO — Kotlin
 │
 └── util/
     ├── AnimationUtils.kt                  # animações reutilizáveis — Kotlin
@@ -285,12 +285,11 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 
 ### MVVM (ParticipantesActivity)
 - `ParticipantesViewModel : AndroidViewModel` com `LiveData` para todos os estados — Kotlin (PR #39)
-- Todas as operações de banco executadas via `ExecutorService` (thread de background)
-- Resultados postados de volta ao main thread via `Handler(Looper.getMainLooper())` ou `postValue`
+- Operações de banco executadas via `viewModelScope.launch { withContext(Dispatchers.IO) }` (PR #48)
 - Activity apenas observa LiveData e não toca diretamente nos repositórios
-- `InstantTaskExecutorRule` + `syncExecutor` para testes determinísticos (PR #43)
-- `private var` repositories — requerido por `@VisibleForTesting setRepositories()` — TODO: converter para `val` com constructor injection
-- `@Volatile grupoId` — escrito no main thread, lido em background threads do executor
+- `InstantTaskExecutorRule` + `UnconfinedTestDispatcher` para testes determinísticos (PR #43 + PR #50)
+- `private var` repositories — requerido por `@VisibleForTesting setRepositories()` — TODO: converter para `val` com constructor injection ou `@TestInstallIn`
+- `@Volatile grupoId` — escrito no main thread, lido em coroutines de IO
 
 ### Repository Pattern (ParticipantesActivity)
 - `ParticipanteRepository` / `DesejoRepository` desacoplam ViewModel dos DAOs
@@ -572,7 +571,7 @@ DAOs já migraram para Kotlin (Fase 10c — PR #38). Fields podem virar `val` co
 
 ### codigoAcesso (campo órfão)
 
-`Participante.codigoAcesso` existe no model mas não tem coluna `codigo_acesso` no schema v8 e não é lido/gravado por nenhum DAO. Decisão pendente: adicionar via migration (schema v9) ou remover no cleanup de Fase 10.
+`Participante.codigoAcesso` existe no model mas não tem coluna `codigo_acesso` no banco e não é lido/gravado por nenhum DAO. Campo mantido no model por compatibilidade — candidato a remoção em cleanup futuro.
 
 ---
 
@@ -580,7 +579,7 @@ DAOs já migraram para Kotlin (Fase 10c — PR #38). Fields podem virar `val` co
 
 ### open class + open fun em ParticipanteRepository
 
-`ParticipanteRepository` é `open class` com todos os métodos `open` porque os testes Kotlin (`ParticipantesViewModelTest.kt`) criam subclasses anônimas para injetar comportamento. Kotlin classes são `final` por padrão — sem `open`, a compilação falha com "cannot inherit from final". **TODO:** converter para `internal` + `@VisibleForTesting` e remover `open` quando migrar injeção de fakes para constructor injection ou `@TestInstallIn`.
+`ParticipanteRepository` é `open class` com todos os métodos `open` porque os testes Kotlin (`ParticipantesViewModelTest.kt`) criam subclasses anônimas para injetar comportamento. Kotlin classes são `final` por padrão — sem `open`, a compilação falha com "cannot inherit from final". TODO pendente: converter para `internal` + `@VisibleForTesting` e remover `open` quando migrar injeção de fakes para constructor injection ou `@TestInstallIn`.
 
 ### Construtor triplo em Repositories
 
@@ -592,19 +591,19 @@ Pass 1 busca participantes em `LinkedHashMap` (preserva `ORDER BY nome`). Pass 2
 
 ### NOME_AMIGO_DESCONHECIDO em companion object
 
-`ParticipanteDAO.NOME_AMIGO_DESCONHECIDO = "Ninguém"` extraído para constante pública porque `RevelarAmigoActivity` precisa comparar com o fallback. **TODO:** mover para `strings.xml` e fazer `getNomeAmigoSorteado()` retornar `String?` (Fase 10f — test cleanup).
+`ParticipanteDAO.NOME_AMIGO_DESCONHECIDO = "Ninguém"` extraído para constante pública porque `RevelarAmigoActivity` precisa comparar com o fallback. TODO pendente: mover para `strings.xml` e fazer `getNomeAmigoSorteado()` retornar `String?`.
 
-### @Deprecated em proximoId()
+### proximoId() removido (PR #46)
 
-`DesejoDAO.proximoId()` mantido por compatibilidade com `InserirDesejoActivity.kt` que ainda chama via `DesejoRepository.proximoId()`. Anotado com `@Deprecated(replaceWith = ReplaceWith("inserir(desejo)"))`. `ParticipanteDesejosActivity` já foi migrado e não usa mais o método. **TODO (Roadmap #1):** remover `proximoId()` de `DesejoDAO`/`DesejoRepository` e refatorar `InserirDesejoActivity` para usar `inserir()` diretamente.
+`DesejoDAO.proximoId()` e `DesejoRepository.proximoId()` foram removidos (PR #46). `InserirDesejoActivity` foi refatorada para usar `repo.inserir(desejo)` diretamente via `AsyncDatabaseHelper`.
 
 ### mapearDesejosCursor — helper privado
 
 `DesejoDAO.mapearDesejosCursor(cursor: Cursor)` elimina duplicação entre `listar()` e `listarPorParticipante()`. Usa `getColumnIndexOrThrow()` em todos os campos — falha ruidosamente em schema mismatch.
 
-### Ordem de deleção (FK-safe)
+### Ordem de deleção — ON DELETE CASCADE (schema v9, PR #47)
 
-Ao remover participante/grupo: exclusao → desejo → participante → grupo. Sem `ON DELETE CASCADE` no schema v8, a ordem deve ser child-before-parent manualmente. Comentário `// TODO: schema v9 ON DELETE CASCADE` nos loops em `GrupoDAO.remover()` e `ParticipanteDAO.remover()`.
+Schema v9 adicionou `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo`. A deleção em cascade é gerenciada pelo SQLite — `GrupoDAO.remover()` e `ParticipanteDAO.remover()` não precisam mais deletar manualmente filhos antes do pai.
 
 ---
 
@@ -620,11 +619,11 @@ Ao remover participante/grupo: exclusao → desejo → participante → grupo. S
 
 ### private var repositories
 
-`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `setRepositories()` (`@VisibleForTesting`) ainda é usado nos testes para injetar fakes. **TODO:** converter para `val`, remover `setRepositories()` e migrar para constructor injection ou `@TestInstallIn` do Hilt.
+`participanteRepository` e `desejoRepository` são `var` (não `val`) porque `setRepositories()` (`@VisibleForTesting`) ainda é usado nos testes para injetar fakes. TODO pendente: converter para `val`, remover `setRepositories()` e migrar para constructor injection ou `@TestInstallIn` do Hilt.
 
-### ExecutorService + Handler em vez de coroutines
+### Coroutines — viewModelScope + Dispatchers.IO (PR #48)
 
-A Fase 10d manteve `ExecutorService` + `Handler(Looper.getMainLooper())` em vez de migrar para coroutines — a migração de threading é independente da migração de linguagem e tem escopo maior (requer `viewModelScope`, `Dispatchers.IO`, suspending repositories). **TODO:** Fase 10e ou posterior — avaliar migrar para coroutines após a migração das Activities, quando `ParticipantesViewModelTest` também estiver em Kotlin e puder usar `TestCoroutineDispatcher`/`UnconfinedTestDispatcher`.
+A Fase 10d manteve `ExecutorService` + `Handler.post`; migração para coroutines foi feita no PR #48. O ViewModel agora usa `viewModelScope.launch { withContext(Dispatchers.IO) { ... } }` para todas as operações de banco. Testes usam `UnconfinedTestDispatcher` injetado via `ioDispatcher` (PR #50 adicionou `Dispatchers.setMain/resetMain` no setUp/tearDown).
 
 ### handleDbError() — padrão de tratamento de erros
 
@@ -716,13 +715,16 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 
 ### Roadmap Priorizado
 
-| # | Tarefa | Status |
-|---|--------|--------|
-| 1 | **Cleanup pós-migração** — remover `proximoId()` deprecated de `DesejoDAO`/`DesejoRepository` + refatorar `InserirDesejoActivity` | 🔄 Próximo |
-| 2 | **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` (`MySQLiteOpenHelper.kt`) | ⏳ |
-| 3 | **Coroutines** — substituir `ExecutorService` + `Handler.post` no ViewModel por `viewModelScope` + `Dispatchers.IO` | ⏳ |
-| 4 | **Testes de UI** — Espresso adicionais (GruposActivity, mais casos de ParticipantesActivity) | ⏳ |
-| 5 | **Funcionalidades novas** — backup/restore, histórico de sorteios, etc. | ⏳ |
+| # | Tarefa | Status | PR |
+|---|--------|--------|----|
+| 1 | **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` | ✅ Concluído | #46 |
+| 2 | **Schema v9** — `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` | ✅ Concluído | #47 |
+| 3 | **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel | ✅ Concluído | #48 |
+| 4 | **Estados de UI** — loading/empty/content via `StateViewHelper` + `ViewStub` | ✅ Concluído | #49 |
+| 5 | **Testes Espresso** — `ParticipantesActivity` | ✅ Concluído | #51 |
+| 6 | **kotlin.random.Random** — substituir `java.util.Random` em `SorteioEngine` | ✅ Concluído | #53 |
+| — | **Testes de UI adicionais** — Espresso (GruposActivity, mais casos) | ⏳ Próximo | — |
+| — | **Funcionalidades novas** — backup/restore, histórico de sorteios, etc. | ⏳ | — |
 
 ### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
@@ -743,10 +745,11 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 - [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
 - [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
 - [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
-- [ ] **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` ← **#1**
-- [ ] **Schema v9** — `ON DELETE CASCADE` na tabela `exclusao` ← **#2**
-- [ ] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel ← **#3**
-- [ ] Testes de UI com Espresso adicionais (GruposActivity, mais casos ParticipantesActivity) ← **#4**
+- [x] **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` — PR #46
+- [x] **Schema v9** — `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` — PR #47
+- [x] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel — PR #48
+- [x] `kotlin.random.Random` em `SorteioEngine` — PR #53
+- [ ] Testes de UI com Espresso adicionais (GruposActivity, mais casos ParticipantesActivity)
 - [ ] Logs estruturados (Timber)
 
 ### UI/UX
