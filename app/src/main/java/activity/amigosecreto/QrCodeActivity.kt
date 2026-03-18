@@ -82,13 +82,16 @@ class QrCodeActivity : AppCompatActivity() {
         // desnecessários em nomes com acentos.
         val nomeSemAcento = Normalizer.normalize(nomeParticipante, Normalizer.Form.NFD)
             .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
-        nomeArquivo = "amigo_secreto_${nomeSemAcento.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")}_qr.png"
+        val nomeSanitizado = nomeSemAcento.replace(Regex("[^a-zA-Z0-9_\\-]"), "_").ifBlank { "participante" }
+        nomeArquivo = "amigo_secreto_${nomeSanitizado}_qr.png"
 
         findViewById<TextView>(R.id.tv_qr_instrucao).text =
             getString(R.string.qr_instrucao, nomeParticipante)
 
         imageViewQr = findViewById(R.id.iv_qrcode)
         val btnSalvar = findViewById<MaterialButton>(R.id.btn_salvar_qr)
+        // Desabilitado até o QR ser gerado assincronamente (evita clique prematuro).
+        btnSalvar.isEnabled = false
 
         if (conteudoQr.isBlank()) {
             Toast.makeText(this, R.string.qr_erro_sem_sorteio, Toast.LENGTH_LONG).show()
@@ -96,17 +99,18 @@ class QrCodeActivity : AppCompatActivity() {
             return
         }
 
-        gerarEExibirQr(conteudoQr)
+        gerarEExibirQr(conteudoQr) { btnSalvar.isEnabled = true }
 
         btnSalvar.setOnClickListener { salvarQrNaGaleria() }
     }
 
-    private fun gerarEExibirQr(conteudo: String) {
+    private fun gerarEExibirQr(conteudo: String, onGerado: () -> Unit = {}) {
         lifecycleScope.launch {
             val bitmap = withContext(Dispatchers.Default) { QrCodeHelper.gerar(conteudo) }
             if (bitmap != null) {
                 qrBitmap = bitmap
                 imageViewQr.setImageBitmap(bitmap)
+                onGerado()
             } else {
                 Toast.makeText(this@QrCodeActivity, R.string.qr_erro_gerar, Toast.LENGTH_LONG).show()
                 finish()
@@ -180,7 +184,9 @@ class QrCodeActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        qrBitmap?.recycle()
+        // Não reciclar qrBitmap aqui: salvarBitmapAsync pode estar rodando no Dispatchers.IO
+        // e usar o bitmap após onDestroy, causando IllegalStateException.
+        // Para 512x512 RGB_565 (512 KB), não há pressão de memória que justifique reciclar.
         qrBitmap = null
         super.onDestroy()
     }
