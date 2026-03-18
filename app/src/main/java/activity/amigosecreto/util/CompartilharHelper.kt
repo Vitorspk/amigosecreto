@@ -3,6 +3,7 @@ package activity.amigosecreto.util
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager.NameNotFoundException
 import android.net.Uri
 import android.widget.Toast
 import activity.amigosecreto.R
@@ -28,6 +29,7 @@ object CompartilharHelper {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, mensagem)
             setPackage(WHATSAPP_PACKAGE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             context.startActivity(intent)
@@ -45,6 +47,7 @@ object CompartilharHelper {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, mensagem)
             setPackage(TELEGRAM_PACKAGE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             context.startActivity(intent)
@@ -56,6 +59,7 @@ object CompartilharHelper {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, mensagem)
             setPackage(TELEGRAM_FOSS_PACKAGE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             context.startActivity(foss)
@@ -67,6 +71,10 @@ object CompartilharHelper {
     /**
      * Compartilha via Email. Usa [Intent.ACTION_SENDTO] com scheme mailto para abrir
      * o cliente de e-mail padrão. Se não houver app de e-mail, exibe toast de erro.
+     *
+     * Nota: o destinatário fica em branco (mailto:?subject=...) — o organizador preenche
+     * o endereço no cliente de e-mail, pois o app não armazena e-mails dos participantes
+     * de forma obrigatória.
      */
     fun compartilharEmail(context: Context, mensagem: String, assunto: String) {
         // Uri.Builder evita injection via assunto/corpo
@@ -75,7 +83,9 @@ object CompartilharHelper {
             .appendQueryParameter("subject", assunto)
             .appendQueryParameter("body", mensagem)
             .build()
-        val intent = Intent(Intent.ACTION_SENDTO, uri)
+        val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         try {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
@@ -91,7 +101,9 @@ object CompartilharHelper {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, mensagem)
         }
-        context.startActivity(Intent.createChooser(intent, titulo))
+        context.startActivity(Intent.createChooser(intent, titulo).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
     }
 
     /**
@@ -110,7 +122,7 @@ object CompartilharHelper {
         return try {
             context.packageManager.getPackageInfo(packageName, 0)
             true
-        } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+        } catch (e: NameNotFoundException) {
             false
         }
     }

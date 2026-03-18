@@ -272,12 +272,19 @@ class ParticipantesActivity : AppCompatActivity() {
         view.findViewById<android.widget.TextView>(R.id.tv_share_titulo).text =
             getString(R.string.share_sheet_titulo, nomeParticipante)
 
-        view.findViewById<View>(R.id.btn_share_whatsapp).setOnClickListener {
+        val btnWhatsApp = view.findViewById<View>(R.id.btn_share_whatsapp)
+        val btnTelegram = view.findViewById<View>(R.id.btn_share_telegram)
+
+        // Oculta botões de apps não instalados — evita confusão ao cair no share sheet genérico
+        btnWhatsApp.visibility = if (CompartilharHelper.isWhatsAppInstalado(this)) View.VISIBLE else View.GONE
+        btnTelegram.visibility = if (CompartilharHelper.isTelegramInstalado(this)) View.VISIBLE else View.GONE
+
+        btnWhatsApp.setOnClickListener {
             sheet.dismiss()
             CompartilharHelper.compartilharWhatsApp(this, mensagem,
                 getString(R.string.share_with_person, nomeParticipante))
         }
-        view.findViewById<View>(R.id.btn_share_telegram).setOnClickListener {
+        btnTelegram.setOnClickListener {
             sheet.dismiss()
             CompartilharHelper.compartilharTelegram(this, mensagem,
                 getString(R.string.share_with_person, nomeParticipante))
