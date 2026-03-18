@@ -68,6 +68,16 @@ class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         db.execSQL(sqlCreateSorteioPar())
     }
 
+    /**
+     * Called when the database version in storage is newer than what this helper expects.
+     * This happens when Room (version 11+) has already migrated the database and the legacy
+     * MySQLiteOpenHelper (version 10) is opened afterwards. No-op: Room owns schema management
+     * for v11+; legacy DAOs still work on the same tables they know about.
+     */
+    override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Intentional no-op: allow legacy helper to open databases managed by Room
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // Migrations must be ordered oldest first to prevent data loss
 

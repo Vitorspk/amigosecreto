@@ -1,101 +1,67 @@
 package activity.amigosecreto.repository
 
-import android.content.Context
 import androidx.annotation.VisibleForTesting
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.db.room.ParticipanteRoomDao
 
 /**
- * Repository que encapsula todo o acesso a ParticipanteDAO.
+ * Repository que encapsula todo o acesso a [ParticipanteRoomDao].
  *
- * Isola Activities e ViewModels do SQLite, facilitando testes (mock/substituto)
- * e evolução futura (ex: Room, sync com servidor).
+ * Isola Activities e ViewModels do Room, facilitando testes via injeção do DAO.
+ * Todos os métodos são suspend — devem ser chamados a partir de uma coroutine.
  *
- * Todos os métodos são síncronos e devem ser chamados a partir de uma thread de background.
- *
- * TODO: fase10-dao — quando migrarem para Room, trocar var por val nos models e
- *  construir via construtor primário, eliminando setters.
+ * A classe é `open` para que testes Kotlin possam criar subclasses anônimas com override.
+ * TODO: substituir por constructor injection via @TestInstallIn quando conveniente.
  */
-open class ParticipanteRepository private constructor(private val dao: ParticipanteDAO) {
+open class ParticipanteRepository @VisibleForTesting internal constructor(
+    private val dao: ParticipanteRoomDao,
+) {
 
-    constructor(context: Context) : this(ParticipanteDAO(context))
+    open suspend fun listarPorGrupo(grupoId: Int): List<Participante> =
+        dao.listarPorGrupo(grupoId)
 
-    @VisibleForTesting
-    internal constructor(dao: ParticipanteDAO, @Suppress("UNUSED_PARAMETER") forTesting: Boolean) : this(dao)
-
-    open fun listarPorGrupo(grupoId: Int): List<Participante> {
-        dao.open()
-        return try { dao.listarPorGrupo(grupoId) } finally { dao.close() }
+    open suspend fun inserir(participante: Participante, grupoId: Int) {
+        participante.grupoId = grupoId
+        val id = dao.inserir(participante)
+        participante.id = id.toInt()
     }
 
-    open fun inserir(participante: Participante, grupoId: Int) {
-        dao.open()
-        try { dao.inserir(participante, grupoId) } finally { dao.close() }
-    }
+    open suspend fun atualizar(participante: Participante): Boolean =
+        dao.atualizar(participante) > 0
 
-    open fun atualizar(participante: Participante): Boolean {
-        dao.open()
-        return try { dao.atualizar(participante) } finally { dao.close() }
-    }
+    open suspend fun remover(id: Int) = dao.remover(id)
 
-    open fun remover(id: Int) {
-        dao.open()
-        try { dao.remover(id) } finally { dao.close() }
-    }
+    open suspend fun deletarTodosDoGrupo(grupoId: Int) = dao.deletarTodosDoGrupo(grupoId)
 
-    open fun deletarTodosDoGrupo(grupoId: Int) {
-        dao.open()
-        try { dao.deletarTodosDoGrupo(grupoId) } finally { dao.close() }
-    }
+    open suspend fun limparSorteioDoGrupo(grupoId: Int) = dao.limparSorteioDoGrupo(grupoId)
 
-    open fun limparSorteioDoGrupo(grupoId: Int) {
-        dao.open()
-        try { dao.limparSorteioDoGrupo(grupoId) } finally { dao.close() }
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    open suspend fun adicionarExclusao(idParticipante: Int, idExcluido: Int) {
+        dao.salvarExclusoes(idParticipante, listOf(idExcluido), emptyList())
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    open fun adicionarExclusao(idParticipante: Int, idExcluido: Int) {
-        dao.open()
-        try { dao.adicionarExclusao(idParticipante, idExcluido) } finally { dao.close() }
+    open suspend fun removerExclusao(idParticipante: Int, idExcluido: Int) {
+        dao.salvarExclusoes(idParticipante, emptyList(), listOf(idExcluido))
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    open fun removerExclusao(idParticipante: Int, idExcluido: Int) {
-        dao.open()
-        try { dao.removerExclusao(idParticipante, idExcluido) } finally { dao.close() }
-    }
+    open suspend fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) =
+        dao.salvarExclusoes(participanteId, adicionar, remover)
 
-    /**
-     * Aplica todas as alterações de exclusão em uma única transação atômica (evita falha parcial
-     * e múltiplos open/close que ocorreriam num loop de chamadas individuais).
-     */
-    open fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
-        dao.open()
-        try { dao.salvarExclusoes(participanteId, adicionar, remover) } finally { dao.close() }
-    }
+    open suspend fun salvarSorteio(participantes: List<Participante>, sorteados: List<Participante>): Boolean =
+        dao.salvarSorteio(participantes, sorteados)
 
-    open fun salvarSorteio(participantes: List<Participante>, sorteados: List<Participante>): Boolean {
-        dao.open()
-        return try { dao.salvarSorteio(participantes, sorteados) } finally { dao.close() }
-    }
+    open suspend fun marcarComoEnviado(id: Int) = dao.marcarComoEnviado(id)
 
-    open fun marcarComoEnviado(id: Int) {
-        dao.open()
-        try { dao.marcarComoEnviado(id) } finally { dao.close() }
-    }
+    open suspend fun getNomeAmigoSorteado(amigoId: Int): String =
+        dao.getNome(amigoId) ?: NOME_AMIGO_DESCONHECIDO
 
-    open fun getNomeAmigoSorteado(amigoId: Int): String {
-        dao.open()
-        return try { dao.getNomeAmigoSorteado(amigoId) } finally { dao.close() }
-    }
+    open suspend fun contarPorGrupo(): Map<Int, Int> =
+        dao.contarPorTodosGrupos().associate { it.grupoId to it.count }
 
-    open fun contarPorGrupo(): Map<Int, Int> {
-        dao.open()
-        return try { dao.contarPorGrupo() } finally { dao.close() }
-    }
+    open suspend fun buscarPorId(id: Int): Participante? = dao.buscarPorId(id)
 
-    open fun buscarPorId(id: Int): Participante? {
-        dao.open()
-        return try { dao.buscarPorId(id) } finally { dao.close() }
+    companion object {
+        const val NOME_AMIGO_DESCONHECIDO = "Ninguém"
     }
 }

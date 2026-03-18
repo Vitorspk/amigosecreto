@@ -1,26 +1,45 @@
 package activity.amigosecreto.db
 
 import android.os.Parcelable
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Ignore
+import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
-// var fields: DAOs populate via setters after construction (see CLAUDE.md § Model layer decisions).
-// TODO(fase10-dao): switch to val + constructor injection once DesejoDAO migrates to Room.
 // equals/hashCode use id only — identity = DB primary key, not field values.
-// Semantic change: Java compared all fields; audited — no production call site relied on that.
-// Audited (all Desejo Activities): desejoDAO.remover(desejo) calls are DAO deletions, not
-// List.remove() — equals is not involved. All collections are List<Desejo> iterated by index.
+// Secondary constructor preserved for test call sites (Desejo(id, produto)).
 @Parcelize
+@Entity(
+    tableName = "desejo",
+    foreignKeys = [ForeignKey(
+        entity = Participante::class,
+        parentColumns = ["id"],
+        childColumns = ["participante_id"],
+        onDelete = ForeignKey.CASCADE
+    )]
+)
 class Desejo(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
     var id: Int = 0,
+    @ColumnInfo(name = "produto")
     var produto: String? = null,
+    @ColumnInfo(name = "categoria")
     var categoria: String? = null,
+    @ColumnInfo(name = "lojas")
     var lojas: String? = null,
+    @ColumnInfo(name = "preco_minimo")
     var precoMinimo: Double = 0.0,
+    @ColumnInfo(name = "preco_maximo")
     var precoMaximo: Double = 0.0,
+    @ColumnInfo(name = "participante_id")
     var participanteId: Int = 0,
 ) : Parcelable, Comparable<Desejo> {
 
-    // Secondary constructor preserving the Java Desejo(int, String) call site in tests.
+    // Secondary constructor preserving the Desejo(id, produto) call site in tests.
+    @Ignore
     constructor(id: Int, produto: String?) : this(
         id = id, produto = produto, categoria = null, lojas = null,
         precoMinimo = 0.0, precoMaximo = 0.0, participanteId = 0,

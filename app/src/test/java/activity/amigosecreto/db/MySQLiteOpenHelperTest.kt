@@ -1,7 +1,10 @@
 package activity.amigosecreto.db
 
-import android.database.sqlite.SQLiteDatabase
+import activity.amigosecreto.db.room.AppDatabase
+import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -10,28 +13,40 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * Verifica que o schema do Room (AppDatabase) contém as tabelas e colunas
+ * esperadas após a migração. Substitui o MySQLiteOpenHelperTest original que
+ * testava o schema do helper legado — Room agora gerencia o schema.
+ *
+ * Usa SupportSQLiteDatabase (PRAGMA table_info) via openHelper do Room.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class MySQLiteOpenHelperTest {
 
-    private lateinit var helper: MySQLiteOpenHelper
-    private lateinit var db: SQLiteDatabase
+    private lateinit var db: AppDatabase
+    private lateinit var sdb: SupportSQLiteDatabase
 
     @Before
     fun setUp() {
-        helper = MySQLiteOpenHelper(ApplicationProvider.getApplicationContext())
-        db = helper.writableDatabase
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
+        // Force schema creation by opening the database
+        sdb = db.openHelper.writableDatabase
     }
 
     @After
     fun tearDown() {
-        helper.close()
+        db.close()
     }
 
     private fun getTabelasExistentes(): List<String> {
-        val cursor = db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%'",
-            null
+        val cursor = sdb.query(
+            "SELECT name FROM sqlite_master WHERE type='table' " +
+            "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%' " +
+            "AND name NOT LIKE 'room_%'"
         )
         return cursor.use {
             val tabelas = mutableListOf<String>()
@@ -43,7 +58,7 @@ class MySQLiteOpenHelperTest {
     }
 
     private fun colunaExiste(tabela: String, coluna: String): Boolean {
-        val cursor = db.rawQuery("PRAGMA table_info($tabela)", null)
+        val cursor = sdb.query("PRAGMA table_info($tabela)")
         return cursor.use {
             if (it.moveToFirst()) {
                 val nomeIdx = it.getColumnIndexOrThrow("name")
@@ -55,254 +70,149 @@ class MySQLiteOpenHelperTest {
         }
     }
 
-    // --- onCreate ---
+    // --- tabelas criadas ---
 
     @Test
     fun onCreate_cria_tabela_grupo() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_GRUPO))
+        assertTrue(getTabelasExistentes().contains("grupo"))
     }
 
     @Test
     fun onCreate_cria_tabela_participante() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_PARTICIPANTE))
+        assertTrue(getTabelasExistentes().contains("participante"))
     }
 
     @Test
     fun onCreate_cria_tabela_exclusao() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_EXCLUSAO))
+        assertTrue(getTabelasExistentes().contains("exclusao"))
     }
 
     @Test
     fun onCreate_cria_tabela_desejo() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_DESEJO))
+        assertTrue(getTabelasExistentes().contains("desejo"))
     }
-
-    @Test
-    fun tabela_grupo_tem_colunas_esperadas() {
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_GRUPO, MySQLiteOpenHelper.COLUMN_GRUPO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_GRUPO, MySQLiteOpenHelper.COLUMN_GRUPO_NOME))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_GRUPO, MySQLiteOpenHelper.COLUMN_GRUPO_DATA))
-    }
-
-    @Test
-    fun tabela_participante_tem_colunas_esperadas() {
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_NOME))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_EMAIL))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_TELEFONE))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_ENVIADO))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_PARTICIPANTE, MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID))
-    }
-
-    @Test
-    fun tabela_desejo_tem_coluna_participante_id() {
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID))
-    }
-
-    // --- onUpgrade ---
-
-    @Test
-    fun onUpgrade_v7_para_v8_adiciona_coluna_participante_id_na_desejo() {
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_DESEJO}")
-        db.execSQL(
-            "CREATE TABLE ${MySQLiteOpenHelper.TABLE_DESEJO} (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "produto TEXT NOT NULL, " +
-            "categoria TEXT, " +
-            "preco_minimo REAL, " +
-            "preco_maximo REAL, " +
-            "lojas TEXT)"
-        )
-        assertFalse(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID))
-
-        helper.onUpgrade(db, 7, 8)
-
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_DESEJO, MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID))
-    }
-
-    @Test
-    fun onUpgrade_v8_para_v9_preserva_dados_de_exclusao() {
-        // Set up v8 schema tables and insert data
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_EXCLUSAO}")
-        db.execSQL(
-            "CREATE TABLE ${MySQLiteOpenHelper.TABLE_EXCLUSAO}(" +
-            "${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID} INTEGER, " +
-            "${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID} INTEGER, " +
-            "PRIMARY KEY (${MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID}, ${MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID}))"
-        )
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_EXCLUSAO} VALUES (1, 2)")
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_EXCLUSAO} VALUES (3, 4)")
-
-        helper.onUpgrade(db, 8, 9)
-
-        val cursor = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_EXCLUSAO}", null)
-        val count = cursor.use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(2, count)
-    }
-
-    @Test
-    fun onUpgrade_v8_para_v9_preserva_dados_de_desejo() {
-        // Remove existing desejo table and create v8 version without CASCADE
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_DESEJO}")
-        db.execSQL(
-            "CREATE TABLE ${MySQLiteOpenHelper.TABLE_DESEJO}(" +
-            "${MySQLiteOpenHelper.COLUMN_ID} INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "${MySQLiteOpenHelper.COLUMN_PRODUTO} TEXT NOT NULL, " +
-            "${MySQLiteOpenHelper.COLUMN_CATEGORIA} TEXT, " +
-            "${MySQLiteOpenHelper.COLUMN_PRECO_MINIMO} REAL, " +
-            "${MySQLiteOpenHelper.COLUMN_PRECO_MAXIMO} REAL, " +
-            "${MySQLiteOpenHelper.COLUMN_LOJAS} TEXT, " +
-            "${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID} INTEGER)"
-        )
-        db.execSQL(
-            "INSERT INTO ${MySQLiteOpenHelper.TABLE_DESEJO} " +
-            "(${MySQLiteOpenHelper.COLUMN_PRODUTO}, ${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}) " +
-            "VALUES ('Bola', 1)"
-        )
-        db.execSQL(
-            "INSERT INTO ${MySQLiteOpenHelper.TABLE_DESEJO} " +
-            "(${MySQLiteOpenHelper.COLUMN_PRODUTO}, ${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}) " +
-            "VALUES ('Livro', 2)"
-        )
-
-        helper.onUpgrade(db, 8, 9)
-
-        val cursor = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
-        val count = cursor.use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(2, count)
-    }
-
-    // --- ON DELETE CASCADE ---
-
-    @Test
-    fun cascade_remover_participante_apaga_exclusoes_associadas() {
-        db.execSQL("PRAGMA foreign_keys = ON")
-        // Insert grupo and participantes
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_GRUPO} (${MySQLiteOpenHelper.COLUMN_GRUPO_NOME}) VALUES ('G1')")
-        val grupoId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}) VALUES ('Alice', $grupoId)")
-        val p1Id = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}) VALUES ('Bob', $grupoId)")
-        val p2Id = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_EXCLUSAO} VALUES ($p1Id, $p2Id)")
-
-        db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} WHERE ${MySQLiteOpenHelper.COLUMN_ID} = $p1Id")
-
-        val count = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_EXCLUSAO}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(0, count)
-    }
-
-    @Test
-    fun cascade_remover_participante_apaga_desejos_associados() {
-        db.execSQL("PRAGMA foreign_keys = ON")
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_GRUPO} (${MySQLiteOpenHelper.COLUMN_GRUPO_NOME}) VALUES ('G2')")
-        val grupoId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}) VALUES ('Carlos', $grupoId)")
-        val pId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_DESEJO} (${MySQLiteOpenHelper.COLUMN_PRODUTO}, ${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}) VALUES ('Bola', $pId)")
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_DESEJO} (${MySQLiteOpenHelper.COLUMN_PRODUTO}, ${MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID}) VALUES ('Livro', $pId)")
-
-        db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} WHERE ${MySQLiteOpenHelper.COLUMN_ID} = $pId")
-
-        val count = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_DESEJO}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(0, count)
-    }
-
-    // --- Schema v10: tabelas sorteio e sorteio_par ---
 
     @Test
     fun onCreate_cria_tabela_sorteio() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_SORTEIO))
+        assertTrue(getTabelasExistentes().contains("sorteio"))
     }
 
     @Test
     fun onCreate_cria_tabela_sorteio_par() {
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_SORTEIO_PAR))
+        assertTrue(getTabelasExistentes().contains("sorteio_par"))
     }
+
+    // --- colunas da tabela grupo ---
+
+    @Test
+    fun tabela_grupo_tem_colunas_esperadas() {
+        assertTrue(colunaExiste("grupo", "id"))
+        assertTrue(colunaExiste("grupo", "nome"))
+        assertTrue(colunaExiste("grupo", "data"))
+    }
+
+    // --- colunas da tabela participante ---
+
+    @Test
+    fun tabela_participante_tem_colunas_esperadas() {
+        assertTrue(colunaExiste("participante", "id"))
+        assertTrue(colunaExiste("participante", "nome"))
+        assertTrue(colunaExiste("participante", "email"))
+        assertTrue(colunaExiste("participante", "telefone"))
+        assertTrue(colunaExiste("participante", "amigo_sorteado_id"))
+        assertTrue(colunaExiste("participante", "enviado"))
+        assertTrue(colunaExiste("participante", "grupo_id"))
+    }
+
+    // --- colunas da tabela desejo ---
+
+    @Test
+    fun tabela_desejo_tem_coluna_participante_id() {
+        assertTrue(colunaExiste("desejo", "participante_id"))
+    }
+
+    // --- colunas da tabela sorteio ---
 
     @Test
     fun tabela_sorteio_tem_colunas_esperadas() {
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO, MySQLiteOpenHelper.COLUMN_SORTEIO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO, MySQLiteOpenHelper.COLUMN_SORTEIO_GRUPO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO, MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA))
+        assertTrue(colunaExiste("sorteio", "id"))
+        assertTrue(colunaExiste("sorteio", "grupo_id"))
+        assertTrue(colunaExiste("sorteio", "data_hora"))
     }
+
+    // --- colunas da tabela sorteio_par ---
 
     @Test
     fun tabela_sorteio_par_tem_colunas_esperadas() {
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_PARTICIPANTE_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEADO_ID))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_SORTEADO))
-        assertTrue(colunaExiste(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_ENVIADO))
+        assertTrue(colunaExiste("sorteio_par", "sorteio_id"))
+        assertTrue(colunaExiste("sorteio_par", "participante_id"))
+        assertTrue(colunaExiste("sorteio_par", "sorteado_id"))
+        assertTrue(colunaExiste("sorteio_par", "nome_participante"))
+        assertTrue(colunaExiste("sorteio_par", "nome_sorteado"))
+        assertTrue(colunaExiste("sorteio_par", "enviado"))
     }
 
-    @Test
-    fun onUpgrade_v9_para_v10_cria_tabelas_sorteio_e_sorteio_par() {
-        // Simular banco v9: dropar as novas tabelas se existirem
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}")
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO}")
-
-        helper.onUpgrade(db, 9, 10)
-
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_SORTEIO))
-        assertTrue(getTabelasExistentes().contains(MySQLiteOpenHelper.TABLE_SORTEIO_PAR))
-    }
+    // --- ON DELETE CASCADE via Room: remover participante apaga exclusoes e desejos ---
 
     @Test
-    fun onUpgrade_v9_para_v10_com_sorteio_existente_cria_registro_historico() {
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}")
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO}")
+    fun cascade_remover_participante_apaga_exclusoes_associadas() = runBlocking {
+        val grupoDao = db.grupoDao()
+        val participanteDao = db.participanteDao()
 
-        // Inserir grupo com participantes com sorteio ativo
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_GRUPO} (${MySQLiteOpenHelper.COLUMN_GRUPO_NOME}) VALUES ('Natal')")
-        val grupoId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}, ${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID}) VALUES ('Ana', $grupoId, 2)")
-        val p1Id = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}, ${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID}) VALUES ('Bruno', $grupoId, $p1Id)")
+        val grupoId = grupoDao.inserir(Grupo(nome = "G1")).toInt()
+        val p1 = Participante(nome = "Alice", grupoId = grupoId)
+        val p1Id = participanteDao.inserir(p1).toInt()
+        val p2 = Participante(nome = "Bob", grupoId = grupoId)
+        val p2Id = participanteDao.inserir(p2).toInt()
+        participanteDao.inserirExclusao(Exclusao(p1Id, p2Id))
 
-        helper.onUpgrade(db, 9, 10)
+        participanteDao.remover(p1Id)
 
-        val count = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_SORTEIO}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(1, count)
-
-        val pares = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
-        assertEquals(2, pares)
-    }
-
-    @Test
-    fun onUpgrade_v9_para_v10_grupo_sem_sorteio_nao_cria_registro_historico() {
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}")
-        db.execSQL("DROP TABLE IF EXISTS ${MySQLiteOpenHelper.TABLE_SORTEIO}")
-
-        // Grupo sem sorteio (amigo_sorteado_id NULL)
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_GRUPO} (${MySQLiteOpenHelper.COLUMN_GRUPO_NOME}) VALUES ('Vazio')")
-        val grupoId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_PARTICIPANTE} (${MySQLiteOpenHelper.COLUMN_NOME}, ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}) VALUES ('Carlos', $grupoId)")
-
-        helper.onUpgrade(db, 9, 10)
-
-        val count = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_SORTEIO}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
+        val count = sdb.query("SELECT COUNT(*) FROM exclusao").use {
+            it.moveToFirst(); it.getInt(0)
+        }
         assertEquals(0, count)
     }
 
     @Test
-    fun cascade_remover_grupo_apaga_sorteios_associados() {
-        db.execSQL("PRAGMA foreign_keys = ON")
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_GRUPO} (${MySQLiteOpenHelper.COLUMN_GRUPO_NOME}) VALUES ('Grupo Cascade')")
-        val grupoId = db.rawQuery("SELECT last_insert_rowid()", null).use { it.moveToFirst(); it.getInt(0) }
-        db.execSQL("INSERT INTO ${MySQLiteOpenHelper.TABLE_SORTEIO} (${MySQLiteOpenHelper.COLUMN_SORTEIO_GRUPO_ID}, ${MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA}) VALUES ($grupoId, '2025-12-24T20:00:00')")
+    fun cascade_remover_participante_apaga_desejos_associados() = runBlocking {
+        val grupoDao = db.grupoDao()
+        val participanteDao = db.participanteDao()
+        val desejoDao = db.desejoDao()
 
-        db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_GRUPO} WHERE ${MySQLiteOpenHelper.COLUMN_GRUPO_ID} = $grupoId")
+        val grupoId = grupoDao.inserir(Grupo(nome = "G2")).toInt()
+        val p = Participante(nome = "Carlos", grupoId = grupoId)
+        val pId = participanteDao.inserir(p).toInt()
+        desejoDao.inserir(Desejo(produto = "Bola", participanteId = pId))
+        desejoDao.inserir(Desejo(produto = "Livro", participanteId = pId))
 
-        val count = db.rawQuery("SELECT COUNT(*) FROM ${MySQLiteOpenHelper.TABLE_SORTEIO}", null)
-            .use { it.moveToFirst(); it.getInt(0) }
+        participanteDao.remover(pId)
+
+        val count = sdb.query("SELECT COUNT(*) FROM desejo").use {
+            it.moveToFirst(); it.getInt(0)
+        }
+        assertEquals(0, count)
+    }
+
+    @Test
+    fun cascade_remover_grupo_apaga_sorteios_associados() = runBlocking {
+        val grupoDao = db.grupoDao()
+        val sorteioDao = db.sorteioDao()
+
+        val grupo = Grupo(nome = "Grupo Cascade")
+        val grupoId = grupoDao.inserir(grupo).toInt()
+        grupo.id = grupoId
+
+        // Insert sorteio directly via raw SQL to avoid needing participantes
+        sdb.execSQL(
+            "INSERT INTO sorteio (grupo_id, data_hora) VALUES ($grupoId, '2025-12-24 20:00:00')"
+        )
+
+        grupoDao.remover(grupo)
+
+        val count = sdb.query("SELECT COUNT(*) FROM sorteio").use {
+            it.moveToFirst(); it.getInt(0)
+        }
         assertEquals(0, count)
     }
 }

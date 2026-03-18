@@ -1,9 +1,14 @@
 package activity.amigosecreto.repository
 
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -23,32 +28,40 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33])
 class ParticipanteRepositorySalvarExclusoesTest {
 
+    private lateinit var db: AppDatabase
+    private lateinit var grupoDao: GrupoRoomDao
+    private lateinit var participanteRoomDao: ParticipanteRoomDao
     private lateinit var repository: ParticipanteRepository
-    private lateinit var grupoDao: GrupoDAO
     private var grupoId = 0
 
     @Before
-    fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
-        grupoId = grupoDao.inserir(Grupo().apply { nome = "Grupo Exclusões" }).toInt()
-        repository = ParticipanteRepository(ctx)
+    fun setUp() = runBlocking {
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
+
+        grupoDao = db.grupoDao()
+        participanteRoomDao = db.participanteDao()
+
+        val grupo = Grupo(nome = "Grupo Exclusões")
+        grupoId = grupoDao.inserir(grupo).toInt()
+
+        repository = ParticipanteRepository(participanteRoomDao)
     }
 
     @After
     fun tearDown() {
-        grupoDao.limparTudo()
-        grupoDao.close()
+        db.close()
     }
 
-    private fun inserir(nome: String): Int {
-        val p = Participante().apply { this.nome = nome }
+    private suspend fun inserir(nome: String): Int {
+        val p = Participante(nome = nome)
         repository.inserir(p, grupoId)
         return p.id
     }
 
-    private fun exclusoesDeParticipante(participanteId: Int): List<Int> =
+    private suspend fun exclusoesDeParticipante(participanteId: Int): List<Int> =
         repository.listarPorGrupo(grupoId)
             .firstOrNull { it.id == participanteId }
             ?.idsExcluidos
@@ -57,7 +70,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     // ===== adicionar exclusões =====
 
     @Test
-    fun salvarExclusoes_adicionar_persisteExclusao() {
+    fun salvarExclusoes_adicionar_persisteExclusao() = runTest {
         val idAna = inserir("Ana")
         val idBruno = inserir("Bruno")
         repository.salvarExclusoes(idAna, listOf(idBruno), emptyList())
@@ -65,7 +78,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     }
 
     @Test
-    fun salvarExclusoes_adicionarMultiplas_todasPersistidas() {
+    fun salvarExclusoes_adicionarMultiplas_todasPersistidas() = runTest {
         val idCarla = inserir("Carla")
         val idDiego = inserir("Diego")
         val idEva = inserir("Eva")
@@ -78,7 +91,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     // ===== remover exclusões =====
 
     @Test
-    fun salvarExclusoes_remover_removeExclusaoExistente() {
+    fun salvarExclusoes_remover_removeExclusaoExistente() = runTest {
         val idFelipe = inserir("Felipe")
         val idGabi = inserir("Gabi")
         repository.salvarExclusoes(idFelipe, listOf(idGabi), emptyList())
@@ -90,7 +103,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     // ===== adicionar e remover na mesma chamada =====
 
     @Test
-    fun salvarExclusoes_adicionarERemover_transacaoAtomicaCorreta() {
+    fun salvarExclusoes_adicionarERemover_transacaoAtomicaCorreta() = runTest {
         val idHugo = inserir("Hugo")
         val idIris = inserir("Iris")
         val idJoao = inserir("João")
@@ -106,7 +119,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     // ===== listas vazias =====
 
     @Test
-    fun salvarExclusoes_listasVazias_naoAlteraEstadoAtual() {
+    fun salvarExclusoes_listasVazias_naoAlteraEstadoAtual() = runTest {
         val idKaren = inserir("Karen")
         val idLucas = inserir("Lucas")
         repository.salvarExclusoes(idKaren, listOf(idLucas), emptyList())
@@ -116,7 +129,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     }
 
     @Test
-    fun salvarExclusoes_ambosVazios_naoLancaExcecao() {
+    fun salvarExclusoes_ambosVazios_naoLancaExcecao() = runTest {
         val idMaria = inserir("Maria")
         repository.salvarExclusoes(idMaria, emptyList(), emptyList())
     }
@@ -124,7 +137,7 @@ class ParticipanteRepositorySalvarExclusoesTest {
     // ===== não contamina outros participantes =====
 
     @Test
-    fun salvarExclusoes_naoAfetaOutrosParticipantes() {
+    fun salvarExclusoes_naoAfetaOutrosParticipantes() = runTest {
         val idNadia = inserir("Nadia")
         val idOtto = inserir("Otto")
         val idPaulo = inserir("Paulo")

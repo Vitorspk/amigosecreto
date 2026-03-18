@@ -17,8 +17,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
+import activity.amigosecreto.db.room.AppDatabase
 import activity.amigosecreto.util.AsyncDatabaseHelper
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -27,29 +28,29 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ParticipantesActivityTest {
 
-    private lateinit var grupoDao: GrupoDAO
+    private lateinit var db: AppDatabase
     private lateinit var grupo: Grupo
     private lateinit var scenario: ActivityScenario<ParticipantesActivity>
 
     @Before
     fun setUp() {
         IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().register(ParticipantesViewModel.idlingResource)
 
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        db = AppDatabase.getInstance(ctx)
 
         // Limpar banco completamente antes de cada teste para garantir isolamento.
-        // GrupoDAO.limparTudo() apaga grupos, participantes e exclusoes em transacao atomica.
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
-        grupoDao.limparTudo()
-
-        grupo = Grupo().apply {
-            nome = "Grupo Espresso"
-            data = "01/01/2025"
+        runBlocking {
+            db.grupoDao().deletarTodosParticipantes()
+            db.grupoDao().deletarTodosGrupos()
         }
-        val id = grupoDao.inserir(grupo).toInt()
-        grupo.id = id
-        grupoDao.close()
+
+        grupo = Grupo(nome = "Grupo Espresso", data = "01/01/2025")
+        runBlocking {
+            val id = db.grupoDao().inserir(grupo)
+            grupo.id = id.toInt()
+        }
 
         val intent = Intent(ApplicationProvider.getApplicationContext(), ParticipantesActivity::class.java)
         intent.putExtra("grupo", grupo)
@@ -59,16 +60,14 @@ class ParticipantesActivityTest {
     @After
     fun tearDown() {
         IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().unregister(ParticipantesViewModel.idlingResource)
         try {
             scenario.close()
         } finally {
-            // Cria novo DAO para tearDown — evita reuso de DAO potencialmente em estado invalido
-            // caso setUp tenha falhado antes de concluir a inicializacao.
-            val ctx = InstrumentationRegistry.getInstrumentation().targetContext
-            val cleanupDao = GrupoDAO(ctx)
-            cleanupDao.open()
-            cleanupDao.limparTudo()
-            cleanupDao.close()
+            runBlocking {
+                db.grupoDao().deletarTodosParticipantes()
+                db.grupoDao().deletarTodosGrupos()
+            }
         }
     }
 

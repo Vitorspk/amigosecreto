@@ -19,8 +19,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import activity.amigosecreto.db.GrupoDAO
+import activity.amigosecreto.db.room.AppDatabase
 import activity.amigosecreto.util.AsyncDatabaseHelper
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -39,7 +40,7 @@ class GruposActivityTest {
         else
             GrantPermissionRule.grant()
 
-    private lateinit var dao: GrupoDAO
+    private lateinit var db: AppDatabase
     private lateinit var scenario: ActivityScenario<GruposActivity>
 
     @Before
@@ -49,10 +50,11 @@ class GruposActivityTest {
         IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
 
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
-        dao = GrupoDAO(ctx)
-        dao.open()
-        dao.limparTudo()
-        dao.close()
+        db = AppDatabase.getInstance(ctx)
+        runBlocking {
+            db.grupoDao().deletarTodosParticipantes()
+            db.grupoDao().deletarTodosGrupos()
+        }
         // Activity lancada APOS limpar o banco para evitar race condition
         scenario = ActivityScenario.launch(GruposActivity::class.java)
     }
@@ -63,13 +65,10 @@ class GruposActivityTest {
         try {
             scenario.close()
         } finally {
-            // Cria novo DAO para tearDown — evita reuso de DAO potencialmente em estado invalido
-            // caso setUp tenha falhado antes de concluir a inicializacao.
-            val ctx = InstrumentationRegistry.getInstrumentation().targetContext
-            val cleanupDao = GrupoDAO(ctx)
-            cleanupDao.open()
-            cleanupDao.limparTudo()
-            cleanupDao.close()
+            runBlocking {
+                db.grupoDao().deletarTodosParticipantes()
+                db.grupoDao().deletarTodosGrupos()
+            }
         }
     }
 
