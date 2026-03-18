@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Telegram paper plane icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <!-- Blue circle background -->
+    <path
+        android:fillColor="#2AABEE"
+        android:pathData="M20,0C8.954,0 0,8.954 0,20C0,31.046 8.954,40 20,40C31.046,40 40,31.046 40,20C40,8.954 31.046,0 20,0Z"/>
+    <!-- White paper plane -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8.5,19.5L28.5,11.5L23.5,29.5L18.5,24L14.5,27L15.5,21L8.5,19.5Z"/>
+    <path
+        android:fillColor="#C8E6FA"
+        android:pathData="M15.5,21L18.5,24L23.5,29.5L19.5,19.5Z"/>
+</vector>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Email envelope icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <!-- Red/orange circle background -->
+    <path
+        android:fillColor="#EA4335"
+        android:pathData="M20,0C8.954,0 0,8.954 0,20C0,31.046 8.954,40 20,40C31.046,40 40,31.046 40,20C40,8.954 31.046,0 20,0Z"/>
+    <!-- White envelope -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,14H31V27H9V14ZM9,14L20,22L31,14"/>
+</vector>

@@ -281,6 +281,15 @@
     <string name="backup_confirmar_mensagem">Isso substituirá TODOS os dados atuais. Esta ação não pode ser desfeita. Deseja continuar?</string>
     <string name="backup_confirmar_sim">Sim, importar</string>
 
+    <!-- Compartilhar -->
+    <string name="error_no_email_app">Nenhum app de e-mail encontrado.</string>
+    <string name="share_via_whatsapp">WhatsApp</string>
+    <string name="share_via_telegram">Telegram</string>
+    <string name="share_via_email">E-mail</string>
+    <string name="share_via_outros">Outros</string>
+    <string name="share_email_assunto">Amigo Secreto — seu resultado</string>
+    <string name="share_sheet_titulo">Compartilhar com %1$s</string>
+
     <!-- Notificações de lembrete -->
     <string name="notificacao_canal_nome">Lembretes de Sorteio</string>
     <string name="notificacao_canal_descricao">Lembretes para realizar o sorteio de amigo secreto</string>

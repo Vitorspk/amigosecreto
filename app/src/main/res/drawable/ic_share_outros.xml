@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generic share icon (three connected dots) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <!-- Grey circle background -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M20,0C8.954,0 0,8.954 0,20C0,31.046 8.954,40 20,40C31.046,40 40,31.046 40,20C40,8.954 31.046,0 20,0Z"/>
+    <!-- White share dots and lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27,14C25.343,14 24,15.343 24,17C24,17.199 24.021,17.393 24.06,17.58L16.45,21.74C15.893,21.277 15.18,21 14.4,21C12.523,21 11,22.523 11,24.4C11,26.277 12.523,27.8 14.4,27.8C16.277,27.8 17.8,26.277 17.8,24.4C17.8,24.157 17.771,23.921 17.718,23.695L25.254,19.574C25.818,20.078 26.568,20.4 27.4,20.4C29.277,20.4 30.8,18.877 30.8,17C30.8,15.123 29.277,13.6 27.4,13.6L27,14ZM27,16C28.105,16 29,16.895 29,18C29,19.105 28.105,20 27,20C25.895,20 25,19.105 25,18C25,16.895 25.895,16 27,16ZM14,23C15.105,23 16,23.895 16,25C16,26.105 15.105,27 14,27C12.895,27 12,26.105 12,25C12,23.895 12.895,23 14,23ZM27,24C28.105,24 29,24.895 29,26C29,27.105 28.105,28 27,28C25.895,28 25,27.105 25,26C25,24.895 25.895,24 27,24Z"/>
+    <!-- Lines between dots -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,19L15,24"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,16L26,21"/>
+</vector>

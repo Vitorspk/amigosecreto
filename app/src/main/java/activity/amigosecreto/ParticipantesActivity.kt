@@ -30,11 +30,13 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.util.CompartilharHelper
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
 
@@ -249,21 +251,49 @@ class ParticipantesActivity : AppCompatActivity() {
             pendingEditEmailOriginal = null
         }
 
-        // Mensagem de compartilhamento pronta — abrir share sheet.
+        // Mensagem de compartilhamento pronta — exibir bottom sheet de opções de envio.
         viewModel.mensagemCompartilhamentoResult.observe(this) { resultado ->
             if (resultado == null) return@observe
             viewModel.clearMensagemCompartilhamentoResult()
             atualizarLista()
-            val intent = Intent(Intent.ACTION_SEND)
-            intent.type = "text/plain"
-            intent.putExtra(Intent.EXTRA_TEXT, resultado.mensagem)
-            startActivity(Intent.createChooser(intent,
-                getString(R.string.share_with_person, resultado.participante.nome)))
+            exibirBottomSheetCompartilhar(resultado.mensagem, resultado.participante.nome ?: "")
         }
     }
 
     private fun atualizarLista() {
         viewModel.carregarParticipantes()
+    }
+
+    private fun exibirBottomSheetCompartilhar(mensagem: String, nomeParticipante: String) {
+        val sheet = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_compartilhar, null)
+        sheet.setContentView(view)
+
+        view.findViewById<android.widget.TextView>(R.id.tv_share_titulo).text =
+            getString(R.string.share_sheet_titulo, nomeParticipante)
+
+        view.findViewById<View>(R.id.btn_share_whatsapp).setOnClickListener {
+            sheet.dismiss()
+            CompartilharHelper.compartilharWhatsApp(this, mensagem,
+                getString(R.string.share_with_person, nomeParticipante))
+        }
+        view.findViewById<View>(R.id.btn_share_telegram).setOnClickListener {
+            sheet.dismiss()
+            CompartilharHelper.compartilharTelegram(this, mensagem,
+                getString(R.string.share_with_person, nomeParticipante))
+        }
+        view.findViewById<View>(R.id.btn_share_email).setOnClickListener {
+            sheet.dismiss()
+            CompartilharHelper.compartilharEmail(this, mensagem,
+                getString(R.string.share_email_assunto))
+        }
+        view.findViewById<View>(R.id.btn_share_outros).setOnClickListener {
+            sheet.dismiss()
+            CompartilharHelper.compartilharGenerico(this, mensagem,
+                getString(R.string.share_with_person, nomeParticipante))
+        }
+
+        sheet.show()
     }
 
     private fun exibirDialogAdd() {
