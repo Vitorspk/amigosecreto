@@ -6,7 +6,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~157+) |
+| Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~370) |
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
@@ -141,7 +141,7 @@ O `build.gradle` suporta dois modos:
 
 ## Banco de Dados
 
-### Nome: `amigosecreto_v9.db` (versão 9 — PR #47)
+### Nome: `amigosecreto_v10.db` (versão 11 — Room — PR #63)
 
 ```sql
 CREATE TABLE grupo (
@@ -186,6 +186,8 @@ CREATE TABLE desejo (
 - `< v7` → drop e recria tudo (versões muito antigas)
 - `v7 → v8` → adiciona coluna `participante_id` na tabela `desejo`
 - `v8 → v9` → adiciona `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` (PR #47)
+- `v9 → v10` → adiciona tabelas `sorteio` e `sorteio_par` para histórico de sorteios (PR #56)
+- `v10 → v11` → Room assume gerenciamento; recria `participante` e `desejo` com `NOT NULL`; adiciona índice `index_exclusao_excluido_id` (PR #63)
 
 ---
 
@@ -300,7 +302,11 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Erros de banco tratados via `handleDbError()` no ViewModel: loga com `Log.e` + posta `errorMessage` via `Handler.post` — nunca relança de dentro do executor (relançar de `Runnable` vai para `UncaughtExceptionHandler` sem feedback ao usuário)
 
 ### DAO Pattern
-- `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`
+- `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO` — DAOs legados, usam `MySQLiteOpenHelper` singleton
+- `MySQLiteOpenHelper` é **singleton** (`getInstance(context)`) — evita race condition em `onUpgrade`
+- `close()` nos DAOs legados é **no-op** — fechar o singleton fecharia o pool compartilhado
+- `AmigoSecretoApplication` inicializa Room de forma **eager** (`openHelper.writableDatabase`) para garantir que `MIGRATION_10_11` conclui antes de qualquer DAO legado abrir o banco
+- Room DAOs (`GrupoRoomDao`, `ParticipanteRoomDao`, `DesejoRoomDao`, `SorteioRoomDao`) — usados pelo ViewModel via Hilt
 - Queries parametrizadas (prevenção SQL injection)
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
 - Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
@@ -732,6 +738,9 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 12 | **QR Code** — gerar QR Code para cada participante revelar seu amigo secreto | ✅ Concluído | #60 |
 | 13 | **Timber** — logging estruturado substituindo `android.util.Log` | ✅ Concluído | #61 |
 | 14 | **Modo escuro** — suporte completo com `values-night/`, `drawable-night/`, WCAG AA | ✅ Concluído | #62 |
+| 15 | **Migração Room** — banco migrado para Room v11; DAOs legados mantidos via singleton | ✅ Concluído | #63 |
+| 16 | **Suporte a tablets** — margens responsivas e detecção `is_tablet` | ✅ Concluído | #64 |
+| 17 | **Fix race condition SQLite + scroll** — singleton MySQLiteOpenHelper, close() no-op, Room eager init, paddingBottom dinâmico | ✅ Concluído | #65 |
 
 ### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
