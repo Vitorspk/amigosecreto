@@ -34,6 +34,7 @@ class ParticipantesActivityTest {
     @Before
     fun setUp() {
         IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().register(ParticipantesViewModel.idlingResource)
 
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -59,6 +60,7 @@ class ParticipantesActivityTest {
     @After
     fun tearDown() {
         IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().unregister(ParticipantesViewModel.idlingResource)
         try {
             scenario.close()
         } finally {

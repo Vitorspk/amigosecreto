@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.test.espresso.idling.CountingIdlingResource
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import activity.amigosecreto.db.Desejo
@@ -33,6 +34,26 @@ class ParticipantesViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "ParticipantesViewModel"
+        /**
+         * CountingIdlingResource for Espresso tests to synchronize with coroutine-based DB operations.
+         * Register via IdlingRegistry.getInstance().register(ParticipantesViewModel.idlingResource).
+         */
+        val idlingResource = CountingIdlingResource("ParticipantesViewModel")
+    }
+
+    /**
+     * Wraps viewModelScope.launch to keep [idlingResource] in sync with coroutine lifecycle.
+     * Espresso waits until counter reaches 0 before performing assertions.
+     */
+    private fun launchTracked(block: suspend () -> Unit) {
+        idlingResource.increment()
+        launchTracked {
+            try {
+                block()
+            } finally {
+                idlingResource.decrement()
+            }
+        }
     }
 
     /** Resultado do sorteio. */
@@ -105,7 +126,7 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Marca participante como enviado em background (evita ANR). */
     fun marcarComoEnviado(participanteId: Int) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { participanteRepository.marcarComoEnviado(participanteId) }
             } catch (e: Exception) {
@@ -116,7 +137,7 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Remove participante em background (evita ANR). */
     fun removerParticipante(participanteId: Int) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { participanteRepository.remover(participanteId) }
                 carregarParticipantes()
@@ -135,7 +156,7 @@ class ParticipantesViewModel @Inject constructor(
      * edição ou manter os campos preenchidos para o usuário corrigir.
      */
     fun atualizarParticipante(participante: Participante) {
-        viewModelScope.launch {
+        launchTracked {
             val sucesso = try {
                 withContext(ioDispatcher) { participanteRepository.atualizar(participante) }
             } catch (e: Exception) {
@@ -149,7 +170,7 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Insere participante em background (evita ANR). */
     fun inserirParticipante(participante: Participante, grupoId: Int) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { participanteRepository.inserir(participante, grupoId) }
                 carregarParticipantes()
@@ -161,7 +182,7 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Deleta todos os participantes de um grupo em background (evita ANR). */
     fun deletarTodosDoGrupo(grupoId: Int) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { participanteRepository.deletarTodosDoGrupo(grupoId) }
                 carregarParticipantes()
@@ -173,7 +194,7 @@ class ParticipantesViewModel @Inject constructor(
 
     /** Salva exclusões de um participante em background em transação atômica (evita ANR e falha parcial). */
     fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { participanteRepository.salvarExclusoes(participanteId, adicionar, remover) }
                 carregarParticipantes()
@@ -190,7 +211,7 @@ class ParticipantesViewModel @Inject constructor(
     fun carregarParticipantes() {
         if (grupoId == -1) return
         _isLoading.value = true
-        viewModelScope.launch {
+        launchTracked {
             try {
                 val (lista, counts) = withContext(ioDispatcher) {
                     participanteRepository.listarPorGrupo(grupoId) to desejoRepository.contarDesejosPorGrupo(grupoId)
@@ -223,7 +244,7 @@ class ParticipantesViewModel @Inject constructor(
         _isLoading.value = true
         val sortableSnapshot = ArrayList(snapshot)
 
-        viewModelScope.launch {
+        launchTracked {
             val sorteados = withContext(ioDispatcher) {
                 var result: List<Participante>? = null
                 var tentativas = 0
@@ -237,7 +258,7 @@ class ParticipantesViewModel @Inject constructor(
             if (sorteados == null) {
                 _isLoading.value = false
                 _sorteioResult.value = SorteioResultado(SorteioResultado.Status.FAILURE_IMPOSSIBLE)
-                return@launch
+                return@launchTracked
             }
 
             // Inline handling (not handleDbError) because the result drives a tri-state block below:
@@ -271,7 +292,7 @@ class ParticipantesViewModel @Inject constructor(
      * quanto a reconstrução após rotação (lista restaurada do bundle).
      */
     fun prepararMensagensSms(snapshot: List<Participante>) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 val (participantesAtuais, desejosMap) = withContext(ioDispatcher) {
                     val p = participanteRepository.listarPorGrupo(grupoId)
@@ -312,7 +333,7 @@ class ParticipantesViewModel @Inject constructor(
      * o participante não é marcado.
      */
     fun prepararMensagemCompartilhamento(participante: Participante) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 val mensagem = withContext(ioDispatcher) {
                     val validAmigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
@@ -335,7 +356,7 @@ class ParticipantesViewModel @Inject constructor(
      */
     fun obterNomeAmigoParaQr(participante: Participante) {
         val amigoId = participante.amigoSorteadoId?.takeIf { it > 0 } ?: return
-        viewModelScope.launch {
+        launchTracked {
             try {
                 val nomeAmigo = withContext(ioDispatcher) {
                     participanteRepository.getNomeAmigoSorteado(amigoId)
