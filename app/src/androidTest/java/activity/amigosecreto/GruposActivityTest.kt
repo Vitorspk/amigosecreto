@@ -81,7 +81,7 @@ class GruposActivityTest {
 
     @Test
     fun tela_inicial_sem_grupos_nao_exibe_itens_na_lista() {
-        // ListView vazio — nenhum item com texto de grupo existe
+        // RecyclerView vazio — nenhum item com texto de grupo existe
         onView(withText("Familia Teste")).check(doesNotExist())
     }
 

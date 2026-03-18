@@ -34,7 +34,6 @@ import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.text.SimpleDateFormat
@@ -312,10 +311,14 @@ class GruposActivity : AppCompatActivity() {
                 }
             },
             object : AsyncDatabaseHelper.ResultCallback<List<Grupo>> {
+                @Suppress("NotifyDataSetChanged")
                 override fun onSuccess(result: List<Grupo>) {
                     listaGrupos.clear()
                     listaGrupos.addAll(result)
                     if (listaGrupos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+                    // Primeiro notify: exibe nomes imediatamente com contagens em "0".
+                    // recarregarContagensAsync fará um segundo notify com as contagens reais.
+                    // TODO: unificar em uma única query para evitar o double-bind.
                     adapter.notifyDataSetChanged()
                     adapter.recarregarContagensAsync()
                 }
@@ -376,6 +379,8 @@ class GruposActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // TODO: extract to adapter/ package when DAO/dialog coupling is reduced
+    @Suppress("NotifyDataSetChanged")
     private inner class GruposRecyclerAdapter(
         private val ctx: Context,
         private val itens: MutableList<Grupo>,
@@ -443,11 +448,13 @@ class GruposActivity : AppCompatActivity() {
         override fun getItemCount() = itens.size
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val g = itens[position]
+            // Use bindingAdapterPosition for consistency with ViewHolder.init click handlers —
+            // position parameter can be stale if partial-update notifications are introduced later.
+            val pos = holder.bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION } ?: position
+            val g = itens[pos]
 
             holder.tvNome.text = g.nome
-            // Usar g.id (estável) em vez de position para evitar que emoji/gradiente mude
-            // ao deletar/reordenar itens na lista.
+            // Use g.id (stable) instead of position so emoji/gradient don't shift on delete/reorder.
             holder.tvEmoji.text = emojis[g.id % emojis.size]
             holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
 
