@@ -20,10 +20,11 @@
         <item name="colorOnSurface">@color/md_theme_onSurface</item>
 
         <!-- Window settings -->
+        <!-- statusBarColor, windowLightStatusBar e navigationBarColor removidos:
+             EdgeToEdge.enable() gerencia as barras do sistema automaticamente (API 21+).
+             Definir essas propriedades conflita com edge-to-edge e são descontinuadas
+             no Android 15 — consistente com values/styles.xml. -->
         <item name="android:windowBackground">@color/md_theme_background</item>
-        <item name="android:statusBarColor">@color/md_theme_primaryContainer</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
-        <item name="android:navigationBarColor">@color/md_theme_surface</item>
 
         <!-- Component styles -->
         <item name="textInputStyle">@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox</item>
