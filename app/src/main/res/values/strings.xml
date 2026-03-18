@@ -219,15 +219,11 @@
          translatable="false": emojis são símbolos universais, não devem ser traduzidos. -->
     <string name="emoji_gift" translatable="false">🎁</string>
     <string name="emoji_diamond" translatable="false">💎</string>
-    <string name="emoji_santa" translatable="false">🎅</string>
     <string name="emoji_person" translatable="false">👤</string>
     <string name="emoji_edit" translatable="false">✏️</string>
     <string name="emoji_trash" translatable="false">🗑️</string>
 
     <!-- Content descriptions (prefixo cd_ = contentDescription exclusivamente) -->
-    <!-- cd_remove_group: used in res/layout/item_grupo.xml — suppressed because that layout is not
-         directly inflated yet (reserved for future use; see item_grupo.xml header comment) -->
-    <string name="cd_remove_group" tools:ignore="UnusedResources">Remover Grupo</string>
     <string name="cd_remove_participant">Remover Participante</string>
     <string name="cd_wish_icon">Ícone do desejo</string>
     <string name="cd_my_wishes">Meus Desejos</string>
