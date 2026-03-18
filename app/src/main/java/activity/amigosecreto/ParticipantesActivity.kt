@@ -90,13 +90,30 @@ class ParticipantesActivity : AppCompatActivity() {
 
         // Ajusta padding do container de botoes inferiores para nao ficar atras
         // da navigation bar em modo edge-to-edge (Android 15+).
+        // Tambem propaga a altura total do painel como paddingBottom do conteudo do scroll,
+        // garantindo que o ultimo item da lista seja sempre rolavel para alem dos botoes.
         val bottomButtons = findViewById<View>(R.id.layout_bottom_buttons)
+        val scrollContent = findViewById<View>(R.id.layout_scroll_content)
         if (bottomButtons != null) {
             val padBottom = bottomButtons.paddingBottom
             ViewCompat.setOnApplyWindowInsetsListener(bottomButtons) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, padBottom + systemBars.bottom)
                 insets
+            }
+            // Atualiza paddingBottom do conteudo sempre que o painel de botoes mudar de altura.
+            // O padding e aplicado no LinearLayout filho do NestedScrollView (nao no proprio scroll)
+            // pois e o conteudo que precisa ter espaco extra — o NestedScrollView ja tem clipToPadding=false.
+            bottomButtons.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                val panelHeight = bottom - top
+                Timber.d("SCROLL_FIX: bottomButtons top=$top bottom=$bottom panelHeight=$panelHeight scrollContent.paddingBottom=${scrollContent?.paddingBottom}")
+                scrollContent?.setPadding(
+                    scrollContent.paddingLeft,
+                    scrollContent.paddingTop,
+                    scrollContent.paddingRight,
+                    panelHeight
+                )
+                Timber.d("SCROLL_FIX: after setPadding scrollContent.paddingBottom=${scrollContent?.paddingBottom}")
             }
         }
 

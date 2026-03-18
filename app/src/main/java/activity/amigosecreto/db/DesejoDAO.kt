@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase
 
 class DesejoDAO(ctx: Context) {
 
-    private val helper = MySQLiteOpenHelper(ctx)
+    private val helper = MySQLiteOpenHelper.getInstance(ctx)
     private lateinit var database: SQLiteDatabase
 
     @Throws(SQLException::class)
@@ -17,7 +17,8 @@ class DesejoDAO(ctx: Context) {
     }
 
     fun close() {
-        helper.close()
+        // No-op: o helper é singleton — fechar aqui fecharia o pool compartilhado por todos
+        // os DAOs do processo. O pool fica aberto pelo tempo de vida do app.
     }
 
     fun alterar(oldDesejo: Desejo, newDesejo: Desejo) {

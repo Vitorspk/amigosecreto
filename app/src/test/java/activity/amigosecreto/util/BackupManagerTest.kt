@@ -1,5 +1,6 @@
 package activity.amigosecreto.util
 
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.*
@@ -16,6 +17,7 @@ import activity.amigosecreto.db.MySQLiteOpenHelper
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.SorteioDAO
+import activity.amigosecreto.db.room.AppDatabase
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -30,6 +32,9 @@ class BackupManagerTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
+        // Inicializa o AppDatabase no contexto Robolectric para que BackupManager.importarDeJson
+        // possa usar sua conexão em vez de abrir uma conexão paralela via MySQLiteOpenHelper.
+        AppDatabase.initForTesting(ctx)
         abrirDaos()
     }
 
@@ -38,6 +43,8 @@ class BackupManagerTest {
         abrirDaos() // garantir que estão abertos para limpar
         grupoDao.limparTudo()
         fecharDaos()
+        AppDatabase.closeForTesting()
+        MySQLiteOpenHelper.resetInstanceForTesting()
     }
 
     private fun abrirDaos() {

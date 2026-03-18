@@ -11,6 +11,7 @@ import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.MySQLiteOpenHelper
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.SorteioDAO
+import activity.amigosecreto.db.room.AppDatabase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -154,14 +155,16 @@ object BackupManager {
         val gruposJson = root.optJSONArray("grupos")
             ?: return ImportResult.Failure("Campo 'grupos' ausente no JSON")
 
-        // Fase 2: inserção atômica em transação única — rollback automático em caso de erro
-        val helper = MySQLiteOpenHelper(context)
+        // Fase 2: inserção atômica via MySQLiteOpenHelper.
+        // Usamos o mesmo helper dos DAOs legados — o SQLiteOpenHelper do Android gerencia
+        // um único connection pool por arquivo. Não fechamos o helper após o uso para não
+        // invalidar conexões abertas em outros DAOs do mesmo processo.
+        val helper = MySQLiteOpenHelper.getInstance(context)
         val db = helper.writableDatabase
         db.execSQL("PRAGMA foreign_keys = ON")
         db.beginTransaction()
         return try {
             // Limpar tudo dentro da transação — deletar em ordem inversa das FKs
-            // (PRAGMA foreign_keys pode não estar ativo antes do beginTransaction)
             db.delete(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, null)
             db.delete(MySQLiteOpenHelper.TABLE_SORTEIO, null, null)
             db.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, null)
@@ -178,6 +181,7 @@ object BackupManager {
                     put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA, gJson.optString("data", ""))
                 }
                 val novoGrupoId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_GRUPO, null, grupoValues)
+                if (novoGrupoId == -1L) throw IllegalStateException("Falha ao inserir grupo")
 
                 // Mapa id_antigo -> id_novo para remapear referências FK
                 val idMap = mutableMapOf<Int, Int>()
@@ -196,6 +200,7 @@ object BackupManager {
                         put(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, novoGrupoId)
                     }
                     val novoPartId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, partValues)
+                    if (novoPartId == -1L) throw IllegalStateException("Falha ao inserir participante")
                     idMap[pJson.optInt("id", -1)] = novoPartId.toInt()
 
                     val desejosJson = pJson.optJSONArray("desejos") ?: JSONArray()
@@ -237,8 +242,7 @@ object BackupManager {
                             put(MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID, novoPartId)
                             put(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID, novoExcId)
                         }
-                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, v,
-                            SQLiteDatabase.CONFLICT_IGNORE)
+                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, v, SQLiteDatabase.CONFLICT_IGNORE)
                     }
                 }
 
@@ -251,6 +255,7 @@ object BackupManager {
                         put(MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA, sJson.optString("data_hora", ""))
                     }
                     val sorteioId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_SORTEIO, null, sorteioValues)
+                    if (sorteioId == -1L) throw IllegalStateException("Falha ao inserir sorteio")
 
                     val paresJson = sJson.optJSONArray("pares") ?: JSONArray()
                     for (k in 0 until paresJson.length()) {
@@ -265,8 +270,7 @@ object BackupManager {
                             put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_SORTEADO, parJson.optString("nome_sorteado", ""))
                             put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_ENVIADO, parJson.optInt("enviado", 0))
                         }
-                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, parValues,
-                            SQLiteDatabase.CONFLICT_IGNORE)
+                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, parValues, SQLiteDatabase.CONFLICT_IGNORE)
                     }
                 }
 
@@ -280,7 +284,9 @@ object BackupManager {
             ImportResult.Failure(e.message ?: "Erro desconhecido")
         } finally {
             db.endTransaction()
-            helper.close()
+            // Não fechar helper: SQLiteOpenHelper usa reference counting interno.
+            // Fechar aqui invalidaria o connection pool compartilhado com DAOs legados
+            // que possam estar abertos em outras threads (ex: GruposActivity.contarPorGrupo).
         }
     }
 
