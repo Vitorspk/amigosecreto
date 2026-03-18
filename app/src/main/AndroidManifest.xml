@@ -33,6 +33,14 @@
             <action android:name="android.intent.action.SENDTO" />
             <data android:scheme="smsto" />
         </intent>
+
+        <!-- Explicit package visibility for share targets (Android 11+).
+             ACTION_SEND + text/plain covers official WhatsApp and Telegram, but
+             Telegram FOSS may not register that filter — explicit package guarantees
+             getPackageInfo() works for isTelegramInstalado(). -->
+        <package android:name="com.whatsapp" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="org.telegram.messenger.foss" />
     </queries>
 
     <application
