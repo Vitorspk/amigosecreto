@@ -258,6 +258,17 @@ class ParticipantesActivity : AppCompatActivity() {
             atualizarLista()
             exibirBottomSheetCompartilhar(resultado.mensagem, resultado.participante.nome ?: "")
         }
+
+        // Nome do amigo obtido — abrir QrCodeActivity.
+        viewModel.qrCodeResult.observe(this) { resultado ->
+            if (resultado == null) return@observe
+            viewModel.clearQrCodeResult()
+            val intent = Intent(this, QrCodeActivity::class.java).apply {
+                putExtra(QrCodeActivity.EXTRA_NOME_PARTICIPANTE, resultado.nomeParticipante)
+                putExtra(QrCodeActivity.EXTRA_CONTEUDO_QR, resultado.nomeAmigo)
+            }
+            startActivity(intent)
+        }
     }
 
     private fun atualizarLista() {
@@ -689,6 +700,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val btnDesejos = view.findViewById<ImageButton>(R.id.btn_desejos)
             val btnRegras = view.findViewById<ImageButton>(R.id.btn_regras)
             val btnShare = view.findViewById<ImageButton>(R.id.btn_share)
+            val btnQrCode = view.findViewById<ImageButton>(R.id.btn_qrcode)
             val btnEditar = view.findViewById<ImageButton>(R.id.btn_editar)
             val btnRemover = view.findViewById<ImageButton>(R.id.btn_remover)
 
@@ -711,6 +723,7 @@ class ParticipantesActivity : AppCompatActivity() {
                 tvEmail.text = if (p.isEnviado) getString(R.string.status_result_sent) else getString(R.string.status_ready_share)
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, if (p.isEnviado) R.color.text_secondary else R.color.colorAccent))
                 btnShare.visibility = View.VISIBLE
+                btnQrCode.visibility = View.VISIBLE
             } else {
                 tvEmail.text = if (p.idsExcluidos.isEmpty())
                     getString(R.string.status_no_restrictions)
@@ -718,6 +731,7 @@ class ParticipantesActivity : AppCompatActivity() {
                     ctx.resources.getQuantityString(R.plurals.label_restrictions_count, p.idsExcluidos.size, p.idsExcluidos.size)
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
                 btnShare.visibility = View.GONE
+                btnQrCode.visibility = View.GONE
             }
 
             btnDesejos.setOnClickListener {
@@ -736,6 +750,10 @@ class ParticipantesActivity : AppCompatActivity() {
                 compartilharResultado(p)
             }
 
+            btnQrCode.setOnClickListener {
+                abrirQrCode(p)
+            }
+
             btnEditar.setOnClickListener { exibirDialogEditar(p) }
 
             btnRemover.setOnClickListener { viewModel.removerParticipante(p.id) }
@@ -748,6 +766,12 @@ class ParticipantesActivity : AppCompatActivity() {
             // mensagemCompartilhamentoResult em onCreate(). atualizarLista() no observer
             // dispara notifyDataSetChanged(), que recria as views e reabilita o botão.
             viewModel.prepararMensagemCompartilhamento(p)
+        }
+
+        private fun abrirQrCode(p: Participante) {
+            // Delega ao ViewModel para buscar o nome do amigo em background.
+            // O resultado chega via observer de qrCodeResult em onCreate().
+            viewModel.obterNomeAmigoParaQr(p)
         }
     }
 }

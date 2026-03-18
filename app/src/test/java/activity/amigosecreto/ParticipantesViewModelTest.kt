@@ -666,4 +666,78 @@ class ParticipantesViewModelTest {
             viewModel.prepararMensagemCompartilhamento(p)
         }
     }
+
+    // =========================================================
+    // obterNomeAmigoParaQr
+    // =========================================================
+
+    @Test
+    fun obterNomeAmigoParaQr_semSorteio_naoAtualizaQrCodeResult() = runTest(testDispatcher) {
+        viewModel.init(grupoId)
+        viewModel.clearQrCodeResult()
+
+        // amigoSorteadoId = null → método retorna sem postar resultado
+        val p = Participante().apply { id = 1; nome = "Ana" }
+        viewModel.obterNomeAmigoParaQr(p)
+
+        assertNull(viewModel.qrCodeResult.value)
+    }
+
+    @Test
+    fun obterNomeAmigoParaQr_amigoSorteadoZero_naoAtualizaQrCodeResult() = runTest(testDispatcher) {
+        viewModel.init(grupoId)
+        viewModel.clearQrCodeResult()
+
+        // amigoSorteadoId = 0 → treated as "não sorteado"
+        val p = Participante().apply { id = 1; nome = "Bruno"; amigoSorteadoId = 0 }
+        viewModel.obterNomeAmigoParaQr(p)
+
+        assertNull(viewModel.qrCodeResult.value)
+    }
+
+    @Test
+    fun obterNomeAmigoParaQr_sucesso_postaqrCodeResultado() = runTest(testDispatcher) {
+        // Inserir participantes
+        val p1 = Participante().apply { nome = "Carlos"; telefone = "11111" }
+        val p2 = Participante().apply { nome = "Diana"; telefone = "22222" }
+        participanteDao.inserir(p1, grupoId)
+        participanteDao.inserir(p2, grupoId)
+        val lista = participanteDao.listarPorGrupo(grupoId)
+        // lista é ordenada por nome: [Carlos, Diana]
+        val carlos = lista.first { it.nome == "Carlos" }
+        val diana = lista.first { it.nome == "Diana" }
+
+        // salvarSorteio(participantes, sorteados): participantes[i] recebe sorteados[i].id como amigo.
+        // Para Carlos tirar Diana: participantes=[Carlos, Diana], sorteados=[Diana, Carlos]
+        participanteDao.salvarSorteio(listOf(carlos, diana), listOf(diana, carlos))
+
+        viewModel.init(grupoId)
+        val participanteAtual = participanteDao.listarPorGrupo(grupoId).first { it.nome == "Carlos" }
+
+        viewModel.obterNomeAmigoParaQr(participanteAtual)
+
+        val resultado = viewModel.qrCodeResult.value
+        assertNotNull(resultado)
+        assertEquals("Carlos", resultado!!.nomeParticipante)
+        assertEquals("Diana", resultado.nomeAmigo)
+    }
+
+    @Test
+    fun obterNomeAmigoParaQr_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
+        val repoQueLanca = object : ParticipanteRepository(app) {
+            override fun getNomeAmigoSorteado(amigoId: Int): String {
+                throw SQLiteException("falha simulada")
+            }
+        }
+        viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel.ioDispatcher = testDispatcher
+        viewModel.init(grupoId)
+        viewModel.clearErrorMessage()
+
+        val p = Participante().apply { id = 1; nome = "Eduardo"; amigoSorteadoId = 99 }
+        viewModel.obterNomeAmigoParaQr(p)
+
+        assertNotNull(viewModel.errorMessage.value)
+        assertFalse(viewModel.errorMessage.value!!.isEmpty())
+    }
 }
