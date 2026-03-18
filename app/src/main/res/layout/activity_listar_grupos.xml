@@ -155,14 +155,12 @@
                 android:visibility="gone" />
 
             <!-- Lista de Grupos -->
-            <ListView
-                android:id="@+id/lv_grupos"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_grupos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:divider="@android:color/transparent"
-                android:dividerHeight="12dp"
-                android:nestedScrollingEnabled="true"
-                tools:listitem="@layout/item_grupo_modern" />
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_grupo" />
 
         </LinearLayout>
 

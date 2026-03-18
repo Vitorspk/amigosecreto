@@ -8,14 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import timber.log.Timber
-import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.BaseAdapter
-import android.widget.LinearLayout
 import android.widget.PopupMenu
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +17,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
@@ -36,6 +32,11 @@ import activity.amigosecreto.util.HapticFeedbackUtils
 import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,14 +50,22 @@ class GruposActivity : AppCompatActivity() {
         const val BACKUP_MIME_TYPE = "application/json"
     }
 
-    private lateinit var lvGrupos: android.widget.ListView
+    private lateinit var rvGrupos: RecyclerView
     private lateinit var btnCriarGrupo: MaterialButton
     private lateinit var dao: GrupoDAO
     private lateinit var participanteDao: ParticipanteDAO
     private lateinit var backupRepository: BackupRepository
     private val listaGrupos = mutableListOf<Grupo>()
-    private lateinit var adapter: GruposAdapter
+    private lateinit var adapter: GruposRecyclerAdapter
     private lateinit var stateHelper: StateViewHelper
+
+    // Arrays de emojis e gradientes para variar os cards
+    private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
+    private val gradientes = intArrayOf(
+        R.drawable.card_gradient_orange,
+        R.drawable.card_gradient_blue,
+        R.drawable.card_gradient_green
+    )
 
     private val solicitarPermissaoNotificacao = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -72,14 +81,6 @@ class GruposActivity : AppCompatActivity() {
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { confirmarEImportarBackup(it) } }
 
-    // Arrays de emojis e gradientes para variar os cards
-    private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
-    private val gradientes = intArrayOf(
-        R.drawable.card_gradient_orange,
-        R.drawable.card_gradient_blue,
-        R.drawable.card_gradient_green
-    )
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -93,17 +94,18 @@ class GruposActivity : AppCompatActivity() {
         dao = GrupoDAO(this)
         participanteDao = ParticipanteDAO(this)
         backupRepository = BackupRepository(this)
-        lvGrupos = findViewById(R.id.lv_grupos)
+        rvGrupos = findViewById(R.id.rv_grupos)
         btnCriarGrupo = findViewById(R.id.btn_criar_grupo)
 
         stateHelper = StateViewHelper(
             stubLoading = findViewById(R.id.stub_loading),
             stubEmpty = findViewById(R.id.stub_empty),
-            contentView = lvGrupos
+            contentView = rvGrupos
         )
 
-        adapter = GruposAdapter(this, listaGrupos)
-        lvGrupos.adapter = adapter
+        adapter = GruposRecyclerAdapter(this, listaGrupos, emojis, gradientes)
+        rvGrupos.layoutManager = LinearLayoutManager(this)
+        rvGrupos.adapter = adapter
 
         btnCriarGrupo.setOnClickListener { exibirDialogAdd() }
 
@@ -303,14 +305,14 @@ class GruposActivity : AppCompatActivity() {
     private fun atualizarLista() {
         stateHelper.showLoading()
         AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<List<activity.amigosecreto.db.Grupo>> {
-                override fun doInBackground(): List<activity.amigosecreto.db.Grupo> {
+            object : AsyncDatabaseHelper.BackgroundTask<List<Grupo>> {
+                override fun doInBackground(): List<Grupo> {
                     dao.open()
                     return try { dao.listar() } finally { dao.close() }
                 }
             },
-            object : AsyncDatabaseHelper.ResultCallback<List<activity.amigosecreto.db.Grupo>> {
-                override fun onSuccess(result: List<activity.amigosecreto.db.Grupo>) {
+            object : AsyncDatabaseHelper.ResultCallback<List<Grupo>> {
+                override fun onSuccess(result: List<Grupo>) {
                     listaGrupos.clear()
                     listaGrupos.addAll(result)
                     if (listaGrupos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
@@ -374,10 +376,12 @@ class GruposActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private inner class GruposAdapter(
+    private inner class GruposRecyclerAdapter(
         private val ctx: Context,
-        private val itens: MutableList<Grupo>
-    ) : BaseAdapter() {
+        private val itens: MutableList<Grupo>,
+        private val emojis: Array<String>,
+        private val gradientes: IntArray
+    ) : RecyclerView.Adapter<GruposRecyclerAdapter.ViewHolder>() {
 
         private val contagemParticipantes = mutableMapOf<Int, Int>()
 
@@ -405,44 +409,43 @@ class GruposActivity : AppCompatActivity() {
             )
         }
 
-        override fun getCount() = itens.size
-        override fun getItem(position: Int) = itens[position]
-        override fun getItemId(position: Int) = itens[position].id.toLong()
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val tvNome: TextView = view.findViewById(R.id.tv_grupo_nome)
+            val tvParticipantes: TextView = view.findViewById(R.id.tv_grupo_participantes)
+            val tvEmoji: TextView = view.findViewById(R.id.tv_grupo_emoji)
+            val layoutContent: LinearLayout = view.findViewById(R.id.layout_grupo_content)
+        }
 
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: LayoutInflater.from(ctx).inflate(R.layout.item_grupo_modern, parent, false)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(ctx).inflate(R.layout.item_grupo, parent, false)
+            return ViewHolder(view)
+        }
 
+        override fun getItemCount() = itens.size
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val g = itens[position]
-            val tvNome = view.findViewById<TextView>(R.id.tv_grupo_nome)
-            val tvParticipantes = view.findViewById<TextView>(R.id.tv_grupo_participantes)
-            val tvEmoji = view.findViewById<TextView>(R.id.tv_grupo_emoji)
-            val layoutContent = view.findViewById<LinearLayout>(R.id.layout_grupo_content)
 
-            tvNome.text = g.nome
+            holder.tvNome.text = g.nome
+            holder.tvEmoji.text = emojis[position % emojis.size]
+            holder.layoutContent.setBackgroundResource(gradientes[position % gradientes.size])
 
-            // Set participantes count - usar contagem pré-carregada
             val numParticipantes = contagemParticipantes[g.id] ?: 0
-            tvParticipantes.text = ctx.resources.getQuantityString(R.plurals.label_participants, numParticipantes, numParticipantes)
+            holder.tvParticipantes.text = ctx.resources.getQuantityString(
+                R.plurals.label_participants, numParticipantes, numParticipantes
+            )
 
-            // Set emoji baseado na posição
-            tvEmoji.text = emojis[position % emojis.size]
-
-            // Set gradiente baseado na posição
-            layoutContent.setBackgroundResource(gradientes[position % gradientes.size])
-
-            view.setOnClickListener {
+            holder.itemView.setOnClickListener {
                 val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
                 intent.putExtra("grupo", g)
                 startActivity(intent)
             }
 
-            view.setOnLongClickListener { v ->
+            holder.itemView.setOnLongClickListener { v ->
                 HapticFeedbackUtils.performMediumFeedback(v)
                 exibirMenuContextoGrupo(v, g)
                 true
             }
-
-            return view
         }
 
         private fun exibirMenuContextoGrupo(anchorView: View, g: Grupo) {
@@ -543,6 +546,5 @@ class GruposActivity : AppCompatActivity() {
                 .setNegativeButton(R.string.button_cancel, null)
                 .show()
         }
-
     }
 }

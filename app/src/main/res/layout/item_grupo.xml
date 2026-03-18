@@ -1,73 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Reserved for future use: MaterialCardView replacement for item_grupo_modern in GruposActivity (see #25) -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="UnusedResources"
     android:id="@+id/card_grupo_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="80dp"
+    android:layout_marginVertical="6dp"
     app:cardCornerRadius="20dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="1dp"
-    app:strokeColor="@color/divider"
-    app:cardBackgroundColor="@color/white">
+    app:cardElevation="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
+        android:id="@+id/layout_grupo_content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:background="@drawable/card_gradient_orange"
         android:orientation="horizontal"
-        android:padding="20dp"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:padding="16dp">
 
-        <View
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="@drawable/circle_background"
-            android:backgroundTint="@color/colorPrimaryContainer" />
+        <!-- Emoji Icon -->
+        <TextView
+            android:id="@+id/tv_grupo_emoji"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            tools:text="🎅"
+            android:importantForAccessibility="no"
+            android:textSize="32sp"
+            android:gravity="center"
+            android:layout_marginEnd="12dp" />
 
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="-42dp"
-            android:src="@drawable/ic_gift"
-            app:tint="@color/colorPrimary"
-            android:importantForAccessibility="no" />
-
+        <!-- Group Info -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="30dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_grupo_nome"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                tools:text="Festa de Natal"
+                android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                tools:text="Nome do Grupo"/>
+                android:shadowColor="#40000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4" />
 
-            <TextView
-                android:id="@+id/tv_grupo_data"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@color/colorSecondary"
-                android:layout_marginTop="2dp"
-                tools:text="01/01/2024"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/emoji_person"
+                    android:importantForAccessibility="no"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_grupo_participantes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="6 Participantes"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:shadowColor="#40000000"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="2" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btn_remover_grupo"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_delete"
-            app:tint="@color/colorError"
-            android:contentDescription="@string/cd_remove_group"/>
+        <!-- Arrow Icon -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_arrow_forward"
+            android:layout_marginStart="8dp"
+            app:tint="@color/white"
+            android:importantForAccessibility="no" />
 
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>
