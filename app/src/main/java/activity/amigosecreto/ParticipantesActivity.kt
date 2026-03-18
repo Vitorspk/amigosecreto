@@ -36,6 +36,8 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.CompartilharHelper
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
@@ -689,6 +691,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val btnDesejos = view.findViewById<ImageButton>(R.id.btn_desejos)
             val btnRegras = view.findViewById<ImageButton>(R.id.btn_regras)
             val btnShare = view.findViewById<ImageButton>(R.id.btn_share)
+            val btnQrCode = view.findViewById<ImageButton>(R.id.btn_qrcode)
             val btnEditar = view.findViewById<ImageButton>(R.id.btn_editar)
             val btnRemover = view.findViewById<ImageButton>(R.id.btn_remover)
 
@@ -711,6 +714,7 @@ class ParticipantesActivity : AppCompatActivity() {
                 tvEmail.text = if (p.isEnviado) getString(R.string.status_result_sent) else getString(R.string.status_ready_share)
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, if (p.isEnviado) R.color.text_secondary else R.color.colorAccent))
                 btnShare.visibility = View.VISIBLE
+                btnQrCode.visibility = View.VISIBLE
             } else {
                 tvEmail.text = if (p.idsExcluidos.isEmpty())
                     getString(R.string.status_no_restrictions)
@@ -718,6 +722,7 @@ class ParticipantesActivity : AppCompatActivity() {
                     ctx.resources.getQuantityString(R.plurals.label_restrictions_count, p.idsExcluidos.size, p.idsExcluidos.size)
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
                 btnShare.visibility = View.GONE
+                btnQrCode.visibility = View.GONE
             }
 
             btnDesejos.setOnClickListener {
@@ -736,6 +741,10 @@ class ParticipantesActivity : AppCompatActivity() {
                 compartilharResultado(p)
             }
 
+            btnQrCode.setOnClickListener {
+                abrirQrCode(p)
+            }
+
             btnEditar.setOnClickListener { exibirDialogEditar(p) }
 
             btnRemover.setOnClickListener { viewModel.removerParticipante(p.id) }
@@ -748,6 +757,32 @@ class ParticipantesActivity : AppCompatActivity() {
             // mensagemCompartilhamentoResult em onCreate(). atualizarLista() no observer
             // dispara notifyDataSetChanged(), que recria as views e reabilita o botão.
             viewModel.prepararMensagemCompartilhamento(p)
+        }
+
+        private fun abrirQrCode(p: Participante) {
+            val amigoId = p.amigoSorteadoId?.takeIf { it > 0 } ?: return
+            // Busca nome do amigo em background para não bloquear UI thread
+            AsyncDatabaseHelper.execute(
+                object : AsyncDatabaseHelper.BackgroundTask<String> {
+                    override fun doInBackground(): String {
+                        val dao = ParticipanteDAO(ctx)
+                        dao.open()
+                        return try { dao.getNomeAmigoSorteado(amigoId) } finally { dao.close() }
+                    }
+                },
+                object : AsyncDatabaseHelper.ResultCallback<String> {
+                    override fun onSuccess(nomeAmigo: String) {
+                        val intent = Intent(ctx, QrCodeActivity::class.java).apply {
+                            putExtra(QrCodeActivity.EXTRA_NOME_PARTICIPANTE, p.nome ?: "")
+                            putExtra(QrCodeActivity.EXTRA_CONTEUDO_QR, nomeAmigo)
+                        }
+                        ctx.startActivity(intent)
+                    }
+                    override fun onError(e: Exception) {
+                        Toast.makeText(ctx, R.string.qr_erro_gerar, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         }
     }
 }

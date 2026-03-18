@@ -111,6 +111,11 @@
             android:name=".DetalheDesejoActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".QrCodeActivity"
+            android:label="@string/qr_menu_item"
+            android:exported="false" />
+
         <!-- FileProvider for secure file sharing -->
         <provider
             android:name="androidx.core.content.FileProvider"

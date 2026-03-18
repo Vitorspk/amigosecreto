@@ -166,4 +166,7 @@ dependencies {
     // WorkManager — background task scheduling for reminder notifications
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
     testImplementation 'androidx.work:work-testing:2.9.1'
+
+    // QR Code generation — ZXing core (pure Java, no extra Activity or camera required)
+    implementation 'com.google.zxing:core:3.5.3'
 }

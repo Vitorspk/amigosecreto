@@ -281,6 +281,19 @@
     <string name="backup_confirmar_mensagem">Isso substituirá TODOS os dados atuais. Esta ação não pode ser desfeita. Deseja continuar?</string>
     <string name="backup_confirmar_sim">Sim, importar</string>
 
+    <!-- QR Code -->
+    <string name="qr_instrucao">QR Code de %1$s</string>
+    <string name="qr_dica">💡 Mostre este QR Code para o participante revelar seu amigo secreto</string>
+    <string name="qr_btn_compartilhar">Compartilhar resultado</string>
+    <string name="qr_btn_salvar">Salvar na galeria</string>
+    <string name="qr_salvo_sucesso">QR Code salvo na galeria!</string>
+    <string name="qr_erro_sem_sorteio">Sorteio ainda não realizado para este participante.</string>
+    <string name="qr_erro_gerar">Erro ao gerar QR Code.</string>
+    <string name="qr_erro_salvar">Erro ao salvar QR Code.</string>
+    <string name="qr_cd_imagem">QR Code do amigo secreto</string>
+    <string name="qr_mensagem_compartilhar">🎁 %1$s, seu Amigo Secreto é: *%2$s*! 🎉\n\nMantenha em segredo! 🤫</string>
+    <string name="qr_menu_item">QR Code</string>
+
     <!-- Compartilhar -->
     <string name="error_no_email_app">Nenhum app de e-mail encontrado.</string>
     <string name="share_via_whatsapp">WhatsApp</string>
