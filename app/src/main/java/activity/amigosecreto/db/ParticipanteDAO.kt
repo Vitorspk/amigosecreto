@@ -249,22 +249,16 @@ class ParticipanteDAO(ctx: Context) {
      * Retorna o número de grupos que têm >= [minParticipantes] participantes mas onde
      * nenhum participante possui amigo_sorteado_id definido (sorteio ainda não realizado).
      *
-     * Usa uma única query com INNER JOIN + GROUP BY + HAVING, evitando N+1.
+     * Usa GROUP BY + HAVING numa única query, evitando N+1.
      * Padrão equivalente a [contarPorGrupo] e ao batch de DesejoDAO.
-     */
-    /**
-     * Retorna o número de grupos que têm >= [minParticipantes] participantes mas onde
-     * nenhum participante possui amigo_sorteado_id definido (sorteio ainda não realizado).
      *
-     * Usa uma única query com GROUP BY + HAVING, evitando N+1.
-     * Padrão equivalente a [contarPorGrupo] e ao batch de DesejoDAO.
+     * Nota: [minParticipantes] é um Int interno injetado como literal no SQL (não como ?).
+     * rawQuery com ? dentro de subquery tem comportamento inconsistente no Robolectric 4.13;
+     * o valor não vem de entrada externa, portanto não há risco de SQL injection.
      */
     fun contarGruposPendentes(minParticipantes: Int = 3): Int {
-        // Conta grupos onde:
-        //   - há >= minParticipantes participantes
-        //   - nenhum participante tem amigo_sorteado_id definido (todos NULL)
-        // Usa GROUP BY + HAVING numa única query para evitar N+1.
-        // COUNT(coluna) conta apenas valores não-NULL; se todos são NULL, COUNT = 0.
+        // COUNT(coluna) conta apenas valores não-NULL — se todos amigo_sorteado_id são NULL,
+        // COUNT = 0, indicando que o sorteio ainda não foi realizado.
         val sql =
             "SELECT ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
             " FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}" +

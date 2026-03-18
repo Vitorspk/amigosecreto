@@ -117,8 +117,15 @@ class GruposActivity : AppCompatActivity() {
         // Atualizar a lista sempre que voltar para esta tela
         atualizarLista()
         // Re-agendamento idempotente (KEEP policy) — retoma lembrete se Worker se auto-cancelou
-        // quando não havia grupos pendentes e novos grupos foram criados
-        LembreteScheduler.agendar(this)
+        // quando não havia grupos pendentes e novos grupos foram criados.
+        // Verifica permissão antes de agendar para não gerar trabalho desnecessário em Android 13+
+        // quando o usuário negou POST_NOTIFICATIONS.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED
+        ) {
+            LembreteScheduler.agendar(this)
+        }
     }
 
     private fun agendarLembreteSePermitido() {
