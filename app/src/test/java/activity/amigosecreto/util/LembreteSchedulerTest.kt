@@ -39,12 +39,17 @@ class LembreteSchedulerTest {
 
         assertTrue("Deve haver ao menos um trabalho agendado", trabalhos.isNotEmpty())
         val estado = trabalhos[0].state
-        // PeriodicWorkRequest em modo de teste pode estar ENQUEUED, RUNNING ou BLOCKED
-        // (BLOCKED é o estado inicial válido para trabalho periódico aguardando janela)
+        // Verifica que o trabalho NÃO está em estado terminal (CANCELLED, FAILED, SUCCEEDED).
+        // Em modo de teste, PeriodicWorkRequest pode ser ENQUEUED, RUNNING ou BLOCKED
+        // dependendo da versão do WorkManager e do ambiente de CI — todos são estados válidos.
+        val estadosTerminais = setOf(
+            WorkInfo.State.CANCELLED,
+            WorkInfo.State.FAILED,
+            WorkInfo.State.SUCCEEDED
+        )
         assertTrue(
-            "Trabalho deve estar enfileirado, rodando ou bloqueado",
-            estado == WorkInfo.State.ENQUEUED || estado == WorkInfo.State.RUNNING
-                    || estado == WorkInfo.State.BLOCKED
+            "Trabalho deve estar ativo (estado atual: $estado)",
+            estado !in estadosTerminais
         )
     }
 
