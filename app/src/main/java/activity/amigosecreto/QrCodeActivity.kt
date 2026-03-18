@@ -25,6 +25,7 @@ import activity.amigosecreto.util.QrCodeHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.Normalizer
 
 /**
  * Exibe o QR Code do resultado do sorteio para que o participante possa
@@ -77,7 +78,11 @@ class QrCodeActivity : AppCompatActivity() {
 
         val nomeParticipante = intent.getStringExtra(EXTRA_NOME_PARTICIPANTE) ?: ""
         val conteudoQr = intent.getStringExtra(EXTRA_CONTEUDO_QR) ?: ""
-        nomeArquivo = "amigo_secreto_${nomeParticipante.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")}_qr.png"
+        // Remove diacríticos (João→Joao) antes de sanitizar para evitar underscores
+        // desnecessários em nomes com acentos.
+        val nomeSemAcento = Normalizer.normalize(nomeParticipante, Normalizer.Form.NFD)
+            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+        nomeArquivo = "amigo_secreto_${nomeSemAcento.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")}_qr.png"
 
         findViewById<TextView>(R.id.tv_qr_instrucao).text =
             getString(R.string.qr_instrucao, nomeParticipante)

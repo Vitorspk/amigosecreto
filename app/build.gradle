@@ -167,6 +167,9 @@ dependencies {
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
     testImplementation 'androidx.work:work-testing:2.9.1'
 
+    // CardView — used by QrCodeActivity layout (also transitive via material:1.12.0)
+    implementation 'androidx.cardview:cardview:1.0.0'
+
     // QR Code generation — ZXing core (pure Java, no extra Activity or camera required)
     implementation 'com.google.zxing:core:3.5.3'
 }

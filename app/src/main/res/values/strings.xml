@@ -283,7 +283,7 @@
 
     <!-- QR Code -->
     <string name="qr_instrucao">QR Code de %1$s</string>
-    <string name="qr_dica">💡 Mostre este QR Code para o participante revelar seu amigo secreto</string>
+    <string name="qr_dica">Mostre este QR Code para o participante revelar seu amigo secreto</string>
     <string name="qr_btn_salvar">Salvar na galeria</string>
     <string name="qr_salvo_sucesso">QR Code salvo na galeria!</string>
     <string name="qr_erro_sem_sorteio">Sorteio ainda não realizado para este participante.</string>
