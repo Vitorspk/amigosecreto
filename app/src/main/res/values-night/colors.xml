@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Primary (Dark Mode) -->
-    <color name="md_theme_primary">#FFB4AB</color>
-    <color name="md_theme_onPrimary">#690005</color>
-    <color name="md_theme_primaryContainer">#93000A</color>
-    <color name="md_theme_onPrimaryContainer">#FFDAD6</color>
+    <!-- Primary (Dark Mode) — Roxo claro sobre fundo escuro (WCAG AA: 4.5:1 sobre #1C1B1F) -->
+    <color name="md_theme_primary">#C5B4FF</color>
+    <color name="md_theme_onPrimary">#2A1770</color>
+    <color name="md_theme_primaryContainer">#4230A6</color>
+    <color name="md_theme_onPrimaryContainer">#E5DAFF</color>
 
-    <!-- Secondary (Dark Mode) -->
-    <color name="md_theme_secondary">#E57373</color>
-    <color name="md_theme_onSecondary">#3B0000</color>
-    <color name="md_theme_secondaryContainer">#8E0000</color>
-    <color name="md_theme_onSecondaryContainer">#FFDAD6</color>
+    <!-- Secondary (Dark Mode) — Roxo médio -->
+    <color name="md_theme_secondary">#CCC0FF</color>
+    <color name="md_theme_onSecondary">#2E1C84</color>
+    <color name="md_theme_secondaryContainer">#4638A0</color>
+    <color name="md_theme_onSecondaryContainer">#E5DEFF</color>
 
     <!-- Background (Dark Mode) -->
     <color name="md_theme_background">#1C1B1F</color>
@@ -21,19 +21,29 @@
     <color name="md_theme_surface">#2B2930</color>
     <color name="md_theme_onSurface">#E6E1E5</color>
 
+    <!-- Aliases de cores nomeadas — usados diretamente em layouts -->
+    <color name="purple_primary">@color/md_theme_primary</color>
+    <color name="purple_dark">@color/md_theme_primaryContainer</color>
+    <color name="purple_background">@color/md_theme_secondaryContainer</color>
+
     <!-- Legacy colors for backward compatibility -->
     <color name="colorPrimary">@color/md_theme_primary</color>
     <color name="colorPrimaryDark">@color/md_theme_primaryContainer</color>
     <color name="colorPrimaryContainer">@color/md_theme_primaryContainer</color>
-    <color name="colorSecondary">#66BB6A</color>
-    <color name="colorSecondaryContainer">#1B5E20</color>
-    <color name="colorAccent">#FFD54F</color>
-    <color name="colorError">#CF6679</color>
+    <color name="colorSecondary">@color/md_theme_secondary</color>
+    <color name="colorSecondaryContainer">@color/md_theme_secondaryContainer</color>
+    <color name="colorAccent">#69D49C</color>
+    <color name="colorError">#FFB4AB</color>
     <color name="background">@color/md_theme_background</color>
     <color name="surface">@color/md_theme_surface</color>
     <color name="text_primary">@color/md_theme_onSurface</color>
     <color name="text_secondary">#9E9E9E</color>
     <color name="white">#FFFFFF</color>
     <color name="divider">#424242</color>
+
+    <!-- Texto sobre gradientes coloridos — em dark mode os gradientes são mais escuros,
+         branco puro oferece melhor contraste (WCAG AA: ~7:1 sobre os gradientes dark) -->
+    <color name="text_on_color_surface">#FFFFFF</color>
+    <color name="text_on_red_surface">#FFFFFF</color>
 
 </resources>

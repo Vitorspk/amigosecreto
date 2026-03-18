@@ -47,4 +47,10 @@
     <color name="white">#FFFFFF</color>
     <color name="divider">#E0E0E0</color>
 
+    <!-- Texto sobre gradientes coloridos (header bars, cards com fundo colorido) -->
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="text_on_color_surface" tools:ignore="UnusedResources">#E8DEFF</color>
+    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
+    <color name="text_on_red_surface" tools:ignore="UnusedResources">#FFEBEE</color>
+
 </resources>

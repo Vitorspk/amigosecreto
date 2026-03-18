@@ -44,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/label_no_participants"
-                android:textColor="#E8DEFF"
+                android:textColor="@color/text_on_color_surface"
                 android:textSize="14sp" />
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>

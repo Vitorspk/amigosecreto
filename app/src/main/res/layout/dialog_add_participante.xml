@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/dialog_desc_add_friend"
-                android:textColor="#FFEBEE"
+                android:textColor="@color/text_on_red_surface"
                 android:textSize="14sp" />
         </LinearLayout>
 
