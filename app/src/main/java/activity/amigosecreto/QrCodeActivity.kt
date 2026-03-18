@@ -80,13 +80,15 @@ class QrCodeActivity : AppCompatActivity() {
     }
 
     private fun gerarEExibirQr(conteudo: String) {
-        val bitmap = QrCodeHelper.gerar(conteudo)
-        if (bitmap != null) {
-            qrBitmap = bitmap
-            imageViewQr.setImageBitmap(bitmap)
-        } else {
-            Toast.makeText(this, R.string.qr_erro_gerar, Toast.LENGTH_LONG).show()
-            finish()
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.Default) { QrCodeHelper.gerar(conteudo) }
+            if (bitmap != null) {
+                qrBitmap = bitmap
+                imageViewQr.setImageBitmap(bitmap)
+            } else {
+                Toast.makeText(this@QrCodeActivity, R.string.qr_erro_gerar, Toast.LENGTH_LONG).show()
+                finish()
+            }
         }
     }
 
