@@ -46,4 +46,19 @@
     <color name="text_on_color_surface">#FFFFFF</color>
     <color name="text_on_red_surface">#FFFFFF</color>
 
+    <!-- Cores dos card gradients em dark mode (extraídas dos drawables para centralizar manutenção) -->
+    <!-- Âmbar/dourado escuro para card de sorteio/orange -->
+    <color name="card_gradient_amber_start">#5C3D00</color>
+    <color name="card_gradient_amber_end">#3D2800</color>
+    <!-- Índigo escuro para card de grupo/blue -->
+    <color name="card_gradient_indigo_start">#1A237E</color>
+    <color name="card_gradient_indigo_end">#0D1363</color>
+    <!-- Verde escuro para card de participantes/green -->
+    <color name="card_gradient_forest_start">#1B5E20</color>
+    <color name="card_gradient_forest_end">#0A3D0E</color>
+    <!-- Verde escuro para botão de sorteio -->
+    <color name="gradient_sort_start">#2E7D32</color>
+    <color name="gradient_sort_center">#1B5E20</color>
+    <color name="gradient_sort_end">#124016</color>
+
 </resources>

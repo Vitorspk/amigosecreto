@@ -2,8 +2,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Dark mode: tom índigo/azul escuro — visualmente distinto do verde e âmbar -->
     <gradient
-        android:startColor="#1A237E"
-        android:endColor="#0D1363"
+        android:startColor="@color/card_gradient_indigo_start"
+        android:endColor="@color/card_gradient_indigo_end"
         android:angle="135" />
     <corners android:radius="20dp" />
 </shape>
