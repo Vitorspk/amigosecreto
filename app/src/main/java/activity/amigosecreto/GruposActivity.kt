@@ -414,6 +414,25 @@ class GruposActivity : AppCompatActivity() {
             val tvParticipantes: TextView = view.findViewById(R.id.tv_grupo_participantes)
             val tvEmoji: TextView = view.findViewById(R.id.tv_grupo_emoji)
             val layoutContent: LinearLayout = view.findViewById(R.id.layout_grupo_content)
+
+            init {
+                itemView.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
+                    val g = itens[pos]
+                    val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
+                    intent.putExtra("grupo", g)
+                    startActivity(intent)
+                }
+                itemView.setOnLongClickListener { v ->
+                    val pos = bindingAdapterPosition
+                    if (pos == RecyclerView.NO_POSITION) return@setOnLongClickListener false
+                    val g = itens[pos]
+                    HapticFeedbackUtils.performMediumFeedback(v)
+                    exibirMenuContextoGrupo(v, g)
+                    true
+                }
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -427,25 +446,15 @@ class GruposActivity : AppCompatActivity() {
             val g = itens[position]
 
             holder.tvNome.text = g.nome
-            holder.tvEmoji.text = emojis[position % emojis.size]
-            holder.layoutContent.setBackgroundResource(gradientes[position % gradientes.size])
+            // Usar g.id (estável) em vez de position para evitar que emoji/gradiente mude
+            // ao deletar/reordenar itens na lista.
+            holder.tvEmoji.text = emojis[g.id % emojis.size]
+            holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
 
             val numParticipantes = contagemParticipantes[g.id] ?: 0
             holder.tvParticipantes.text = ctx.resources.getQuantityString(
                 R.plurals.label_participants, numParticipantes, numParticipantes
             )
-
-            holder.itemView.setOnClickListener {
-                val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
-                intent.putExtra("grupo", g)
-                startActivity(intent)
-            }
-
-            holder.itemView.setOnLongClickListener { v ->
-                HapticFeedbackUtils.performMediumFeedback(v)
-                exibirMenuContextoGrupo(v, g)
-                true
-            }
         }
 
         private fun exibirMenuContextoGrupo(anchorView: View, g: Grupo) {
