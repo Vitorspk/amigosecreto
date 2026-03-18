@@ -54,4 +54,17 @@
     <!-- Base fallback for values-night/colors.xml override — lint false positive -->
     <color name="text_on_red_surface" tools:ignore="UnusedResources">#FFFFFF</color>
 
+    <!-- Base fallbacks for drawable-night card gradient colors (only used in night drawables).
+         Light mode uses the drawable files from res/drawable/ directly — these are required
+         by lint [MissingDefaultResource] to prevent runtime crashes. -->
+    <color name="card_gradient_amber_start" tools:ignore="UnusedResources">#FF6F00</color>
+    <color name="card_gradient_amber_end" tools:ignore="UnusedResources">#E65100</color>
+    <color name="card_gradient_indigo_start" tools:ignore="UnusedResources">#3949AB</color>
+    <color name="card_gradient_indigo_end" tools:ignore="UnusedResources">#283593</color>
+    <color name="card_gradient_forest_start" tools:ignore="UnusedResources">#388E3C</color>
+    <color name="card_gradient_forest_end" tools:ignore="UnusedResources">#1B5E20</color>
+    <color name="gradient_sort_start" tools:ignore="UnusedResources">#43A047</color>
+    <color name="gradient_sort_center" tools:ignore="UnusedResources">#2E7D32</color>
+    <color name="gradient_sort_end" tools:ignore="UnusedResources">#1B5E20</color>
+
 </resources>
