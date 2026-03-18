@@ -257,14 +257,15 @@ class ParticipanteDAO(ctx: Context) {
      * o valor não vem de entrada externa, portanto não há risco de SQL injection.
      */
     fun contarGruposPendentes(minParticipantes: Int = 3): Int {
-        // COUNT(coluna) conta apenas valores não-NULL — se todos amigo_sorteado_id são NULL,
-        // COUNT = 0, indicando que o sorteio ainda não foi realizado.
+        // SUM(CASE WHEN amigo_sorteado_id > 0 THEN 1 ELSE 0 END) = 0 verifica que nenhum
+        // participante tem amigo_sorteado_id definido. Trata corretamente tanto NULL quanto
+        // o valor legado 0 (ambos indicam "não sorteado" — ver takeIf { it > 0 } no ViewModel).
         val sql =
             "SELECT ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
             " FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}" +
             " GROUP BY ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
             " HAVING COUNT(*) >= $minParticipantes" +
-            "   AND COUNT(${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID}) = 0"
+            "   AND SUM(CASE WHEN ${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID} > 0 THEN 1 ELSE 0 END) = 0"
         val cursor = database.rawQuery(sql, null)
         return cursor.use { it.count }
     }
