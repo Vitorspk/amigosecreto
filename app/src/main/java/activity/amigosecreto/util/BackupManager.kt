@@ -11,7 +11,7 @@ import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.MySQLiteOpenHelper
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.SorteioDAO
-import activity.amigosecreto.db.room.AppDatabase  // closeInstance() — invalida cache Room pós-import
+import activity.amigosecreto.db.room.AppDatabase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -156,11 +156,10 @@ object BackupManager {
             ?: return ImportResult.Failure("Campo 'grupos' ausente no JSON")
 
         // Fase 2: inserção atômica via MySQLiteOpenHelper.
-        // Fechar Room antes de abrir conexão direta: evita conflito WAL entre as duas conexões
-        // e garante que o Room reabra com cache limpo após a importação, tornando os dados
-        // imediatamente visíveis para DAOs Room na próxima chamada a getInstance().
-        AppDatabase.closeInstance()
-        val helper = MySQLiteOpenHelper(context)
+        // Usamos o mesmo helper dos DAOs legados — o SQLiteOpenHelper do Android gerencia
+        // um único connection pool por arquivo. Não fechamos o helper após o uso para não
+        // invalidar conexões abertas em outros DAOs do mesmo processo.
+        val helper = MySQLiteOpenHelper.getInstance(context)
         val db = helper.writableDatabase
         db.execSQL("PRAGMA foreign_keys = ON")
         db.beginTransaction()
@@ -285,7 +284,9 @@ object BackupManager {
             ImportResult.Failure(e.message ?: "Erro desconhecido")
         } finally {
             db.endTransaction()
-            helper.close()
+            // Não fechar helper: SQLiteOpenHelper usa reference counting interno.
+            // Fechar aqui invalidaria o connection pool compartilhado com DAOs legados
+            // que possam estar abertos em outras threads (ex: GruposActivity.contarPorGrupo).
         }
     }
 

@@ -50,12 +50,92 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         /**
-         * Migration 10 → 11: Room assume o gerenciamento sem alterar o schema.
-         * Necessária para que Room não recrie o banco (destruindo dados dos usuários).
+         * Migration 10 → 11: adapta o schema criado pelo MySQLiteOpenHelper para o formato
+         * exato esperado pelo Room (colunas NOT NULL, índices, FKs com ON DELETE CASCADE).
+         *
+         * O MySQLiteOpenHelper criava as tabelas sem NOT NULL e sem índices auxiliares.
+         * O Room valida o schema rigorosamente — divergências causam IllegalStateException.
+         * Solução: rename → recreate com schema correto → copy → drop old → create indexes.
+         *
+         * Tabelas afetadas:
+         * - participante: grupo_id e enviado precisam de NOT NULL
+         * - desejo:        preco_minimo, preco_maximo e participante_id precisam de NOT NULL
+         * - exclusao:      precisa do índice index_exclusao_excluido_id
+         *
+         * grupo, sorteio e sorteio_par já estão corretos ou são novas — sem alteração.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // No-op: schema idêntico ao v10 — Room apenas valida e registra a versão.
+                // --- participante ---
+                db.execSQL("ALTER TABLE participante RENAME TO participante_old")
+                db.execSQL("""
+                    CREATE TABLE participante (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `nome` TEXT,
+                        `email` TEXT,
+                        `telefone` TEXT,
+                        `amigo_sorteado_id` INTEGER,
+                        `enviado` INTEGER NOT NULL DEFAULT 0,
+                        `grupo_id` INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id)
+                    SELECT id, nome, email, telefone, amigo_sorteado_id,
+                           COALESCE(enviado, 0), COALESCE(grupo_id, 0)
+                    FROM participante_old
+                """.trimIndent())
+                db.execSQL("DROP TABLE participante_old")
+
+                // --- desejo ---
+                db.execSQL("ALTER TABLE desejo RENAME TO desejo_old")
+                db.execSQL("""
+                    CREATE TABLE desejo (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `produto` TEXT,
+                        `categoria` TEXT,
+                        `lojas` TEXT,
+                        `preco_minimo` REAL NOT NULL DEFAULT 0,
+                        `preco_maximo` REAL NOT NULL DEFAULT 0,
+                        `participante_id` INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY(`participante_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO desejo (id, produto, categoria, lojas, preco_minimo, preco_maximo, participante_id)
+                    SELECT id, produto, categoria, lojas,
+                           COALESCE(preco_minimo, 0), COALESCE(preco_maximo, 0),
+                           COALESCE(participante_id, 0)
+                    FROM desejo_old
+                """.trimIndent())
+                db.execSQL("DROP TABLE desejo_old")
+
+                // --- exclusao: índice exigido pelo Room ---
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `exclusao` (`excluido_id`)")
+
+                // --- sorteio e sorteio_par: criados pelo MySQLiteOpenHelper v10 via SorteioDAO ---
+                // Garantir que existem (banco pode ter sido criado antes do v10 completo)
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sorteio (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `grupo_id` INTEGER NOT NULL,
+                        `data_hora` TEXT NOT NULL,
+                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sorteio_par (
+                        `sorteio_id` INTEGER NOT NULL,
+                        `participante_id` INTEGER NOT NULL,
+                        `sorteado_id` INTEGER NOT NULL,
+                        `nome_participante` TEXT NOT NULL,
+                        `nome_sorteado` TEXT NOT NULL,
+                        `enviado` INTEGER NOT NULL,
+                        PRIMARY KEY(`sorteio_id`, `participante_id`),
+                        FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
             }
         }
 

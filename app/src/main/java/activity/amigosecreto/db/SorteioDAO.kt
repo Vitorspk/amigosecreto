@@ -11,7 +11,7 @@ import java.util.Locale
 
 class SorteioDAO(context: Context) {
 
-    private val dbHelper = MySQLiteOpenHelper(context)
+    private val dbHelper = MySQLiteOpenHelper.getInstance(context)
     private lateinit var database: SQLiteDatabase
 
     fun open() {
@@ -19,7 +19,8 @@ class SorteioDAO(context: Context) {
     }
 
     fun close() {
-        dbHelper.close()
+        // No-op: o helper é singleton — fechar aqui fecharia o pool compartilhado por todos
+        // os DAOs do processo. O pool fica aberto pelo tempo de vida do app.
     }
 
     /**

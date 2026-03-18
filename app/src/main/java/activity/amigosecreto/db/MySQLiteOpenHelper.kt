@@ -4,9 +4,35 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class MySQLiteOpenHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class MySQLiteOpenHelper private constructor(context: Context) : SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
+        @Volatile
+        private var INSTANCE: MySQLiteOpenHelper? = null
+
+        /**
+         * Retorna a instância singleton do helper.
+         *
+         * SQLiteOpenHelper é thread-safe por design: o Android serializa chamadas a
+         * getWritableDatabase/getReadableDatabase internamente. Usar uma única instância
+         * evita que múltiplas threads disparem onUpgrade simultaneamente (race condition
+         * que fechava o connection pool antes de todas as threads terminarem a migração).
+         */
+        @JvmStatic
+        fun getInstance(context: Context): MySQLiteOpenHelper =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: MySQLiteOpenHelper(context).also { INSTANCE = it }
+            }
+
+        /** Apenas para testes — reseta o singleton entre testes. */
+        @JvmStatic
+        @androidx.annotation.VisibleForTesting
+        fun resetInstanceForTesting() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+            }
+        }
         const val TABLE_GRUPO = "grupo"
         const val COLUMN_GRUPO_ID = "id"
         const val COLUMN_GRUPO_NOME = "nome"

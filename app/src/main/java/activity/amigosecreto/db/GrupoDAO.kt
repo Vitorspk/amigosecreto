@@ -8,7 +8,7 @@ import androidx.annotation.VisibleForTesting
 
 class GrupoDAO(ctx: Context) {
 
-    private val helper = MySQLiteOpenHelper(ctx)
+    private val helper = MySQLiteOpenHelper.getInstance(ctx)
     private lateinit var database: SQLiteDatabase
 
     @Throws(SQLException::class)
@@ -17,7 +17,8 @@ class GrupoDAO(ctx: Context) {
     }
 
     fun close() {
-        helper.close()
+        // No-op: o helper é singleton — fechar aqui fecharia o pool compartilhado por todos
+        // os DAOs do processo. O pool fica aberto pelo tempo de vida do app.
     }
 
     fun inserir(g: Grupo): Long {

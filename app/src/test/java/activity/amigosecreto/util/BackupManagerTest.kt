@@ -44,6 +44,7 @@ class BackupManagerTest {
         grupoDao.limparTudo()
         fecharDaos()
         AppDatabase.closeForTesting()
+        MySQLiteOpenHelper.resetInstanceForTesting()
     }
 
     private fun abrirDaos() {
