@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark mode: tom índigo/azul escuro — visualmente distinto do verde e âmbar -->
     <gradient
-        android:startColor="#4A3AB8"
-        android:endColor="#3D2FA8"
+        android:startColor="#1A237E"
+        android:endColor="#0D1363"
         android:angle="135" />
     <corners android:radius="20dp" />
 </shape>
