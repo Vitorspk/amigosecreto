@@ -18,6 +18,9 @@ class AmigoSecretoApplication : Application() {
         NotificationHelper.criarCanal(this)
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
+        } else {
+            // TODO: plantar CrashlyticsTree() aqui quando/se integrar Firebase Crashlytics
+            // Timber.plant(CrashlyticsTree())
         }
     }
 }
