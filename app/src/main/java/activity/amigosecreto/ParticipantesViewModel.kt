@@ -47,7 +47,7 @@ class ParticipantesViewModel @Inject constructor(
      */
     private fun launchTracked(block: suspend () -> Unit) {
         idlingResource.increment()
-        launchTracked {
+        viewModelScope.launch {
             try {
                 block()
             } finally {
