@@ -70,6 +70,14 @@ class QrCodeHelperTest {
     }
 
     @Test
+    fun `gerar com conteudo excedendo capacidade do QR retorna null sem lancar excecao`() {
+        // Mais de ~7000 chars excede a capacidade máxima do QR Code (level M)
+        // WriterException deve ser capturado internamente e retornar null
+        val conteudo = "a".repeat(8000)
+        assertNull(QrCodeHelper.gerar(conteudo))
+    }
+
+    @Test
     fun `gerar chamadas consecutivas com mesmo conteudo retornam bitmaps com mesmas dimensoes`() {
         val bitmap1 = QrCodeHelper.gerar("Mesmo conteudo")
         val bitmap2 = QrCodeHelper.gerar("Mesmo conteudo")

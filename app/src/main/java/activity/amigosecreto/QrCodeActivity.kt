@@ -1,7 +1,6 @@
 package activity.amigosecreto
 
 import android.content.ContentValues
-import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -16,8 +15,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import activity.amigosecreto.util.QrCodeHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Exibe o QR Code do resultado do sorteio para que o participante possa
@@ -64,7 +67,6 @@ class QrCodeActivity : AppCompatActivity() {
 
         imageViewQr = findViewById(R.id.iv_qrcode)
         val btnSalvar = findViewById<MaterialButton>(R.id.btn_salvar_qr)
-        val btnCompartilhar = findViewById<MaterialButton>(R.id.btn_compartilhar_qr)
 
         if (conteudoQr.isBlank()) {
             Toast.makeText(this, R.string.qr_erro_sem_sorteio, Toast.LENGTH_LONG).show()
@@ -75,7 +77,6 @@ class QrCodeActivity : AppCompatActivity() {
         gerarEExibirQr(conteudoQr)
 
         btnSalvar.setOnClickListener { salvarQrNaGaleria(nomeParticipante) }
-        btnCompartilhar.setOnClickListener { compartilharQr(nomeParticipante, conteudoQr) }
     }
 
     private fun gerarEExibirQr(conteudo: String) {
@@ -91,17 +92,18 @@ class QrCodeActivity : AppCompatActivity() {
 
     private fun salvarQrNaGaleria(nomeParticipante: String) {
         val bitmap = qrBitmap ?: return
-        val nomeArquivo = "amigo_secreto_${nomeParticipante.replace(" ", "_")}_qr.png"
+        val nomeArquivo = "amigo_secreto_${nomeParticipante.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")}_qr.png"
 
-        try {
-            val uri = salvarBitmap(bitmap, nomeArquivo)
-            if (uri != null) {
-                Toast.makeText(this, getString(R.string.qr_salvo_sucesso), Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, R.string.qr_erro_salvar, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val uri = withContext(Dispatchers.IO) {
+                try {
+                    salvarBitmap(bitmap, nomeArquivo)
+                } catch (_: Exception) {
+                    null
+                }
             }
-        } catch (e: Exception) {
-            Toast.makeText(this, R.string.qr_erro_salvar, Toast.LENGTH_SHORT).show()
+            val msgRes = if (uri != null) R.string.qr_salvo_sucesso else R.string.qr_erro_salvar
+            Toast.makeText(this@QrCodeActivity, msgRes, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -138,19 +140,10 @@ class QrCodeActivity : AppCompatActivity() {
         return uri
     }
 
-    private fun compartilharQr(nomeParticipante: String, conteudoQr: String) {
-        // Compartilha o texto do sorteio via share sheet; o QR é apenas para exibição local.
-        // Compartilhar imagem requereria gravar para arquivo temporário via FileProvider,
-        // o que aumentaria complexidade sem ganho real (destinatário veria o resultado).
-        val mensagem = getString(R.string.qr_mensagem_compartilhar, nomeParticipante, conteudoQr)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, mensagem)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        startActivity(Intent.createChooser(intent, getString(R.string.share_with_person, nomeParticipante)).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        })
+    override fun onDestroy() {
+        qrBitmap?.recycle()
+        qrBitmap = null
+        super.onDestroy()
     }
 
     override fun onSupportNavigateUp(): Boolean {

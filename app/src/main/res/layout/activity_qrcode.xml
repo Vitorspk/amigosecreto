@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_qrcode"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -41,8 +42,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
                 app:cardElevation="4dp"
-                app:cardCornerRadius="12dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
+                app:cardCornerRadius="12dp">
 
                 <ImageView
                     android:id="@+id/iv_qrcode"
@@ -63,14 +63,6 @@
                 android:text="@string/qr_dica"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="@color/text_secondary" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_compartilhar_qr"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="@string/qr_btn_compartilhar"
-                style="@style/Widget.MaterialComponents.Button" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_salvar_qr"

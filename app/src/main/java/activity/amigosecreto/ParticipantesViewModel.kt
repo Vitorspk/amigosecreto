@@ -52,6 +52,12 @@ class ParticipantesViewModel @Inject constructor(
         val mensagem: String
     )
 
+    /** Resultado de obterNomeAmigoParaQr — participante + nome do amigo para exibir o QR Code. */
+    class QrCodeResultado(
+        val nomeParticipante: String,
+        val nomeAmigo: String
+    )
+
     private val _participants = MutableLiveData<List<Participante>>(emptyList())
     private val _wishCounts = MutableLiveData<Map<Int, Int>>(emptyMap())
     private val _isLoading = MutableLiveData(false)
@@ -60,6 +66,7 @@ class ParticipantesViewModel @Inject constructor(
     private val _mensagensSmsResult = MutableLiveData<MensagensSmsResultado?>(null)
     private val _mensagemCompartilhamentoResult = MutableLiveData<MensagemCompartilhamentoResultado?>(null)
     private val _atualizarSucesso = MutableLiveData<Boolean?>(null)
+    private val _qrCodeResult = MutableLiveData<QrCodeResultado?>(null)
 
     val participants: LiveData<List<Participante>> get() = _participants
     val wishCounts: LiveData<Map<Int, Int>> get() = _wishCounts
@@ -69,6 +76,7 @@ class ParticipantesViewModel @Inject constructor(
     val mensagensSmsResult: LiveData<MensagensSmsResultado?> get() = _mensagensSmsResult
     val mensagemCompartilhamentoResult: LiveData<MensagemCompartilhamentoResultado?> get() = _mensagemCompartilhamentoResult
     val atualizarSucesso: LiveData<Boolean?> get() = _atualizarSucesso
+    val qrCodeResult: LiveData<QrCodeResultado?> get() = _qrCodeResult
 
     // Overridable in tests via setIoDispatcher() to use UnconfinedTestDispatcher.
     @VisibleForTesting
@@ -89,6 +97,7 @@ class ParticipantesViewModel @Inject constructor(
     }
 
     fun clearAtualizarSucesso() { _atualizarSucesso.value = null }
+    fun clearQrCodeResult() { _qrCodeResult.value = null }
     fun clearSorteioResult() { _sorteioResult.value = null }
     fun clearErrorMessage() { _errorMessage.value = null }
     fun clearMensagensSmsResult() { _mensagensSmsResult.value = null }
@@ -316,6 +325,24 @@ class ParticipantesViewModel @Inject constructor(
                 _mensagemCompartilhamentoResult.value = MensagemCompartilhamentoResultado(participante, mensagem)
             } catch (e: Exception) {
                 handleDbError(e, "prepararMensagemCompartilhamento: failed for participanteId=${participante.id}", R.string.error_load_share_data)
+            }
+        }
+    }
+
+    /**
+     * Obtém o nome do amigo sorteado para gerar o QR Code de um participante.
+     * Acessa o banco em background; posta o resultado em qrCodeResult.
+     */
+    fun obterNomeAmigoParaQr(participante: Participante) {
+        val amigoId = participante.amigoSorteadoId?.takeIf { it > 0 } ?: return
+        viewModelScope.launch {
+            try {
+                val nomeAmigo = withContext(ioDispatcher) {
+                    participanteRepository.getNomeAmigoSorteado(amigoId)
+                }
+                _qrCodeResult.value = QrCodeResultado(participante.nome ?: "", nomeAmigo)
+            } catch (e: Exception) {
+                handleDbError(e, "obterNomeAmigoParaQr: failed for participanteId=${participante.id}", R.string.qr_erro_gerar)
             }
         }
     }

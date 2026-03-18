@@ -36,8 +36,6 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
-import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.CompartilharHelper
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
@@ -259,6 +257,17 @@ class ParticipantesActivity : AppCompatActivity() {
             viewModel.clearMensagemCompartilhamentoResult()
             atualizarLista()
             exibirBottomSheetCompartilhar(resultado.mensagem, resultado.participante.nome ?: "")
+        }
+
+        // Nome do amigo obtido — abrir QrCodeActivity.
+        viewModel.qrCodeResult.observe(this) { resultado ->
+            if (resultado == null) return@observe
+            viewModel.clearQrCodeResult()
+            val intent = Intent(this, QrCodeActivity::class.java).apply {
+                putExtra(QrCodeActivity.EXTRA_NOME_PARTICIPANTE, resultado.nomeParticipante)
+                putExtra(QrCodeActivity.EXTRA_CONTEUDO_QR, resultado.nomeAmigo)
+            }
+            startActivity(intent)
         }
     }
 
@@ -760,29 +769,9 @@ class ParticipantesActivity : AppCompatActivity() {
         }
 
         private fun abrirQrCode(p: Participante) {
-            val amigoId = p.amigoSorteadoId?.takeIf { it > 0 } ?: return
-            // Busca nome do amigo em background para não bloquear UI thread
-            AsyncDatabaseHelper.execute(
-                object : AsyncDatabaseHelper.BackgroundTask<String> {
-                    override fun doInBackground(): String {
-                        val dao = ParticipanteDAO(ctx)
-                        dao.open()
-                        return try { dao.getNomeAmigoSorteado(amigoId) } finally { dao.close() }
-                    }
-                },
-                object : AsyncDatabaseHelper.ResultCallback<String> {
-                    override fun onSuccess(nomeAmigo: String) {
-                        val intent = Intent(ctx, QrCodeActivity::class.java).apply {
-                            putExtra(QrCodeActivity.EXTRA_NOME_PARTICIPANTE, p.nome ?: "")
-                            putExtra(QrCodeActivity.EXTRA_CONTEUDO_QR, nomeAmigo)
-                        }
-                        ctx.startActivity(intent)
-                    }
-                    override fun onError(e: Exception) {
-                        Toast.makeText(ctx, R.string.qr_erro_gerar, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
+            // Delega ao ViewModel para buscar o nome do amigo em background.
+            // O resultado chega via observer de qrCodeResult em onCreate().
+            viewModel.obterNomeAmigoParaQr(p)
         }
     }
 }

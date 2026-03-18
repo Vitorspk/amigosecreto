@@ -5,6 +5,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Write external storage — required for MediaStore on Android 9 and below (API < 29).
+         On Android 10+ (API 29), MediaStore works without this permission. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
     <!-- Device permissions -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
