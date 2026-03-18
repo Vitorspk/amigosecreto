@@ -11,6 +11,7 @@ import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.MySQLiteOpenHelper
 import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.SorteioDAO
+import activity.amigosecreto.db.room.AppDatabase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -154,20 +155,22 @@ object BackupManager {
         val gruposJson = root.optJSONArray("grupos")
             ?: return ImportResult.Failure("Campo 'grupos' ausente no JSON")
 
-        // Fase 2: inserção atômica em transação única — rollback automático em caso de erro
-        val helper = MySQLiteOpenHelper(context)
-        val db = helper.writableDatabase
+        // Fase 2: inserção atômica via conexão do Room.
+        // Usar AppDatabase.openHelper garante que Room e BackupManager compartilham a mesma
+        // conexão SQLite — evita bloqueios WAL e garante que o Room invalide seu cache após
+        // a transação, tornando os dados importados imediatamente visíveis para queries Room.
+        val roomDb = AppDatabase.getInstance(context)
+        val db = roomDb.openHelper.writableDatabase
         db.execSQL("PRAGMA foreign_keys = ON")
         db.beginTransaction()
         return try {
             // Limpar tudo dentro da transação — deletar em ordem inversa das FKs
-            // (PRAGMA foreign_keys pode não estar ativo antes do beginTransaction)
-            db.delete(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, null)
-            db.delete(MySQLiteOpenHelper.TABLE_SORTEIO, null, null)
-            db.delete(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, null)
-            db.delete(MySQLiteOpenHelper.TABLE_DESEJO, null, null)
-            db.delete(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, null)
-            db.delete(MySQLiteOpenHelper.TABLE_GRUPO, null, null)
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}")
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_SORTEIO}")
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_EXCLUSAO}")
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_DESEJO}")
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}")
+            db.execSQL("DELETE FROM ${MySQLiteOpenHelper.TABLE_GRUPO}")
 
             var gruposImportados = 0
             for (i in 0 until gruposJson.length()) {
@@ -177,7 +180,8 @@ object BackupManager {
                     put(MySQLiteOpenHelper.COLUMN_GRUPO_NOME, gJson.optString("nome", ""))
                     put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA, gJson.optString("data", ""))
                 }
-                val novoGrupoId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_GRUPO, null, grupoValues)
+                val novoGrupoId = db.insert(MySQLiteOpenHelper.TABLE_GRUPO, SQLiteDatabase.CONFLICT_NONE, grupoValues)
+                if (novoGrupoId == -1L) throw IllegalStateException("Falha ao inserir grupo")
 
                 // Mapa id_antigo -> id_novo para remapear referências FK
                 val idMap = mutableMapOf<Int, Int>()
@@ -195,7 +199,8 @@ object BackupManager {
                         put(MySQLiteOpenHelper.COLUMN_ENVIADO, pJson.optInt("enviado", 0))
                         put(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, novoGrupoId)
                     }
-                    val novoPartId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, partValues)
+                    val novoPartId = db.insert(MySQLiteOpenHelper.TABLE_PARTICIPANTE, SQLiteDatabase.CONFLICT_NONE, partValues)
+                    if (novoPartId == -1L) throw IllegalStateException("Falha ao inserir participante")
                     idMap[pJson.optInt("id", -1)] = novoPartId.toInt()
 
                     val desejosJson = pJson.optJSONArray("desejos") ?: JSONArray()
@@ -209,7 +214,7 @@ object BackupManager {
                             put(MySQLiteOpenHelper.COLUMN_LOJAS, dJson.optString("lojas", ""))
                             put(MySQLiteOpenHelper.COLUMN_DESEJO_PARTICIPANTE_ID, novoPartId)
                         }
-                        db.insertOrThrow(MySQLiteOpenHelper.TABLE_DESEJO, null, desejoValues)
+                        db.insert(MySQLiteOpenHelper.TABLE_DESEJO, SQLiteDatabase.CONFLICT_NONE, desejoValues)
                     }
                 }
 
@@ -225,7 +230,7 @@ object BackupManager {
                             val v = ContentValues().apply {
                                 put(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID, novoAmigoId)
                             }
-                            db.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, v,
+                            db.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, SQLiteDatabase.CONFLICT_NONE, v,
                                 "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(novoPartId.toString()))
                         }
                     }
@@ -237,8 +242,7 @@ object BackupManager {
                             put(MySQLiteOpenHelper.COLUMN_PARTICIPANTE_ID, novoPartId)
                             put(MySQLiteOpenHelper.COLUMN_EXCLUIDO_ID, novoExcId)
                         }
-                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_EXCLUSAO, null, v,
-                            SQLiteDatabase.CONFLICT_IGNORE)
+                        db.insert(MySQLiteOpenHelper.TABLE_EXCLUSAO, SQLiteDatabase.CONFLICT_IGNORE, v)
                     }
                 }
 
@@ -250,7 +254,8 @@ object BackupManager {
                         put(MySQLiteOpenHelper.COLUMN_SORTEIO_GRUPO_ID, novoGrupoId)
                         put(MySQLiteOpenHelper.COLUMN_SORTEIO_DATA_HORA, sJson.optString("data_hora", ""))
                     }
-                    val sorteioId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_SORTEIO, null, sorteioValues)
+                    val sorteioId = db.insert(MySQLiteOpenHelper.TABLE_SORTEIO, SQLiteDatabase.CONFLICT_NONE, sorteioValues)
+                    if (sorteioId == -1L) throw IllegalStateException("Falha ao inserir sorteio")
 
                     val paresJson = sJson.optJSONArray("pares") ?: JSONArray()
                     for (k in 0 until paresJson.length()) {
@@ -265,8 +270,7 @@ object BackupManager {
                             put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_SORTEADO, parJson.optString("nome_sorteado", ""))
                             put(MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_ENVIADO, parJson.optInt("enviado", 0))
                         }
-                        db.insertWithOnConflict(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, null, parValues,
-                            SQLiteDatabase.CONFLICT_IGNORE)
+                        db.insert(MySQLiteOpenHelper.TABLE_SORTEIO_PAR, SQLiteDatabase.CONFLICT_IGNORE, parValues)
                     }
                 }
 
@@ -280,7 +284,7 @@ object BackupManager {
             ImportResult.Failure(e.message ?: "Erro desconhecido")
         } finally {
             db.endTransaction()
-            helper.close()
+            // Não fechar db — é gerenciado pelo Room (AppDatabase singleton)
         }
     }
 

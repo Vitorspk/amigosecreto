@@ -70,5 +70,36 @@ abstract class AppDatabase : RoomDatabase() {
                     .build()
                     .also { INSTANCE = it }
             }
+
+        /**
+         * Inicializa o banco usando o mesmo arquivo que MySQLiteOpenHelper (Robolectric).
+         * Deve ser chamado no @Before de testes que usam BackupManager.importarDeJson,
+         * garantindo que Room e DAOs legados compartilhem a mesma conexão de banco.
+         */
+        @androidx.annotation.VisibleForTesting
+        fun initForTesting(context: Context) {
+            synchronized(this) {
+                // Usa o mesmo arquivo de banco que MySQLiteOpenHelper para que Room e DAOs legados
+                // compartilhem os mesmos dados nos testes Robolectric.
+                // fallbackToDestructiveMigration evita falhas de schema validation em banco novo.
+                INSTANCE = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    DATABASE_NAME,
+                )
+                    .allowMainThreadQueries()
+                    .fallbackToDestructiveMigration()
+                    .build()
+            }
+        }
+
+        /** Fecha e limpa o singleton após testes. */
+        @androidx.annotation.VisibleForTesting
+        fun closeForTesting() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+            }
+        }
     }
 }
