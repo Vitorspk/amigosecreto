@@ -1,8 +1,11 @@
 package activity.amigosecreto
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,6 +22,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
@@ -29,6 +33,7 @@ import activity.amigosecreto.repository.BackupRepository
 import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.BackupManager
 import activity.amigosecreto.util.HapticFeedbackUtils
+import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import java.text.SimpleDateFormat
@@ -52,6 +57,12 @@ class GruposActivity : AppCompatActivity() {
     private val listaGrupos = mutableListOf<Grupo>()
     private lateinit var adapter: GruposAdapter
     private lateinit var stateHelper: StateViewHelper
+
+    private val solicitarPermissaoNotificacao = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) LembreteScheduler.agendar(this)
+    }
 
     private val exportarLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE)
@@ -97,12 +108,39 @@ class GruposActivity : AppCompatActivity() {
         btnCriarGrupo.setOnClickListener { exibirDialogAdd() }
 
         atualizarLista()
+        // Solicitação de permissão e agendamento apenas em onCreate — evita dialog repetido em onResume
+        agendarLembreteSePermitido()
     }
 
     override fun onResume() {
         super.onResume()
         // Atualizar a lista sempre que voltar para esta tela
         atualizarLista()
+        // Re-agendamento idempotente (KEEP policy) — retoma lembrete se Worker se auto-cancelou
+        // quando não havia grupos pendentes e novos grupos foram criados.
+        // Verifica permissão antes de agendar para não gerar trabalho desnecessário em Android 13+
+        // quando o usuário negou POST_NOTIFICATIONS.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED
+        ) {
+            LembreteScheduler.agendar(this)
+        }
+    }
+
+    private fun agendarLembreteSePermitido() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED -> LembreteScheduler.agendar(this)
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    // Usuário já negou antes — não insistimos; o app funciona sem notificações
+                }
+                else -> solicitarPermissaoNotificacao.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            LembreteScheduler.agendar(this)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {

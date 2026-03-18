@@ -1,5 +1,7 @@
 package activity.amigosecreto
 
+import android.Manifest
+import android.os.Build
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -16,15 +18,26 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.util.AsyncDatabaseHelper
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GruposActivityTest {
+
+    // Concede POST_NOTIFICATIONS automaticamente no Android 13+ para evitar que o diálogo
+    // de permissão do sistema bloqueie a Activity durante os testes Espresso.
+    @get:Rule
+    val notificationPermission: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+        else
+            GrantPermissionRule.grant()
 
     private lateinit var dao: GrupoDAO
     private lateinit var scenario: ActivityScenario<GruposActivity>

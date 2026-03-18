@@ -726,8 +726,8 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 6 | **kotlin.random.Random** — substituir `java.util.Random` em `SorteioEngine` | ✅ Concluído | #53 |
 | 7 | **Testes de UI adicionais** — Espresso (GruposActivity + IdlingResource) | ✅ Concluído | #55 |
 | 8 | **Histórico de sorteios** — persistir resultados por sorteio com data/hora | ✅ Concluído | #56 |
-| 9 | **Backup/restore** — exportar/importar dados via JSON + SAF (sem permissão extra) | ⏳ Em andamento | — |
-| 10 | **Notificações de lembrete** — lembrar organizador sobre sorteio pendente | ⏳ | — |
+| 9 | **Backup/restore** — exportar/importar dados via JSON + SAF (sem permissão extra) | ✅ Concluído | #57 |
+| 10 | **Notificações de lembrete** — lembrar organizador sobre sorteio pendente | ⏳ Em andamento | #58 |
 | 11 | **Compartilhar via Telegram/Email** — além de WhatsApp/SMS | ⏳ | — |
 | 12 | **QR Code** — gerar QR Code para cada participante revelar seu amigo secreto | ⏳ | — |
 

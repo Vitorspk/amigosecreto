@@ -162,4 +162,8 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.6.1'
     // IdlingResource — used in production code (AsyncDatabaseHelper) so tests can synchronize
     implementation 'androidx.test.espresso:espresso-idling-resource:3.6.1'
+
+    // WorkManager — background task scheduling for reminder notifications
+    implementation 'androidx.work:work-runtime-ktx:2.9.1'
+    testImplementation 'androidx.work:work-testing:2.9.1'
 }

@@ -246,6 +246,31 @@ class ParticipanteDAO(ctx: Context) {
     }
 
     /**
+     * Retorna o número de grupos que têm >= [minParticipantes] participantes mas onde
+     * nenhum participante possui amigo_sorteado_id definido (sorteio ainda não realizado).
+     *
+     * Usa GROUP BY + HAVING numa única query, evitando N+1.
+     * Padrão equivalente a [contarPorGrupo] e ao batch de DesejoDAO.
+     *
+     * Nota: [minParticipantes] é um Int interno injetado como literal no SQL (não como ?).
+     * rawQuery com ? dentro de subquery tem comportamento inconsistente no Robolectric 4.13;
+     * o valor não vem de entrada externa, portanto não há risco de SQL injection.
+     */
+    fun contarGruposPendentes(minParticipantes: Int = 3): Int {
+        // SUM(CASE WHEN amigo_sorteado_id > 0 THEN 1 ELSE 0 END) = 0 verifica que nenhum
+        // participante tem amigo_sorteado_id definido. Trata corretamente tanto NULL quanto
+        // o valor legado 0 (ambos indicam "não sorteado" — ver takeIf { it > 0 } no ViewModel).
+        val sql =
+            "SELECT ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
+            " FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}" +
+            " GROUP BY ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}" +
+            " HAVING COUNT(*) >= $minParticipantes" +
+            "   AND SUM(CASE WHEN ${MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID} > 0 THEN 1 ELSE 0 END) = 0"
+        val cursor = database.rawQuery(sql, null)
+        return cursor.use { it.count }
+    }
+
+    /**
      * Retorna o participante pelo id, ou null se não existir.
      * Nota: [Participante.idsExcluidos] NÃO é populado — use [listarPorGrupo] quando
      * as exclusões forem necessárias.
