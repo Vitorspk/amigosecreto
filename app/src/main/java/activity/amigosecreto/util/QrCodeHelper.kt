@@ -31,8 +31,8 @@ object QrCodeHelper {
         return try {
             val hints = mapOf(
                 EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
-                EncodeHintType.CHARACTER_SET to "UTF-8",
-                EncodeHintType.MARGIN to 1
+                EncodeHintType.CHARACTER_SET to "UTF-8"
+                // MARGIN omitido → ZXing usa padrão de 4 módulos (mínimo ISO/IEC 18004)
             )
             val bitMatrix = QRCodeWriter().encode(conteudo, BarcodeFormat.QR_CODE, tamanho, tamanho, hints)
             val pixels = IntArray(tamanho * tamanho) { index ->
