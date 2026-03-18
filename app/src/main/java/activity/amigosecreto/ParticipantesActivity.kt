@@ -90,13 +90,26 @@ class ParticipantesActivity : AppCompatActivity() {
 
         // Ajusta padding do container de botoes inferiores para nao ficar atras
         // da navigation bar em modo edge-to-edge (Android 15+).
+        // Tambem propaga a altura total do painel como paddingBottom do NestedScrollView,
+        // garantindo que o ultimo item da lista seja sempre rolavel para alem dos botoes.
         val bottomButtons = findViewById<View>(R.id.layout_bottom_buttons)
+        val scrollView = findViewById<View>(R.id.scroll_participantes)
         if (bottomButtons != null) {
             val padBottom = bottomButtons.paddingBottom
             ViewCompat.setOnApplyWindowInsetsListener(bottomButtons) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, padBottom + systemBars.bottom)
                 insets
+            }
+            // Atualiza paddingBottom do scroll sempre que o painel de botoes mudar de altura
+            bottomButtons.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                val panelHeight = bottom - top
+                scrollView?.setPadding(
+                    scrollView.paddingLeft,
+                    scrollView.paddingTop,
+                    scrollView.paddingRight,
+                    panelHeight
+                )
             }
         }
 
