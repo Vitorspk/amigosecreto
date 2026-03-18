@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import timber.log.Timber
 
 @HiltViewModel
 class HistoricoSorteiosViewModel @Inject constructor(
@@ -35,7 +36,7 @@ class HistoricoSorteiosViewModel @Inject constructor(
                 }
                 _sorteios.value = result
             } catch (e: Exception) {
-                android.util.Log.e("HistoricoSorteiosVM", "Erro ao carregar histórico", e)
+                Timber.e(e, "Erro ao carregar histórico")
                 _hasError.value = true
             } finally {
                 _isLoading.value = false

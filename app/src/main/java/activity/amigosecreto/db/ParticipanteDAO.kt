@@ -5,7 +5,7 @@ import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
-import android.util.Log
+import timber.log.Timber
 
 class ParticipanteDAO(ctx: Context) {
 
@@ -125,7 +125,7 @@ class ParticipanteDAO(ctx: Context) {
 
     fun salvarSorteio(participantes: List<Participante>, sorteados: List<Participante>): Boolean {
         if (participantes.size != sorteados.size) {
-            Log.e("ParticipanteDAO", "salvarSorteio: list size mismatch (${participantes.size} vs ${sorteados.size})")
+            Timber.e("salvarSorteio: list size mismatch (${participantes.size} vs ${sorteados.size})")
             return false
         }
         database.beginTransaction()
@@ -143,7 +143,7 @@ class ParticipanteDAO(ctx: Context) {
             database.setTransactionSuccessful()
             return true
         } catch (e: SQLiteException) {
-            Log.e("ParticipanteDAO", "salvarSorteio failed", e)
+            Timber.e(e, "salvarSorteio failed")
             return false
         } finally {
             database.endTransaction()

@@ -1,7 +1,7 @@
 package activity.amigosecreto
 
 import android.os.Bundle
-import android.util.Log
+import timber.log.Timber
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -110,7 +110,7 @@ class AlterarDesejoActivity : AppCompatActivity() {
             dao.remover(oldDesejo)
             Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Log.e(TAG, "remover: failed for desejo id=${oldDesejo.id}", e)
+            Timber.e(e, "remover: failed for desejo id=${oldDesejo.id}")
         } finally {
             dao.close()
         }

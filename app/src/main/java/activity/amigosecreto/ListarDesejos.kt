@@ -1,7 +1,7 @@
 package activity.amigosecreto
 
 import android.content.Context
-import android.util.Log
+import timber.log.Timber
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -97,7 +97,7 @@ class ListarDesejos : AppCompatActivity(), AdapterView.OnItemClickListener {
                     if (listaDesejos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
                 }
                 override fun onError(e: Exception) {
-                    Log.e(TAG, "carregarLista: failed", e)
+                    Timber.e(e, "carregarLista: failed")
                     Toast.makeText(this@ListarDesejos, R.string.error_load_wishes, Toast.LENGTH_LONG).show()
                     stateHelper.showEmpty()
                 }

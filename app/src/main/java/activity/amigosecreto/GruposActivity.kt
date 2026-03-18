@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import timber.log.Timber
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -242,12 +242,12 @@ class GruposActivity : AppCompatActivity() {
                         contentResolver.openOutputStream(uri)?.use { it.write(result.toByteArray()) }
                         Toast.makeText(this@GruposActivity, R.string.backup_exportado_sucesso, Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
-                        Log.e(TAG, "escreverBackupNoUri: falha ao escrever", e)
+                        Timber.e(e, "escreverBackupNoUri: falha ao escrever")
                         Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
                     }
                 }
                 override fun onError(e: Exception) {
-                    Log.e(TAG, "escreverBackupNoUri: erro no background", e)
+                    Timber.e(e, "escreverBackupNoUri: erro no background")
                     Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
                 }
             }
@@ -288,12 +288,12 @@ class GruposActivity : AppCompatActivity() {
                         }
                         is BackupManager.ImportResult.Failure -> {
                             Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
-                            Log.e(TAG, "lerEImportarBackup: ${result.reason}")
+                            Timber.e("lerEImportarBackup: ${result.reason}")
                         }
                     }
                 }
                 override fun onError(e: Exception) {
-                    Log.e(TAG, "lerEImportarBackup: erro no background", e)
+                    Timber.e(e, "lerEImportarBackup: erro no background")
                     Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
                 }
             }
@@ -318,7 +318,7 @@ class GruposActivity : AppCompatActivity() {
                     adapter.recarregarContagensAsync()
                 }
                 override fun onError(e: Exception) {
-                    Log.e(TAG, "atualizarLista: failed", e)
+                    Timber.e(e, "atualizarLista: failed")
                     Toast.makeText(this@GruposActivity, R.string.error_load_groups, Toast.LENGTH_LONG).show()
                     stateHelper.showEmpty()
                 }
@@ -399,7 +399,7 @@ class GruposActivity : AppCompatActivity() {
                     }
 
                     override fun onError(e: Exception) {
-                        Log.e(TAG, "Erro ao carregar contagem de participantes", e)
+                        Timber.e(e, "Erro ao carregar contagem de participantes")
                     }
                 }
             )
@@ -514,7 +514,7 @@ class GruposActivity : AppCompatActivity() {
                             g.nome = nomeOriginal
                             notifyDataSetChanged()
                             btnCriar.isEnabled = true
-                            Log.e(TAG, "Erro ao atualizar nome do grupo", e)
+                            Timber.e(e, "Erro ao atualizar nome do grupo")
                             Toast.makeText(this@GruposActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
                         }
                     }

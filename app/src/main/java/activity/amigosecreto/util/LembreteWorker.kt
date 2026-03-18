@@ -1,7 +1,7 @@
 package activity.amigosecreto.util
 
 import android.content.Context
-import android.util.Log
+import timber.log.Timber
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import activity.amigosecreto.db.ParticipanteDAO
@@ -45,7 +45,7 @@ class LembreteWorker(
             }
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "LembreteWorker: erro ao verificar grupos pendentes — retry agendado", e)
+            Timber.e(e, "LembreteWorker: erro ao verificar grupos pendentes — retry agendado")
             Result.retry()
         }
     }

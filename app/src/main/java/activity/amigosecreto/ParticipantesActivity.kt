@@ -1,7 +1,7 @@
 package activity.amigosecreto
 
 import android.Manifest
-import android.util.Log
+import timber.log.Timber
 import android.content.Context
 import android.content.Intent
 import android.view.Menu
@@ -436,7 +436,7 @@ class ParticipantesActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "onActivityResult: failed to read contact", e)
+                Timber.e(e, "onActivityResult: failed to read contact")
             }
         }
     }

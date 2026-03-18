@@ -4,7 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
-import android.util.Log
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,7 +41,7 @@ class SorteioDAO(context: Context) {
         sorteados: List<Participante>
     ): Long {
         if (participantes.size != sorteados.size) {
-            Log.e("SorteioDAO", "salvarSorteioCompleto: list size mismatch")
+            Timber.e("salvarSorteioCompleto: list size mismatch")
             return -1
         }
         val dataHora = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date())
@@ -82,7 +82,7 @@ class SorteioDAO(context: Context) {
             database.setTransactionSuccessful()
             sorteioId
         } catch (e: SQLiteException) {
-            Log.e("SorteioDAO", "salvarSorteioCompleto failed", e)
+            Timber.e(e, "salvarSorteioCompleto failed")
             -1
         } finally {
             database.endTransaction()
@@ -101,7 +101,7 @@ class SorteioDAO(context: Context) {
             }
             database.insertOrThrow(MySQLiteOpenHelper.TABLE_SORTEIO, null, values)
         } catch (e: android.database.sqlite.SQLiteException) {
-            Log.e("SorteioDAO", "inserirSorteio failed", e)
+            Timber.e(e, "inserirSorteio failed")
             -1
         }
     }
