@@ -1,19 +1,22 @@
 package activity.amigosecreto
 
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.db.Exclusao
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.repository.SorteioRepository
 import android.database.sqlite.SQLiteException
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -28,7 +31,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Testes unitários de ParticipantesViewModel via Robolectric + InstantTaskExecutorRule.
+ * Testes unitários de ParticipantesViewModel via Robolectric + Room in-memory +
+ * InstantTaskExecutorRule.
  *
  * O ioDispatcher do ViewModel é substituído por UnconfinedTestDispatcher para que
  * o background work complete antes das asserções, sem precisar de sleeps ou polling.
@@ -43,9 +47,10 @@ class ParticipantesViewModelTest {
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private lateinit var app: android.app.Application
+    private lateinit var db: AppDatabase
+    private lateinit var grupoDao: GrupoRoomDao
+    private lateinit var participanteRoomDao: ParticipanteRoomDao
     private lateinit var viewModel: ParticipantesViewModel
-    private lateinit var grupoDao: GrupoDAO
-    private lateinit var participanteDao: ParticipanteDAO
     private lateinit var participanteRepository: ParticipanteRepository
     private lateinit var desejoRepository: DesejoRepository
     private lateinit var sorteioRepository: SorteioRepository
@@ -54,23 +59,24 @@ class ParticipantesViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
-    fun setUp() {
+    fun setUp() = runBlocking {
         Dispatchers.setMain(testDispatcher)
         app = ApplicationProvider.getApplicationContext()
 
-        grupoDao = GrupoDAO(app)
-        grupoDao.open()
-        grupoId = grupoDao.inserir(Grupo().apply {
-            nome = "Grupo Teste"
-            data = "01/01/2025"
-        }).toInt()
+        db = Room.inMemoryDatabaseBuilder(app, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
 
-        participanteDao = ParticipanteDAO(app)
-        participanteDao.open()
+        grupoDao = db.grupoDao()
+        participanteRoomDao = db.participanteDao()
 
-        desejoRepository = DesejoRepository(app)
-        participanteRepository = ParticipanteRepository(app)
-        sorteioRepository = SorteioRepository(app)
+        grupoId = grupoDao.inserir(
+            Grupo(nome = "Grupo Teste", data = "01/01/2025")
+        ).toInt()
+
+        participanteRepository = ParticipanteRepository(participanteRoomDao)
+        desejoRepository = DesejoRepository(db.desejoDao())
+        sorteioRepository = SorteioRepository(db.sorteioDao())
 
         viewModel = ParticipantesViewModel(app, participanteRepository, desejoRepository, sorteioRepository)
         viewModel.ioDispatcher = testDispatcher
@@ -79,19 +85,15 @@ class ParticipantesViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        grupoDao.limparTudo()
-        participanteDao.close()
-        grupoDao.close()
+        db.close()
     }
 
     // --- helpers ---
 
-    private fun inserirParticipante(nome: String): Participante {
-        val p = Participante().apply {
-            this.nome = nome
-            telefone = "11999999999"
-        }
-        participanteDao.inserir(p, grupoId)
+    private suspend fun inserirParticipante(nome: String): Participante {
+        val p = Participante(nome = nome, telefone = "11999999999", grupoId = grupoId)
+        val id = participanteRoomDao.inserir(p).toInt()
+        p.id = id
         return p
     }
 
@@ -131,15 +133,12 @@ class ParticipantesViewModelTest {
 
     @Test
     fun carregarParticipantes_populatesWishCountsForEachParticipant() = runTest(testDispatcher) {
-        inserirParticipante("Diana")
-        val apos = participanteDao.listarPorGrupo(grupoId)
-        val pid = apos[0].id
+        val diana = inserirParticipante("Diana")
+        val pid = diana.id
 
-        val desejoDAO = DesejoDAO(app)
-        desejoDAO.open()
-        desejoDAO.inserir(Desejo().apply { produto = "Livro"; participanteId = pid })
-        desejoDAO.inserir(Desejo().apply { produto = "Caneta"; participanteId = pid })
-        desejoDAO.close()
+        val desejoDao = db.desejoDao()
+        desejoDao.inserir(Desejo(produto = "Livro", participanteId = pid))
+        desejoDao.inserir(Desejo(produto = "Caneta", participanteId = pid))
 
         viewModel.init(grupoId)
 
@@ -244,12 +243,12 @@ class ParticipantesViewModelTest {
         val id1 = lista[1].id
         val id2 = lista[2].id
 
-        participanteDao.adicionarExclusao(id0, id1)
-        participanteDao.adicionarExclusao(id0, id2)
-        participanteDao.adicionarExclusao(id1, id0)
-        participanteDao.adicionarExclusao(id1, id2)
-        participanteDao.adicionarExclusao(id2, id0)
-        participanteDao.adicionarExclusao(id2, id1)
+        participanteRoomDao.inserirExclusao(Exclusao(id0, id1))
+        participanteRoomDao.inserirExclusao(Exclusao(id0, id2))
+        participanteRoomDao.inserirExclusao(Exclusao(id1, id0))
+        participanteRoomDao.inserirExclusao(Exclusao(id1, id2))
+        participanteRoomDao.inserirExclusao(Exclusao(id2, id0))
+        participanteRoomDao.inserirExclusao(Exclusao(id2, id1))
 
         // Recarrega lista com exclusões
         viewModel.carregarParticipantes()
@@ -306,9 +305,8 @@ class ParticipantesViewModelTest {
 
     @Test
     fun atualizarParticipante_sucesso_emiteTrue() = runTest(testDispatcher) {
-        inserirParticipante("Vera")
-        val lista = participanteDao.listarPorGrupo(grupoId)
-        val p = lista[0].apply { nome = "Vera Atualizada" }
+        val vera = inserirParticipante("Vera")
+        val p = participanteRoomDao.buscarPorId(vera.id)!!.apply { nome = "Vera Atualizada" }
 
         viewModel.init(grupoId)
         viewModel.atualizarParticipante(p)
@@ -318,7 +316,7 @@ class ParticipantesViewModelTest {
 
     @Test
     fun atualizarParticipante_idInvalido_emiteFalse() = runTest(testDispatcher) {
-        val p = Participante().apply { id = 0; nome = "Fantasma" }
+        val p = Participante(id = 0, nome = "Fantasma")
 
         viewModel.init(grupoId)
         viewModel.atualizarParticipante(p)
@@ -332,15 +330,15 @@ class ParticipantesViewModelTest {
 
     @Test
     fun marcarComoEnviado_setaFlagNoParticipante() = runTest(testDispatcher) {
-        inserirParticipante("Xavier")
-        val antes = participanteDao.listarPorGrupo(grupoId)
-        val id = antes[0].id
+        val xavier = inserirParticipante("Xavier")
+        val id = xavier.id
 
         viewModel.init(grupoId)
         viewModel.marcarComoEnviado(id)
 
-        val apos = participanteDao.listarPorGrupo(grupoId)
-        assertTrue(apos[0].isEnviado)
+        val apos = participanteRoomDao.buscarPorId(id)
+        assertNotNull(apos)
+        assertTrue(apos!!.isEnviado)
     }
 
     // =========================================================
@@ -349,18 +347,17 @@ class ParticipantesViewModelTest {
 
     @Test
     fun salvarExclusoes_adicionaERemoveCorretamente() = runTest(testDispatcher) {
-        inserirParticipante("Yara")
-        inserirParticipante("Zico")
-        val lista = participanteDao.listarPorGrupo(grupoId)
-        val id1 = lista[0].id
-        val id2 = lista[1].id
+        val yara = inserirParticipante("Yara")
+        val zico = inserirParticipante("Zico")
+        val id1 = yara.id
+        val id2 = zico.id
 
         viewModel.init(grupoId)
 
         // Adicionar exclusão
         viewModel.salvarExclusoes(id1, listOf(id2), emptyList())
 
-        val aposAdicionar = participanteDao.listarPorGrupo(grupoId)
+        val aposAdicionar = participanteRoomDao.listarPorGrupo(grupoId)
         val p1 = aposAdicionar.firstOrNull { it.id == id1 }
         assertNotNull(p1)
         assertTrue(p1!!.idsExcluidos.contains(id2))
@@ -368,7 +365,7 @@ class ParticipantesViewModelTest {
         // Remover exclusão
         viewModel.salvarExclusoes(id1, emptyList(), listOf(id2))
 
-        val aposRemover = participanteDao.listarPorGrupo(grupoId)
+        val aposRemover = participanteRoomDao.listarPorGrupo(grupoId)
         val p1apos = aposRemover.firstOrNull { it.id == id1 }
         assertNotNull(p1apos)
         assertFalse(p1apos!!.idsExcluidos.contains(id2))
@@ -380,13 +377,13 @@ class ParticipantesViewModelTest {
 
     @Test
     fun inserirParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun inserir(participante: Participante, grupoId: Int) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun inserir(participante: Participante, grupoId: Int) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        val p = Participante().apply { nome = "Erro" }
+        val p = Participante(nome = "Erro")
         assertaErro(repoQueLanca) { viewModel.inserirParticipante(p, grupoId) }
     }
 
@@ -424,7 +421,7 @@ class ParticipantesViewModelTest {
         assertNotNull(antes)
         assertEquals(2, antes!!.size)
 
-        val novo = Participante().apply { nome = "Fernanda"; telefone = "11988887777" }
+        val novo = Participante(nome = "Fernanda", telefone = "11988887777")
         viewModel.inserirParticipante(novo, grupoId)
 
         val apos = viewModel.participants.value
@@ -452,11 +449,10 @@ class ParticipantesViewModelTest {
 
     @Test
     fun salvarExclusoes_atualizaParticipantsLiveData() = runTest(testDispatcher) {
-        inserirParticipante("Ines")
-        inserirParticipante("Jorge")
-        val lista = participanteDao.listarPorGrupo(grupoId)
-        val id1 = lista[0].id
-        val id2 = lista[1].id
+        val ines = inserirParticipante("Ines")
+        val jorge = inserirParticipante("Jorge")
+        val id1 = ines.id
+        val id2 = jorge.id
 
         viewModel.init(grupoId)
 
@@ -500,7 +496,8 @@ class ParticipantesViewModelTest {
     @Test
     fun prepararMensagensSms_nenhumComTelefone_emiteListaVazia() = runTest(testDispatcher) {
         // Participante sem telefone
-        participanteDao.inserir(Participante().apply { nome = "SemFone" }, grupoId)
+        val semFone = Participante(nome = "SemFone", grupoId = grupoId)
+        participanteRoomDao.inserir(semFone)
 
         viewModel.init(grupoId)
 
@@ -539,8 +536,7 @@ class ParticipantesViewModelTest {
         assertFalse(resultado.mensagem.isEmpty())
 
         // Deve ter marcado como enviado
-        val apos = participanteDao.listarPorGrupo(grupoId)
-        val primeirosApos = apos.firstOrNull { it.id == primeiro.id }
+        val primeirosApos = participanteRoomDao.buscarPorId(primeiro.id)
         assertNotNull(primeirosApos)
         assertTrue(primeirosApos!!.isEnviado)
     }
@@ -551,11 +547,11 @@ class ParticipantesViewModelTest {
 
     @Test
     fun marcarComoEnviado_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun marcarComoEnviado(id: Int) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun marcarComoEnviado(id: Int) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
         assertaErro(repoQueLanca) { viewModel.marcarComoEnviado(1) }
     }
@@ -566,18 +562,18 @@ class ParticipantesViewModelTest {
 
     @Test
     fun atualizarParticipante_excecaoNoRepository_emiteFalse() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun atualizar(participante: Participante): Boolean {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun atualizar(participante: Participante): Boolean {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
 
         viewModel.setRepositories(repoQueLanca, desejoRepository)
         viewModel.ioDispatcher = testDispatcher
         viewModel.init(grupoId)
 
-        val p = Participante().apply { id = 1; nome = "Teste" }
+        val p = Participante(id = 1, nome = "Teste")
         viewModel.atualizarParticipante(p)
 
         assertEquals(false, viewModel.atualizarSucesso.value)
@@ -589,11 +585,11 @@ class ParticipantesViewModelTest {
 
     @Test
     fun removerParticipante_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun remover(id: Int) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun remover(id: Int) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
         assertaErro(repoQueLanca) { viewModel.removerParticipante(1) }
     }
@@ -604,11 +600,11 @@ class ParticipantesViewModelTest {
 
     @Test
     fun deletarTodosDoGrupo_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun deletarTodosDoGrupo(grupoId: Int) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun deletarTodosDoGrupo(grupoId: Int) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
         assertaErro(repoQueLanca) { viewModel.deletarTodosDoGrupo(grupoId) }
     }
@@ -619,11 +615,11 @@ class ParticipantesViewModelTest {
 
     @Test
     fun salvarExclusoes_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun salvarExclusoes(participanteId: Int, adicionar: List<Int>, remover: List<Int>) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
         assertaErro(repoQueLanca) {
             viewModel.salvarExclusoes(1, listOf(2), emptyList())
@@ -637,8 +633,8 @@ class ParticipantesViewModelTest {
     @Test
     fun prepararMensagensSms_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção no listarPorGrupo que prepararMensagensSms chama internamente
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun listarPorGrupo(grupoId: Int): List<Participante> {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> {
                 throw SQLiteException("falha simulada")
             }
         }
@@ -654,13 +650,13 @@ class ParticipantesViewModelTest {
     @Test
     fun prepararMensagemCompartilhamento_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
         // Forçar exceção em marcarComoEnviado, que é sempre chamado
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun marcarComoEnviado(id: Int) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun marcarComoEnviado(id: Int) {
                 throw SQLiteException("falha simulada")
             }
-            override fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
-        val p = Participante().apply { id = 1; nome = "Teste" }
+        val p = Participante(id = 1, nome = "Teste")
         // amigoSorteadoId = null → getNomeAmigoSorteado não é chamado; marcarComoEnviado sempre é
         assertaErro(repoQueLanca) {
             viewModel.prepararMensagemCompartilhamento(p)
@@ -677,7 +673,7 @@ class ParticipantesViewModelTest {
         viewModel.clearQrCodeResult()
 
         // amigoSorteadoId = null → método retorna sem postar resultado
-        val p = Participante().apply { id = 1; nome = "Ana" }
+        val p = Participante(id = 1, nome = "Ana")
         viewModel.obterNomeAmigoParaQr(p)
 
         assertNull(viewModel.qrCodeResult.value)
@@ -689,7 +685,7 @@ class ParticipantesViewModelTest {
         viewModel.clearQrCodeResult()
 
         // amigoSorteadoId = 0 → treated as "não sorteado"
-        val p = Participante().apply { id = 1; nome = "Bruno"; amigoSorteadoId = 0 }
+        val p = Participante(id = 1, nome = "Bruno", amigoSorteadoId = 0)
         viewModel.obterNomeAmigoParaQr(p)
 
         assertNull(viewModel.qrCodeResult.value)
@@ -698,21 +694,20 @@ class ParticipantesViewModelTest {
     @Test
     fun obterNomeAmigoParaQr_sucesso_postaqrCodeResultado() = runTest(testDispatcher) {
         // Inserir participantes
-        val p1 = Participante().apply { nome = "Carlos"; telefone = "11111" }
-        val p2 = Participante().apply { nome = "Diana"; telefone = "22222" }
-        participanteDao.inserir(p1, grupoId)
-        participanteDao.inserir(p2, grupoId)
-        val lista = participanteDao.listarPorGrupo(grupoId)
-        // lista é ordenada por nome: [Carlos, Diana]
-        val carlos = lista.first { it.nome == "Carlos" }
-        val diana = lista.first { it.nome == "Diana" }
+        val carlos = inserirParticipante("Carlos")
+        val diana = inserirParticipante("Diana")
+
+        // lista ordenada por nome: [Carlos, Diana]
+        val listaOrdenada = participanteRoomDao.listarPorGrupoSemExclusoes(grupoId)
+        val carlosDb = listaOrdenada.first { it.nome == "Carlos" }
+        val dianaDb = listaOrdenada.first { it.nome == "Diana" }
 
         // salvarSorteio(participantes, sorteados): participantes[i] recebe sorteados[i].id como amigo.
         // Para Carlos tirar Diana: participantes=[Carlos, Diana], sorteados=[Diana, Carlos]
-        participanteDao.salvarSorteio(listOf(carlos, diana), listOf(diana, carlos))
+        participanteRoomDao.salvarSorteio(listOf(carlosDb, dianaDb), listOf(dianaDb, carlosDb))
 
         viewModel.init(grupoId)
-        val participanteAtual = participanteDao.listarPorGrupo(grupoId).first { it.nome == "Carlos" }
+        val participanteAtual = participanteRoomDao.listarPorGrupoSemExclusoes(grupoId).first { it.nome == "Carlos" }
 
         viewModel.obterNomeAmigoParaQr(participanteAtual)
 
@@ -724,8 +719,8 @@ class ParticipantesViewModelTest {
 
     @Test
     fun obterNomeAmigoParaQr_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
-        val repoQueLanca = object : ParticipanteRepository(app) {
-            override fun getNomeAmigoSorteado(amigoId: Int): String {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun getNomeAmigoSorteado(amigoId: Int): String {
                 throw SQLiteException("falha simulada")
             }
         }
@@ -734,7 +729,7 @@ class ParticipantesViewModelTest {
         viewModel.init(grupoId)
         viewModel.clearErrorMessage()
 
-        val p = Participante().apply { id = 1; nome = "Eduardo"; amigoSorteadoId = 99 }
+        val p = Participante(id = 1, nome = "Eduardo", amigoSorteadoId = 99)
         viewModel.obterNomeAmigoParaQr(p)
 
         assertNotNull(viewModel.errorMessage.value)

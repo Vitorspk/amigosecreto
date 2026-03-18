@@ -2,10 +2,15 @@ package activity.amigosecreto.repository
 
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.DesejoRoomDao
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -15,52 +20,56 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Testes de integração do DesejoRepository via Robolectric + SQLite real.
+ * Testes de integração do DesejoRepository via Robolectric + Room in-memory.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DesejoRepositoryTest {
 
+    private lateinit var db: AppDatabase
+    private lateinit var grupoDao: GrupoRoomDao
+    private lateinit var participanteRoomDao: ParticipanteRoomDao
+    private lateinit var desejoRoomDao: DesejoRoomDao
     private lateinit var repository: DesejoRepository
-    private lateinit var grupoDao: GrupoDAO
     private var grupoId = 0
     private var participanteId = 0
 
     @Before
-    fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
+    fun setUp() = runBlocking {
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
 
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
-        grupoId = grupoDao.inserir(Grupo().apply { nome = "Grupo Teste"; data = "01/01/2025" }).toInt()
+        grupoDao = db.grupoDao()
+        participanteRoomDao = db.participanteDao()
+        desejoRoomDao = db.desejoDao()
 
-        val participanteDao = ParticipanteDAO(ctx)
-        participanteDao.open()
-        val p = Participante().apply { nome = "Participante Teste" }
-        participanteDao.inserir(p, grupoId)
-        participanteId = participanteDao.listarPorGrupo(grupoId)[0].id
-        participanteDao.close()
+        val grupo = Grupo(nome = "Grupo Teste", data = "01/01/2025")
+        grupoId = grupoDao.inserir(grupo).toInt()
 
-        repository = DesejoRepository(ctx)
+        val p = Participante(nome = "Participante Teste", grupoId = grupoId)
+        participanteId = participanteRoomDao.inserir(p).toInt()
+
+        repository = DesejoRepository(desejoRoomDao)
     }
 
     @After
     fun tearDown() {
-        grupoDao.limparTudo()
-        grupoDao.close()
+        db.close()
     }
 
-    private fun criarDesejo(produto: String) = Desejo().apply {
-        this.produto = produto
-        this.participanteId = this@DesejoRepositoryTest.participanteId
-    }
+    private fun criarDesejo(produto: String) = Desejo(
+        produto = produto,
+        participanteId = participanteId,
+    )
 
     // =========================================================
     // inserir / listarPorParticipante
     // =========================================================
 
     @Test
-    fun inserir_e_listarPorParticipante_retornaDesejoInserido() {
+    fun inserir_e_listarPorParticipante_retornaDesejoInserido() = runTest {
         repository.inserir(criarDesejo("Livro"))
         val lista = repository.listarPorParticipante(participanteId)
         assertEquals(1, lista.size)
@@ -68,14 +77,14 @@ class DesejoRepositoryTest {
     }
 
     @Test
-    fun listarPorParticipante_semDesejos_retornaListaVazia() {
+    fun listarPorParticipante_semDesejos_retornaListaVazia() = runTest {
         val lista = repository.listarPorParticipante(participanteId)
         assertNotNull(lista)
         assertTrue(lista.isEmpty())
     }
 
     @Test
-    fun inserir_multiplos_listarRetornaTodos() {
+    fun inserir_multiplos_listarRetornaTodos() = runTest {
         repository.inserir(criarDesejo("Caneta"))
         repository.inserir(criarDesejo("Caderno"))
         repository.inserir(criarDesejo("Mochila"))
@@ -83,7 +92,7 @@ class DesejoRepositoryTest {
     }
 
     @Test
-    fun inserir_atribuiIdGeradoPeloBanco() {
+    fun inserir_atribuiIdGeradoPeloBanco() = runTest {
         val d = criarDesejo("Fone")
         repository.inserir(d)
         assertTrue(d.id > 0)
@@ -94,12 +103,12 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun contarDesejosPorParticipante_semDesejos_retornaZero() {
+    fun contarDesejosPorParticipante_semDesejos_retornaZero() = runTest {
         assertEquals(0, repository.contarDesejosPorParticipante(participanteId))
     }
 
     @Test
-    fun contarDesejosPorParticipante_comDesejos_retornaContagem() {
+    fun contarDesejosPorParticipante_comDesejos_retornaContagem() = runTest {
         repository.inserir(criarDesejo("Item A"))
         repository.inserir(criarDesejo("Item B"))
         assertEquals(2, repository.contarDesejosPorParticipante(participanteId))
@@ -110,7 +119,7 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun alterar_produtoAtualizado_persistido() {
+    fun alterar_produtoAtualizado_persistido() = runTest {
         val original = criarDesejo("Produto Original")
         repository.inserir(original)
 
@@ -125,7 +134,7 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun remover_desejoExistente_removidoDaLista() {
+    fun remover_desejoExistente_removidoDaLista() = runTest {
         val d = criarDesejo("Item para Remover")
         repository.inserir(d)
         assertEquals(1, repository.contarDesejosPorParticipante(participanteId))
@@ -139,7 +148,7 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun buscarPorId_retornaDesejoCorreto() {
+    fun buscarPorId_retornaDesejoCorreto() = runTest {
         val d = criarDesejo("Item Busca")
         repository.inserir(d)
 
@@ -150,7 +159,7 @@ class DesejoRepositoryTest {
     }
 
     @Test
-    fun buscarPorId_idInexistente_retornaNull() {
+    fun buscarPorId_idInexistente_retornaNull() = runTest {
         assertNull(repository.buscarPorId(99999))
     }
 
@@ -159,7 +168,7 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun listar_retornaDesejosDeTodosParticipantes() {
+    fun listar_retornaDesejosDeTodosParticipantes() = runTest {
         repository.inserir(criarDesejo("Bola"))
         repository.inserir(criarDesejo("Raquete"))
         assertTrue(repository.listar().size >= 2)
@@ -170,14 +179,14 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun contarDesejosPorGrupo_grupoVazio_retornaMapaVazio() {
+    fun contarDesejosPorGrupo_grupoVazio_retornaMapaVazio() = runTest {
         val mapa = repository.contarDesejosPorGrupo(grupoId)
         assertNotNull(mapa)
         assertTrue(mapa.isEmpty())
     }
 
     @Test
-    fun contarDesejosPorGrupo_multiplosPorParticipante_somaCorreta() {
+    fun contarDesejosPorGrupo_multiplosPorParticipante_somaCorreta() = runTest {
         repository.inserir(criarDesejo("A"))
         repository.inserir(criarDesejo("B"))
         repository.inserir(criarDesejo("C"))
@@ -189,7 +198,7 @@ class DesejoRepositoryTest {
     // =========================================================
 
     @Test
-    fun listarDesejosPorGrupo_retornaTodosAgrupadosPorParticipante() {
+    fun listarDesejosPorGrupo_retornaTodosAgrupadosPorParticipante() = runTest {
         repository.inserir(criarDesejo("X"))
         repository.inserir(criarDesejo("Y"))
 
@@ -200,13 +209,13 @@ class DesejoRepositoryTest {
     }
 
     @Test
-    fun listarDesejosPorGrupo_participanteSemDesejos_naoAparece() {
+    fun listarDesejosPorGrupo_participanteSemDesejos_naoAparece() = runTest {
         val mapa = repository.listarDesejosPorGrupo(grupoId)
         assertFalse(mapa.containsKey(participanteId))
     }
 
     @Test
-    fun inserir_comPrecoECategoria_persistidosCorretamente() {
+    fun inserir_comPrecoECategoria_persistidosCorretamente() = runTest {
         val d = criarDesejo("Tênis").apply {
             categoria = "Esporte"
             precoMinimo = 100.0

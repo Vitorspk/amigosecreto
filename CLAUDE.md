@@ -729,7 +729,9 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 9 | **Backup/restore** — exportar/importar dados via JSON + SAF (sem permissão extra) | ✅ Concluído | #57 |
 | 10 | **Notificações de lembrete** — lembrar organizador sobre sorteio pendente | ✅ Concluído | #58 |
 | 11 | **Compartilhar via Telegram/Email** — além de WhatsApp/SMS | ✅ Concluído | #59 |
-| 12 | **QR Code** — gerar QR Code para cada participante revelar seu amigo secreto | ⏳ | — |
+| 12 | **QR Code** — gerar QR Code para cada participante revelar seu amigo secreto | ✅ Concluído | #60 |
+| 13 | **Timber** — logging estruturado substituindo `android.util.Log` | ✅ Concluído | #61 |
+| 14 | **Modo escuro** — suporte completo com `values-night/`, `drawable-night/`, WCAG AA | ✅ Concluído | #62 |
 
 ### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)

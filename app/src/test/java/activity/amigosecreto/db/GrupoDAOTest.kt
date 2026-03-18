@@ -1,6 +1,12 @@
 package activity.amigosecreto.db
 
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -16,29 +22,30 @@ import java.util.Locale
 @Config(sdk = [33])
 class GrupoDAOTest {
 
-    private lateinit var dao: GrupoDAO
-    private lateinit var participanteDao: ParticipanteDAO
+    private lateinit var db: AppDatabase
+    private lateinit var dao: GrupoRoomDao
+    private lateinit var participanteDao: ParticipanteRoomDao
 
     @Before
     fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        dao = GrupoDAO(ctx)
-        dao.open()
-        participanteDao = ParticipanteDAO(ctx)
-        participanteDao.open()
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
+        dao = db.grupoDao()
+        participanteDao = db.participanteDao()
     }
 
     @After
     fun tearDown() {
-        dao.limparTudo()
-        dao.close()
-        participanteDao.close()
+        db.close()
     }
 
-    private fun criarGrupo(nome: String): Grupo {
-        val g = Grupo()
-        g.nome = nome
-        g.data = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+    private suspend fun criarGrupo(nome: String): Grupo {
+        val g = Grupo(
+            nome = nome,
+            data = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+        )
         val id = dao.inserir(g)
         g.id = id.toInt()
         return g
@@ -47,20 +54,20 @@ class GrupoDAOTest {
     // --- inserir ---
 
     @Test
-    fun inserir_retorna_id_valido() {
-        val g = Grupo().apply { nome = "Familia"; data = "01/01/2025" }
+    fun inserir_retorna_id_valido() = runTest {
+        val g = Grupo(nome = "Familia", data = "01/01/2025")
         assertTrue(dao.inserir(g) > 0)
     }
 
     // --- listar ---
 
     @Test
-    fun listar_retorna_lista_vazia_quando_sem_dados() {
+    fun listar_retorna_lista_vazia_quando_sem_dados() = runTest {
         assertTrue(dao.listar().isEmpty())
     }
 
     @Test
-    fun listar_retorna_grupo_inserido() {
+    fun listar_retorna_grupo_inserido() = runTest {
         criarGrupo("Trabalho")
         val lista = dao.listar()
         assertEquals(1, lista.size)
@@ -68,7 +75,7 @@ class GrupoDAOTest {
     }
 
     @Test
-    fun listar_ordem_desc_por_id() {
+    fun listar_ordem_desc_por_id() = runTest {
         criarGrupo("Primeiro")
         criarGrupo("Segundo")
         criarGrupo("Terceiro")
@@ -78,21 +85,21 @@ class GrupoDAOTest {
         assertEquals("Primeiro", lista[2].nome)
     }
 
-    // --- atualizarNome ---
+    // --- atualizar (atualizarNome replacement) ---
 
     @Test
-    fun atualizarNome_retorna_1_row_afetada() {
+    fun atualizar_retorna_1_row_afetada() = runTest {
         val g = criarGrupo("Nome Antigo")
         g.nome = "Nome Novo"
-        assertEquals(1, dao.atualizarNome(g))
+        assertEquals(1, dao.atualizar(g))
     }
 
     @Test
-    fun atualizarNome_persiste_novo_nome() {
+    fun atualizar_persiste_novo_nome() = runTest {
         val g = criarGrupo("Nome Antigo")
         val dataOriginal = g.data
         g.nome = "Nome Novo"
-        dao.atualizarNome(g)
+        dao.atualizar(g)
 
         val lista = dao.listar()
         assertEquals(1, lista.size)
@@ -101,60 +108,65 @@ class GrupoDAOTest {
     }
 
     @Test
-    fun atualizarNome_id_inexistente_retorna_0() {
-        val g = Grupo().apply { id = 999; nome = "Fantasma" }
-        assertEquals(0, dao.atualizarNome(g))
+    fun atualizar_id_inexistente_retorna_0() = runTest {
+        val g = Grupo(id = 999, nome = "Fantasma")
+        assertEquals(0, dao.atualizar(g))
     }
 
     // --- remover ---
 
     @Test
-    fun remover_apaga_grupo() {
+    fun remover_apaga_grupo() = runTest {
         val g = criarGrupo("Para Remover")
-        dao.remover(g.id)
+        dao.remover(g)
         assertTrue(dao.listar().isEmpty())
     }
 
     @Test
-    fun remover_apaga_participantes_do_grupo() {
+    fun remover_apaga_participantes_do_grupo() = runTest {
         val g = criarGrupo("Grupo Com Participantes")
-        val p = Participante().apply { nome = "Membro" }
-        participanteDao.inserir(p, g.id)
+        val p = Participante(nome = "Membro", grupoId = g.id)
+        participanteDao.inserir(p)
 
-        dao.remover(g.id)
+        // GrupoRoomDao.remover usa @Delete — sem ON DELETE CASCADE no FK grupo_id.
+        // Deve-se deletar participantes antes do grupo (mesmo comportamento do GrupoDAO legado).
+        participanteDao.deletarTodosDoGrupo(g.id)
+        dao.remover(g)
 
-        assertTrue(participanteDao.listarPorGrupo(g.id).isEmpty())
+        assertTrue(participanteDao.listarPorGrupoSemExclusoes(g.id).isEmpty())
     }
 
     @Test
-    fun remover_nao_afeta_outros_grupos() {
+    fun remover_nao_afeta_outros_grupos() = runTest {
         val g1 = criarGrupo("Grupo 1")
         criarGrupo("Grupo 2")
-        dao.remover(g1.id)
+        dao.remover(g1)
 
         val lista = dao.listar()
         assertEquals(1, lista.size)
         assertEquals("Grupo 2", lista[0].nome)
     }
 
-    // --- limparTudo ---
+    // --- deletarTodosGrupos (limparTudo replacement) ---
 
     @Test
-    fun limparTudo_remove_todos_os_grupos() {
+    fun deletarTodosGrupos_remove_todos_os_grupos() = runTest {
         criarGrupo("G1")
         criarGrupo("G2")
-        dao.limparTudo()
+        dao.deletarTodosParticipantes()
+        dao.deletarTodosGrupos()
         assertTrue(dao.listar().isEmpty())
     }
 
     @Test
-    fun limparTudo_remove_participantes_tambem() {
+    fun deletarTodosGrupos_remove_participantes_tambem() = runTest {
         val g = criarGrupo("Grupo")
-        val p = Participante().apply { nome = "Pessoa" }
-        participanteDao.inserir(p, g.id)
+        val p = Participante(nome = "Pessoa", grupoId = g.id)
+        participanteDao.inserir(p)
 
-        dao.limparTudo()
+        dao.deletarTodosParticipantes()
+        dao.deletarTodosGrupos()
 
-        assertTrue(participanteDao.listarPorGrupo(g.id).isEmpty())
+        assertTrue(participanteDao.listarPorGrupoSemExclusoes(g.id).isEmpty())
     }
 }

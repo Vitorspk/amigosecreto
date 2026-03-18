@@ -5,14 +5,20 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.repository.DesejoRepository
-import activity.amigosecreto.util.AsyncDatabaseHelper
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
+@AndroidEntryPoint
 class InserirDesejoActivity : AppCompatActivity() {
 
     private lateinit var etProduto: TextInputEditText
@@ -22,8 +28,7 @@ class InserirDesejoActivity : AppCompatActivity() {
     private lateinit var etLojas: TextInputEditText
     private lateinit var btnSalvar: MaterialButton
 
-    // Replaced by @Inject when migrating to ViewModel.
-    private val repo by lazy { DesejoRepository(this) }
+    @Inject lateinit var repo: DesejoRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,24 +101,21 @@ class InserirDesejoActivity : AppCompatActivity() {
             return
         }
 
-        AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<Unit> {
-                override fun doInBackground() { repo.inserir(desejo) }
-            },
-            object : AsyncDatabaseHelper.ResultCallback<Unit> {
-                override fun onSuccess(result: Unit) {
-                    if (isDestroyed || isFinishing) return
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) { repo.inserir(desejo) }
+                if (!isDestroyed && !isFinishing) {
                     Toast.makeText(this@InserirDesejoActivity, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
                     finish()
                 }
-                override fun onError(e: Exception) {
-                    if (isDestroyed || isFinishing) return
+            } catch (e: Exception) {
+                if (!isDestroyed && !isFinishing) {
                     btnSalvar.isEnabled = true
-                    invalidateOptionsMenu() // re-enables menu_salvar if triggered via toolbar
+                    invalidateOptionsMenu()
                     val msg = e.message ?: getString(R.string.error_unknown)
                     Toast.makeText(this@InserirDesejoActivity, getString(R.string.error_save_wish_format, msg), Toast.LENGTH_LONG).show()
                 }
             }
-        )
+        }
     }
 }

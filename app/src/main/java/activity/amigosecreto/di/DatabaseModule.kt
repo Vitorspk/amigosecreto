@@ -7,15 +7,20 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.DesejoRoomDao
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import activity.amigosecreto.db.room.SorteioRoomDao
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.repository.SorteioRepository
 
 /**
- * Hilt module that provides repository instances for the entire application lifetime.
+ * Hilt module that provides Room DAOs and repository instances.
  *
- * Repositories are @Singleton because they are stateless wrappers around DAOs — each method
- * opens/closes the DAO internally, so a single shared instance is safe across threads.
+ * AppDatabase is @Singleton — one instance for the entire app lifetime.
+ * Repositories are @Singleton stateless wrappers; Room handles threading via coroutines.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,16 +28,37 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideParticipanteRepository(@ApplicationContext context: Context): ParticipanteRepository =
-        ParticipanteRepository(context)
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+        AppDatabase.getInstance(context)
 
     @Provides
     @Singleton
-    fun provideDesejoRepository(@ApplicationContext context: Context): DesejoRepository =
-        DesejoRepository(context)
+    fun provideGrupoDao(db: AppDatabase): GrupoRoomDao = db.grupoDao()
 
     @Provides
     @Singleton
-    fun provideSorteioRepository(@ApplicationContext context: Context): SorteioRepository =
-        SorteioRepository(context)
+    fun provideParticipanteDao(db: AppDatabase): ParticipanteRoomDao = db.participanteDao()
+
+    @Provides
+    @Singleton
+    fun provideDesejoDao(db: AppDatabase): DesejoRoomDao = db.desejoDao()
+
+    @Provides
+    @Singleton
+    fun provideSorteioDao(db: AppDatabase): SorteioRoomDao = db.sorteioDao()
+
+    @Provides
+    @Singleton
+    fun provideParticipanteRepository(dao: ParticipanteRoomDao): ParticipanteRepository =
+        ParticipanteRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideDesejoRepository(dao: DesejoRoomDao): DesejoRepository =
+        DesejoRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideSorteioRepository(dao: SorteioRoomDao): SorteioRepository =
+        SorteioRepository(dao)
 }

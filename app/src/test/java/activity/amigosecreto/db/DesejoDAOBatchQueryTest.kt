@@ -1,6 +1,13 @@
 package activity.amigosecreto.db
 
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.DesejoRoomDao
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -10,106 +17,106 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Testes para os métodos de batch query do DesejoDAO:
- *   - contarDesejosPorGrupo(int grupoId)
- *   - listarDesejosPorGrupo(int grupoId)
+ * Testes para os métodos de batch query do DesejoRoomDao:
+ *   - contarDesejosPorGrupo(grupoId)
+ *   - listarDesejosPorGrupo(grupoId)
  *
- * Esses métodos usam INNER JOIN + GROUP BY. São críticos para a migração
- * para Kotlin pois qualquer erro de índice de coluna ou alias SQL causaria
- * NullPointerException silencioso.
+ * Esses métodos usam INNER JOIN + GROUP BY. São críticos para verificar
+ * que Room processa corretamente os aliases SQL e os mapeamentos de coluna.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DesejoDAOBatchQueryTest {
 
-    private lateinit var desejoDao: DesejoDAO
-    private lateinit var participanteDao: ParticipanteDAO
-    private lateinit var grupoDao: GrupoDAO
+    private lateinit var db: AppDatabase
+    private lateinit var desejoDao: DesejoRoomDao
+    private lateinit var participanteDao: ParticipanteRoomDao
+    private lateinit var grupoDao: GrupoRoomDao
     private var grupoId = 0
     private var grupoId2 = 0
 
     @Before
-    fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        desejoDao = DesejoDAO(ctx)
-        desejoDao.open()
-        participanteDao = ParticipanteDAO(ctx)
-        participanteDao.open()
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
+    fun setUp() = runBlocking {
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
 
-        grupoId = grupoDao.inserir(Grupo().apply { nome = "Grupo A" }).toInt()
-        grupoId2 = grupoDao.inserir(Grupo().apply { nome = "Grupo B" }).toInt()
+        desejoDao = db.desejoDao()
+        participanteDao = db.participanteDao()
+        grupoDao = db.grupoDao()
+
+        grupoId = grupoDao.inserir(Grupo(nome = "Grupo A")).toInt()
+        grupoId2 = grupoDao.inserir(Grupo(nome = "Grupo B")).toInt()
     }
 
     @After
     fun tearDown() {
-        grupoDao.limparTudo()
-        grupoDao.close()
-        participanteDao.close()
-        desejoDao.close()
+        db.close()
     }
 
-    private fun inserirParticipante(nome: String, gId: Int): Participante {
-        val p = Participante().apply { this.nome = nome }
-        participanteDao.inserir(p, gId)
+    private suspend fun inserirParticipante(nome: String, gId: Int): Participante {
+        val p = Participante(nome = nome, grupoId = gId)
+        val id = participanteDao.inserir(p).toInt()
+        p.id = id
         return p
     }
 
-    private fun inserirDesejo(produto: String, participanteId: Int) {
-        val d = Desejo().apply {
-            this.produto = produto
-            this.categoria = "Cat"
-            this.lojas = "Loja"
-            this.precoMinimo = 10.0
-            this.precoMaximo = 50.0
-            this.participanteId = participanteId
-        }
+    private suspend fun inserirDesejo(produto: String, participanteId: Int) {
+        val d = Desejo(
+            produto = produto,
+            categoria = "Cat",
+            lojas = "Loja",
+            precoMinimo = 10.0,
+            precoMaximo = 50.0,
+            participanteId = participanteId,
+        )
         desejoDao.inserir(d)
     }
 
     // ===== contarDesejosPorGrupo =====
 
     @Test
-    fun contarDesejosPorGrupo_grupoSemDesejos_retornaMapaVazio() {
+    fun contarDesejosPorGrupo_grupoSemDesejos_retornaMapaVazio() = runTest {
         inserirParticipante("Ana", grupoId)
-        val mapa = desejoDao.contarDesejosPorGrupo(grupoId)
+        val mapa = desejoDao.contarDesejosPorGrupo(grupoId).associate { it.participanteId to it.count }
         assertNotNull(mapa)
         assertTrue(mapa.isEmpty())
     }
 
     @Test
-    fun contarDesejosPorGrupo_umParticipanteComDesejos_contagemCorreta() {
+    fun contarDesejosPorGrupo_umParticipanteComDesejos_contagemCorreta() = runTest {
         val p = inserirParticipante("Bruno", grupoId)
         inserirDesejo("Item1", p.id)
         inserirDesejo("Item2", p.id)
         inserirDesejo("Item3", p.id)
-        assertEquals(3, desejoDao.contarDesejosPorGrupo(grupoId)[p.id])
+        val mapa = desejoDao.contarDesejosPorGrupo(grupoId).associate { it.participanteId to it.count }
+        assertEquals(3, mapa[p.id])
     }
 
     @Test
-    fun contarDesejosPorGrupo_variosParticipantes_contagemsIndependentes() {
+    fun contarDesejosPorGrupo_variosParticipantes_contagemsIndependentes() = runTest {
         val p1 = inserirParticipante("Carla", grupoId)
         val p2 = inserirParticipante("Diego", grupoId)
         inserirDesejo("X", p1.id)
         inserirDesejo("Y", p1.id)
         inserirDesejo("Z", p2.id)
 
-        val mapa = desejoDao.contarDesejosPorGrupo(grupoId)
+        val mapa = desejoDao.contarDesejosPorGrupo(grupoId).associate { it.participanteId to it.count }
         assertEquals(2, mapa[p1.id])
         assertEquals(1, mapa[p2.id])
     }
 
     @Test
-    fun contarDesejosPorGrupo_naoContaminaOutroGrupo() {
+    fun contarDesejosPorGrupo_naoContaminaOutroGrupo() = runTest {
         val pA = inserirParticipante("Eva", grupoId)
         val pB = inserirParticipante("Felipe", grupoId2)
         inserirDesejo("ItemA", pA.id)
         inserirDesejo("ItemB1", pB.id)
         inserirDesejo("ItemB2", pB.id)
 
-        val mapaA = desejoDao.contarDesejosPorGrupo(grupoId)
-        val mapaB = desejoDao.contarDesejosPorGrupo(grupoId2)
+        val mapaA = desejoDao.contarDesejosPorGrupo(grupoId).associate { it.participanteId to it.count }
+        val mapaB = desejoDao.contarDesejosPorGrupo(grupoId2).associate { it.participanteId to it.count }
 
         assertEquals(1, mapaA[pA.id])
         assertNull(mapaA[pB.id])
@@ -118,8 +125,8 @@ class DesejoDAOBatchQueryTest {
     }
 
     @Test
-    fun contarDesejosPorGrupo_grupoInexistente_retornaMapaVazio() {
-        val mapa = desejoDao.contarDesejosPorGrupo(99999)
+    fun contarDesejosPorGrupo_grupoInexistente_retornaMapaVazio() = runTest {
+        val mapa = desejoDao.contarDesejosPorGrupo(99999).associate { it.participanteId to it.count }
         assertNotNull(mapa)
         assertTrue(mapa.isEmpty())
     }
@@ -127,23 +134,27 @@ class DesejoDAOBatchQueryTest {
     // ===== listarDesejosPorGrupo =====
 
     @Test
-    fun listarDesejosPorGrupo_grupoSemDesejos_retornaMapaVazio() {
+    fun listarDesejosPorGrupo_grupoSemDesejos_retornaMapaVazio() = runTest {
         inserirParticipante("Gabi", grupoId)
-        val mapa = desejoDao.listarDesejosPorGrupo(grupoId)
+        val mapa = desejoDao.listarDesejosPorGrupo(grupoId).groupBy { it.participanteId }
         assertNotNull(mapa)
         assertTrue(mapa.isEmpty())
     }
 
     @Test
-    fun listarDesejosPorGrupo_camposPopuladosCorretamente() {
+    fun listarDesejosPorGrupo_camposPopuladosCorretamente() = runTest {
         val p = inserirParticipante("Hugo", grupoId)
-        val d = Desejo().apply {
-            produto = "Fone"; categoria = "Audio"; lojas = "Amazon"
-            precoMinimo = 99.0; precoMaximo = 299.0; participanteId = p.id
-        }
+        val d = Desejo(
+            produto = "Fone",
+            categoria = "Audio",
+            lojas = "Amazon",
+            precoMinimo = 99.0,
+            precoMaximo = 299.0,
+            participanteId = p.id,
+        )
         desejoDao.inserir(d)
 
-        val desejos = desejoDao.listarDesejosPorGrupo(grupoId)[p.id]
+        val desejos = desejoDao.listarDesejosPorGrupo(grupoId).groupBy { it.participanteId }[p.id]
         assertNotNull(desejos)
         assertEquals(1, desejos!!.size)
         val found = desejos[0]
@@ -156,27 +167,27 @@ class DesejoDAOBatchQueryTest {
     }
 
     @Test
-    fun listarDesejosPorGrupo_variosParticipantes_listasSeparadas() {
+    fun listarDesejosPorGrupo_variosParticipantes_listasSeparadas() = runTest {
         val p1 = inserirParticipante("Iris", grupoId)
         val p2 = inserirParticipante("João", grupoId)
         inserirDesejo("Livro A", p1.id)
         inserirDesejo("Livro B", p1.id)
         inserirDesejo("Game", p2.id)
 
-        val mapa = desejoDao.listarDesejosPorGrupo(grupoId)
+        val mapa = desejoDao.listarDesejosPorGrupo(grupoId).groupBy { it.participanteId }
         assertEquals(2, mapa[p1.id]!!.size)
         assertEquals(1, mapa[p2.id]!!.size)
     }
 
     @Test
-    fun listarDesejosPorGrupo_naoContaminaOutroGrupo() {
+    fun listarDesejosPorGrupo_naoContaminaOutroGrupo() = runTest {
         val pA = inserirParticipante("Karen", grupoId)
         val pB = inserirParticipante("Lucas", grupoId2)
         inserirDesejo("ItemA", pA.id)
         inserirDesejo("ItemB", pB.id)
 
-        val mapaA = desejoDao.listarDesejosPorGrupo(grupoId)
-        val mapaB = desejoDao.listarDesejosPorGrupo(grupoId2)
+        val mapaA = desejoDao.listarDesejosPorGrupo(grupoId).groupBy { it.participanteId }
+        val mapaB = desejoDao.listarDesejosPorGrupo(grupoId2).groupBy { it.participanteId }
 
         assertTrue(mapaA.containsKey(pA.id))
         assertFalse(mapaA.containsKey(pB.id))
@@ -185,22 +196,26 @@ class DesejoDAOBatchQueryTest {
     }
 
     @Test
-    fun listarDesejosPorGrupo_grupoInexistente_retornaMapaVazio() {
-        val mapa = desejoDao.listarDesejosPorGrupo(99999)
+    fun listarDesejosPorGrupo_grupoInexistente_retornaMapaVazio() = runTest {
+        val mapa = desejoDao.listarDesejosPorGrupo(99999).groupBy { it.participanteId }
         assertNotNull(mapa)
         assertTrue(mapa.isEmpty())
     }
 
     @Test
-    fun listarDesejosPorGrupo_camposOpcionaisNulos_naoLancaExcecao() {
+    fun listarDesejosPorGrupo_camposOpcionaisNulos_naoLancaExcecao() = runTest {
         val p = inserirParticipante("Maria", grupoId)
-        val d = Desejo().apply {
-            produto = "Item sem extras"; categoria = null; lojas = null
-            precoMinimo = 0.0; precoMaximo = 0.0; participanteId = p.id
-        }
+        val d = Desejo(
+            produto = "Item sem extras",
+            categoria = null,
+            lojas = null,
+            precoMinimo = 0.0,
+            precoMaximo = 0.0,
+            participanteId = p.id,
+        )
         desejoDao.inserir(d)
 
-        val desejos = desejoDao.listarDesejosPorGrupo(grupoId)[p.id]
+        val desejos = desejoDao.listarDesejosPorGrupo(grupoId).groupBy { it.participanteId }[p.id]
         assertNotNull(desejos)
         assertEquals(1, desejos!!.size)
         assertEquals("Item sem extras", desejos[0].produto)

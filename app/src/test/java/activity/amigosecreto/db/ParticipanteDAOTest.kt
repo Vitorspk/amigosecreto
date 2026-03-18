@@ -1,6 +1,12 @@
 package activity.amigosecreto.db
 
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -13,49 +19,51 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33])
 class ParticipanteDAOTest {
 
-    private lateinit var dao: ParticipanteDAO
-    private lateinit var grupoDao: GrupoDAO
+    private lateinit var db: AppDatabase
+    private lateinit var dao: ParticipanteRoomDao
+    private lateinit var grupoDao: GrupoRoomDao
     private var grupoId = 0
     private var grupoId2 = 0
 
     @Before
-    fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
-        dao = ParticipanteDAO(ctx)
-        dao.open()
+    fun setUp() = runBlocking {
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries().build()
 
-        grupoId = grupoDao.inserir(Grupo().apply { nome = "Grupo Teste 1"; data = "01/01/2025" }).toInt()
-        grupoId2 = grupoDao.inserir(Grupo().apply { nome = "Grupo Teste 2"; data = "01/01/2025" }).toInt()
+        grupoDao = db.grupoDao()
+        dao = db.participanteDao()
+
+        grupoId = grupoDao.inserir(Grupo(nome = "Grupo Teste 1", data = "01/01/2025")).toInt()
+        grupoId2 = grupoDao.inserir(Grupo(nome = "Grupo Teste 2", data = "01/01/2025")).toInt()
     }
 
     @After
     fun tearDown() {
-        grupoDao.limparTudo()
-        dao.close()
-        grupoDao.close()
+        db.close()
     }
 
-    private fun criarParticipante(nome: String, gId: Int): Participante {
-        val p = Participante().apply { this.nome = nome }
-        dao.inserir(p, gId)
+    private suspend fun criarParticipante(nome: String, gId: Int): Participante {
+        val p = Participante(nome = nome, grupoId = gId)
+        val id = dao.inserir(p).toInt()
+        p.id = id
         return p
     }
 
     // --- inserir ---
 
     @Test
-    fun inserir_gera_id_valido() {
-        val p = Participante().apply { nome = "Ana" }
-        dao.inserir(p, grupoId)
-        assertTrue(p.id > 0)
+    fun inserir_gera_id_valido() = runTest {
+        val p = Participante(nome = "Ana", grupoId = grupoId)
+        val id = dao.inserir(p)
+        assertTrue(id > 0)
     }
 
     // --- listarPorGrupo ---
 
     @Test
-    fun listarPorGrupo_retorna_apenas_participantes_do_grupo() {
+    fun listarPorGrupo_retorna_apenas_participantes_do_grupo() = runTest {
         criarParticipante("Ana", grupoId)
         criarParticipante("Bruno", grupoId)
         criarParticipante("Carlos", grupoId2)
@@ -66,12 +74,12 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun listarPorGrupo_retorna_lista_vazia_para_grupo_sem_participantes() {
+    fun listarPorGrupo_retorna_lista_vazia_para_grupo_sem_participantes() = runTest {
         assertTrue(dao.listarPorGrupo(grupoId).isEmpty())
     }
 
     @Test
-    fun listarPorGrupo_ordenado_por_nome() {
+    fun listarPorGrupo_ordenado_por_nome() = runTest {
         criarParticipante("Zelia", grupoId)
         criarParticipante("Ana", grupoId)
         criarParticipante("Mario", grupoId)
@@ -85,31 +93,31 @@ class ParticipanteDAOTest {
     // --- atualizar ---
 
     @Test
-    fun atualizar_nome_persiste() {
+    fun atualizar_nome_persiste() = runTest {
         val p = criarParticipante("Nome Antigo", grupoId)
         p.nome = "Nome Novo"
-        assertTrue(dao.atualizar(p))
+        assertTrue(dao.atualizar(p) > 0)
 
         assertEquals("Nome Novo", dao.listarPorGrupo(grupoId)[0].nome)
     }
 
     @Test
-    fun atualizar_id_invalido_retorna_false() {
-        val p = Participante().apply { id = 0; nome = "Fantasma" }
-        assertFalse(dao.atualizar(p))
+    fun atualizar_id_invalido_retorna_zero() = runTest {
+        val p = Participante(id = 0, nome = "Fantasma")
+        assertEquals(0, dao.atualizar(p))
     }
 
     // --- remover ---
 
     @Test
-    fun remover_apaga_participante() {
+    fun remover_apaga_participante() = runTest {
         val p = criarParticipante("Para Remover", grupoId)
         dao.remover(p.id)
         assertTrue(dao.listarPorGrupo(grupoId).isEmpty())
     }
 
     @Test
-    fun remover_nao_afeta_outros_participantes() {
+    fun remover_nao_afeta_outros_participantes() = runTest {
         val p1 = criarParticipante("Ana", grupoId)
         criarParticipante("Bruno", grupoId)
         dao.remover(p1.id)
@@ -122,30 +130,30 @@ class ParticipanteDAOTest {
     // --- exclusoes ---
 
     @Test
-    fun adicionarExclusao_persiste() {
+    fun adicionarExclusao_persiste() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
-        dao.adicionarExclusao(a.id, b.id)
+        dao.inserirExclusao(Exclusao(a.id, b.id))
 
         val aAtualizado = dao.listarPorGrupo(grupoId).first { it.id == a.id }
         assertTrue(aAtualizado.idsExcluidos.contains(b.id))
     }
 
     @Test
-    fun adicionarExclusao_duplicada_nao_lanca_excecao() {
+    fun adicionarExclusao_duplicada_nao_lanca_excecao() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
-        dao.adicionarExclusao(a.id, b.id)
-        dao.adicionarExclusao(a.id, b.id) // CONFLICT_IGNORE
+        dao.inserirExclusao(Exclusao(a.id, b.id))
+        dao.inserirExclusao(Exclusao(a.id, b.id)) // IGNORE on conflict
     }
 
     @Test
-    fun removerExclusao_remove_apenas_a_exclusao_especificada() {
+    fun removerExclusao_remove_apenas_a_exclusao_especificada() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         val c = criarParticipante("C", grupoId)
-        dao.adicionarExclusao(a.id, b.id)
-        dao.adicionarExclusao(a.id, c.id)
+        dao.inserirExclusao(Exclusao(a.id, b.id))
+        dao.inserirExclusao(Exclusao(a.id, c.id))
         dao.removerExclusao(a.id, b.id)
 
         val aAtualizado = dao.listarPorGrupo(grupoId).first { it.id == a.id }
@@ -156,7 +164,7 @@ class ParticipanteDAOTest {
     // --- salvarSorteio ---
 
     @Test
-    fun salvarSorteio_persiste_amigo_sorteado_id() {
+    fun salvarSorteio_persiste_amigo_sorteado_id() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         val c = criarParticipante("C", grupoId)
@@ -170,7 +178,7 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun salvarSorteio_atualiza_amigo_sorteado_id_para_cada_participante() {
+    fun salvarSorteio_atualiza_amigo_sorteado_id_para_cada_participante() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         val c = criarParticipante("C", grupoId)
@@ -187,7 +195,7 @@ class ParticipanteDAOTest {
     // --- marcarComoEnviado ---
 
     @Test
-    fun marcarComoEnviado_seta_flag_enviado() {
+    fun marcarComoEnviado_seta_flag_enviado() = runTest {
         val p = criarParticipante("Enviado", grupoId)
         dao.marcarComoEnviado(p.id)
 
@@ -199,27 +207,28 @@ class ParticipanteDAOTest {
     // --- contarPorGrupo ---
 
     @Test
-    fun contarPorGrupo_retorna_mapa_correto() {
+    fun contarPorGrupo_retorna_mapa_correto() = runTest {
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
         criarParticipante("C", grupoId)
         criarParticipante("D", grupoId2)
         criarParticipante("E", grupoId2)
 
-        val mapa = dao.contarPorGrupo()
+        val mapa = dao.contarPorTodosGrupos().associate { it.grupoId to it.count }
         assertEquals(3, mapa[grupoId])
         assertEquals(2, mapa[grupoId2])
     }
 
     @Test
-    fun contarPorGrupo_grupo_vazio_nao_esta_no_mapa() {
-        assertFalse(dao.contarPorGrupo().containsKey(grupoId))
+    fun contarPorGrupo_grupo_vazio_nao_esta_no_mapa() = runTest {
+        val mapa = dao.contarPorTodosGrupos().associate { it.grupoId to it.count }
+        assertFalse(mapa.containsKey(grupoId))
     }
 
     // --- buscarPorId ---
 
     @Test
-    fun buscarPorId_existente_retorna_participante() {
+    fun buscarPorId_existente_retorna_participante() = runTest {
         val p = criarParticipante("Ana", grupoId)
         val encontrado = dao.buscarPorId(p.id)
         assertNotNull(encontrado)
@@ -228,14 +237,14 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun buscarPorId_inexistente_retorna_null() {
+    fun buscarPorId_inexistente_retorna_null() = runTest {
         assertNull(dao.buscarPorId(-1))
     }
 
     // --- limparSorteioDoGrupo ---
 
     @Test
-    fun limparSorteioDoGrupo_nulifica_amigo_sorteado_e_reset_enviado() {
+    fun limparSorteioDoGrupo_nulifica_amigo_sorteado_e_reset_enviado() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         val c = criarParticipante("C", grupoId)
@@ -253,7 +262,7 @@ class ParticipanteDAOTest {
     // --- deletarTodosDoGrupo ---
 
     @Test
-    fun deletarTodosDoGrupo_remove_todos_participantes() {
+    fun deletarTodosDoGrupo_remove_todos_participantes() = runTest {
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
         criarParticipante("C", grupoId2)
@@ -264,10 +273,10 @@ class ParticipanteDAOTest {
         assertEquals(1, dao.listarPorGrupo(grupoId2).size)
     }
 
-    // --- getNomeAmigoSorteado ---
+    // --- getNome (getNomeAmigoSorteado replacement) ---
 
     @Test
-    fun getNomeAmigoSorteado_retorna_nome_correto() {
+    fun getNome_retorna_nome_correto() = runTest {
         val a = criarParticipante("Ana", grupoId)
         val b = criarParticipante("Beatriz", grupoId)
         val c = criarParticipante("Carlos", grupoId)
@@ -275,18 +284,18 @@ class ParticipanteDAOTest {
 
         val anaAtualizada = dao.listarPorGrupo(grupoId).first { it.id == a.id }
         assertNotNull(anaAtualizada.amigoSorteadoId)
-        assertEquals("Beatriz", dao.getNomeAmigoSorteado(anaAtualizada.amigoSorteadoId!!))
+        assertEquals("Beatriz", dao.getNome(anaAtualizada.amigoSorteadoId!!))
     }
 
     @Test
-    fun getNomeAmigoSorteado_id_inexistente_retorna_ninguem() {
-        assertEquals("Ninguém", dao.getNomeAmigoSorteado(-1))
+    fun getNome_id_inexistente_retorna_null() = runTest {
+        assertNull(dao.getNome(-1))
     }
 
     // --- salvarSorteio tamanhos diferentes ---
 
     @Test
-    fun salvarSorteio_listas_tamanhos_diferentes_retorna_false() {
+    fun salvarSorteio_listas_tamanhos_diferentes_retorna_false() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         val c = criarParticipante("C", grupoId)
@@ -302,11 +311,11 @@ class ParticipanteDAOTest {
     // --- adicionarExclusao idempotência ---
 
     @Test
-    fun adicionarExclusao_duplicada_nao_insere_registro_extra() {
+    fun adicionarExclusao_duplicada_nao_insere_registro_extra() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
-        dao.adicionarExclusao(a.id, b.id)
-        dao.adicionarExclusao(a.id, b.id)
+        dao.inserirExclusao(Exclusao(a.id, b.id))
+        dao.inserirExclusao(Exclusao(a.id, b.id))
 
         val aAtualizado = dao.listarPorGrupo(grupoId).first { it.id == a.id }
         assertEquals(1, aAtualizado.idsExcluidos.size)
@@ -316,7 +325,7 @@ class ParticipanteDAOTest {
     // --- deletarTodosDoGrupo grupo vazio ---
 
     @Test
-    fun deletarTodosDoGrupo_grupo_vazio_nao_lanca_excecao() {
+    fun deletarTodosDoGrupo_grupo_vazio_nao_lanca_excecao() = runTest {
         dao.deletarTodosDoGrupo(grupoId)
         assertTrue(dao.listarPorGrupo(grupoId).isEmpty())
     }
@@ -324,19 +333,19 @@ class ParticipanteDAOTest {
     // --- contarGruposPendentes ---
 
     @Test
-    fun contarGruposPendentes_zero_quando_banco_vazio() {
+    fun contarGruposPendentes_zero_quando_banco_vazio() = runTest {
         assertEquals(0, dao.contarGruposPendentes())
     }
 
     @Test
-    fun contarGruposPendentes_zero_quando_grupo_tem_menos_de_3_participantes() {
+    fun contarGruposPendentes_zero_quando_grupo_tem_menos_de_3_participantes() = runTest {
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
         assertEquals(0, dao.contarGruposPendentes())
     }
 
     @Test
-    fun contarGruposPendentes_conta_grupo_com_3_ou_mais_sem_sorteio() {
+    fun contarGruposPendentes_conta_grupo_com_3_ou_mais_sem_sorteio() = runTest {
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
         criarParticipante("C", grupoId)
@@ -344,7 +353,7 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun contarGruposPendentes_ignora_grupo_com_sorteio_realizado() {
+    fun contarGruposPendentes_ignora_grupo_com_sorteio_realizado() = runTest {
         val a = criarParticipante("A", grupoId)
         val b = criarParticipante("B", grupoId)
         criarParticipante("C", grupoId)
@@ -354,7 +363,7 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun contarGruposPendentes_conta_apenas_grupos_pendentes_quando_ha_mistura() {
+    fun contarGruposPendentes_conta_apenas_grupos_pendentes_quando_ha_mistura() = runTest {
         // grupoId: 3 participantes sem sorteio → pendente
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
@@ -369,7 +378,7 @@ class ParticipanteDAOTest {
     }
 
     @Test
-    fun contarGruposPendentes_respeita_minParticipantes_customizado() {
+    fun contarGruposPendentes_respeita_minParticipantes_customizado() = runTest {
         criarParticipante("A", grupoId)
         criarParticipante("B", grupoId)
         // Com minParticipantes=2 deve contar; com 3 não deve

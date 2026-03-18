@@ -1,14 +1,20 @@
 package activity.amigosecreto.db
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.io.Serializable
 
-// var fields: GrupoDAO populates via setters after construction (see CLAUDE.md § Model layer decisions).
-// TODO(fase10-dao): switch to val + constructor injection once GrupoDAO migrates to Room.
 // Plain class (not data class): reference equality — safe in all collection types.
 // toString() returns "" for null nome; Java returned null. Production uses getNome() directly.
+@Entity(tableName = "grupo")
 class Grupo(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
     var id: Int = 0,
+    @ColumnInfo(name = "nome")
     var nome: String? = null,
+    @ColumnInfo(name = "data")
     var data: String? = null,
 ) : Serializable {
     companion object {
