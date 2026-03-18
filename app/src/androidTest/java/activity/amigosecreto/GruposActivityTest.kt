@@ -52,7 +52,7 @@ class GruposActivityTest {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         db = AppDatabase.getInstance(ctx)
         runBlocking {
-            db.participanteDao().deletarTodosParticipantes()
+            db.grupoDao().deletarTodosParticipantes()
             db.grupoDao().deletarTodosGrupos()
         }
         // Activity lancada APOS limpar o banco para evitar race condition
@@ -66,7 +66,7 @@ class GruposActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.participanteDao().deletarTodosParticipantes()
+                db.grupoDao().deletarTodosParticipantes()
                 db.grupoDao().deletarTodosGrupos()
             }
         }

@@ -42,7 +42,7 @@ class ParticipantesActivityTest {
 
         // Limpar banco completamente antes de cada teste para garantir isolamento.
         runBlocking {
-            db.participanteDao().deletarTodosParticipantes()
+            db.grupoDao().deletarTodosParticipantes()
             db.grupoDao().deletarTodosGrupos()
         }
 
@@ -65,7 +65,7 @@ class ParticipantesActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.participanteDao().deletarTodosParticipantes()
+                db.grupoDao().deletarTodosParticipantes()
                 db.grupoDao().deletarTodosGrupos()
             }
         }
