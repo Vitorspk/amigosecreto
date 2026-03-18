@@ -62,7 +62,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="@dimen/activity_horizontal_margin"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp">
 
             <!-- Welcome Section -->
             <LinearLayout

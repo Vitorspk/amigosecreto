@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Devices with smallest width >= 600dp (7"+ tablets) -->
+    <bool name="is_tablet">true</bool>
+</resources>
