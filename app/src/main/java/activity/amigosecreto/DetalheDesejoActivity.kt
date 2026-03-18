@@ -1,7 +1,7 @@
 package activity.amigosecreto
 
 import android.content.Intent
-import android.util.Log
+import timber.log.Timber
 import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
@@ -107,7 +107,7 @@ class DetalheDesejoActivity : AppCompatActivity() {
                 carregarCampos(atualizado)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "recarregarDesejo: failed for desejo id=${d.id}", e)
+            Timber.e(e, "recarregarDesejo: failed for desejo id=${d.id}")
         }
     }
 }

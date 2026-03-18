@@ -3,6 +3,7 @@ package activity.amigosecreto
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import activity.amigosecreto.util.NotificationHelper
+import timber.log.Timber
 
 /**
  * Application class required by Hilt for component generation.
@@ -15,5 +16,8 @@ class AmigoSecretoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         NotificationHelper.criarCanal(this)
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
     }
 }

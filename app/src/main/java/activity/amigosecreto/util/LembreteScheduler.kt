@@ -1,7 +1,7 @@
 package activity.amigosecreto.util
 
 import android.content.Context
-import android.util.Log
+import timber.log.Timber
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -31,7 +31,7 @@ object LembreteScheduler {
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )
-        Log.d(TAG, "Lembrete diário agendado")
+        Timber.d("Lembrete diário agendado")
     }
 
     /**
@@ -40,6 +40,6 @@ object LembreteScheduler {
      */
     fun cancelar(context: Context) {
         WorkManager.getInstance(context).cancelUniqueWork(NOME_TRABALHO)
-        Log.d(TAG, "Lembrete diário cancelado")
+        Timber.d("Lembrete diário cancelado")
     }
 }

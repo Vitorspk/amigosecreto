@@ -2,7 +2,7 @@ package activity.amigosecreto.util
 
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
+import timber.log.Timber
 import androidx.test.espresso.idling.CountingIdlingResource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -38,7 +38,7 @@ object AsyncDatabaseHelper {
                     try { resultCallback?.onSuccess(result) } finally { idlingResource.decrement() }
                 }
             } catch (e: Exception) {
-                Log.e("AsyncDatabaseHelper", "Background task failed", e)
+                Timber.e(e, "Background task failed")
                 mainHandler.post {
                     try { resultCallback?.onError(e) } finally { idlingResource.decrement() }
                 }
@@ -56,7 +56,7 @@ object AsyncDatabaseHelper {
                     try { callback?.run() } finally { idlingResource.decrement() }
                 }
             } catch (e: Exception) {
-                Log.e("AsyncDatabaseHelper", "Background task failed", e)
+                Timber.e(e, "Background task failed")
                 // Decrement on main thread for consistency with execute() and the happy path above.
                 mainHandler.post { idlingResource.decrement() }
                 // TODO: fase10d — com coroutines, a exceção propagará ao caller;

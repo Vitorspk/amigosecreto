@@ -1,7 +1,7 @@
 package activity.amigosecreto
 
 import android.app.Application
-import android.util.Log
+import timber.log.Timber
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -139,7 +139,7 @@ class ParticipantesViewModel @Inject constructor(
             val sucesso = try {
                 withContext(ioDispatcher) { participanteRepository.atualizar(participante) }
             } catch (e: Exception) {
-                Log.e(TAG, "atualizarParticipante: failed for id=${participante.id}", e)
+                Timber.e(e, "atualizarParticipante: failed for id=${participante.id}")
                 false
             }
             _atualizarSucesso.value = sucesso
@@ -247,7 +247,7 @@ class ParticipantesViewModel @Inject constructor(
                     sorteioRepository.salvarSorteioCompleto(grupoId, sortableSnapshot, sorteados) > 0
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "realizarSorteio: failed to save draw result", e)
+                Timber.e(e, "realizarSorteio: failed to save draw result")
                 false
             }
 
@@ -349,11 +349,11 @@ class ParticipantesViewModel @Inject constructor(
 
     /**
      * Trata exceções de operações de banco:
-     * - Loga sempre via Log.e (stack trace visível no adb logcat em debug e release)
+     * - Loga sempre via Timber.e (stack trace visível no adb logcat em debug)
      * - Posta a mensagem de erro no main thread em todos os casos
      */
     private fun handleDbError(e: Exception, logMsg: String, errorStringRes: Int) {
-        Log.e(TAG, logMsg, e)
+        Timber.e(e, logMsg)
         _errorMessage.value = getApplication<Application>().getString(errorStringRes)
     }
 

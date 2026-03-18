@@ -3,7 +3,7 @@ package activity.amigosecreto.util
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.util.Log
+import timber.log.Timber
 import org.json.JSONArray
 import org.json.JSONObject
 import activity.amigosecreto.db.DesejoDAO
@@ -137,7 +137,7 @@ object BackupManager {
         try {
             root = JSONObject(jsonString)
         } catch (e: Exception) {
-            Log.e(TAG, "importarDeJson: JSON malformado", e)
+            Timber.e(e, "importarDeJson: JSON malformado")
             return ImportResult.Failure("JSON inválido: ${e.message}")
         }
 
@@ -276,7 +276,7 @@ object BackupManager {
             db.setTransactionSuccessful()
             ImportResult.Success(gruposImportados)
         } catch (e: Exception) {
-            Log.e(TAG, "importarDeJson: falha na importação — rollback executado", e)
+            Timber.e(e, "importarDeJson: falha na importação — rollback executado")
             ImportResult.Failure(e.message ?: "Erro desconhecido")
         } finally {
             db.endTransaction()

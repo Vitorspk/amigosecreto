@@ -172,4 +172,7 @@ dependencies {
 
     // QR Code generation — ZXing core (pure Java, no extra Activity or camera required)
     implementation 'com.google.zxing:core:3.5.3'
+
+    // Logging — Timber (structured logging; DebugTree in debug, no-op in release)
+    implementation 'com.jakewharton.timber:timber:5.0.1'
 }
