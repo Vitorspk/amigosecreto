@@ -55,6 +55,9 @@ class GruposActivityTest {
             db.grupoDao().deletarTodosParticipantes()
             db.grupoDao().deletarTodosGrupos()
         }
+        // Marcar onboarding como concluido para evitar que o gate redirecione
+        // para OnboardingActivity antes da GruposActivity renderizar.
+        OnboardingActivity.marcarOnboardingConcluido(ctx)
         // Activity lancada APOS limpar o banco para evitar race condition
         scenario = ActivityScenario.launch(GruposActivity::class.java)
     }
