@@ -5,23 +5,16 @@ import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.room.AppDatabase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import timber.log.Timber
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class DashboardActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var db: AppDatabase
+    private val viewModel: DashboardViewModel by viewModels()
 
     private lateinit var grupoAtual: Grupo
 
@@ -60,42 +53,28 @@ class DashboardActivity : AppCompatActivity() {
 
         tvDashNomeGrupo.text = grupoAtual.nome
 
-        carregarDados()
-    }
+        val dataEvento = grupoAtual.dataEvento
+        tvDashDataEvento.text = if (!dataEvento.isNullOrEmpty()) dataEvento
+        else getString(R.string.dashboard_nao_definido)
 
-    private fun carregarDados() {
-        lifecycleScope.launch {
-            try {
-                val totalParticipantes: Int
-                val sorteioRealizado: Boolean
-                val confirmados: Int
+        val localEvento = grupoAtual.localEvento
+        tvDashLocalEvento.text = if (!localEvento.isNullOrEmpty()) localEvento
+        else getString(R.string.dashboard_nao_definido)
 
-                withContext(Dispatchers.IO) {
-                    totalParticipantes = db.participanteDao().contarPorGrupo(grupoAtual.id)
-                    val participantes = db.participanteDao().listarPorGrupoSemExclusoes(grupoAtual.id)
-                    sorteioRealizado = participantes.any { it.amigoSorteadoId != null && it.amigoSorteadoId!! > 0 }
-                    confirmados = db.participanteDao().contarConfirmados(grupoAtual.id)
-                }
-
-                tvDashTotalParticipantes.text = totalParticipantes.toString()
-                tvDashSorteioRealizado.text = if (sorteioRealizado)
-                    getString(R.string.dashboard_sim)
-                else
-                    getString(R.string.dashboard_nao)
-                tvDashConfirmados.text = confirmados.toString()
-
-                val dataEvento = grupoAtual.dataEvento
-                tvDashDataEvento.text = if (!dataEvento.isNullOrEmpty()) dataEvento
-                else getString(R.string.dashboard_nao_definido)
-
-                val localEvento = grupoAtual.localEvento
-                tvDashLocalEvento.text = if (!localEvento.isNullOrEmpty()) localEvento
-                else getString(R.string.dashboard_nao_definido)
-            } catch (e: Exception) {
-                Timber.e(e, "Erro ao carregar dados do dashboard")
-                Toast.makeText(this@DashboardActivity, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
+        viewModel.uiState.observe(this) { state ->
+            if (state.error != null) {
+                Toast.makeText(this, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
+                return@observe
             }
+            tvDashTotalParticipantes.text = state.totalParticipantes.toString()
+            tvDashSorteioRealizado.text = if (state.sorteioRealizado)
+                getString(R.string.dashboard_sim)
+            else
+                getString(R.string.dashboard_nao)
+            tvDashConfirmados.text = state.confirmados.toString()
         }
+
+        viewModel.carregarDados(grupoAtual.id)
     }
 
     override fun onSupportNavigateUp(): Boolean {

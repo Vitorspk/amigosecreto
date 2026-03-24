@@ -114,6 +114,7 @@ class OnboardingActivity : AppCompatActivity() {
 
     private fun concluirOnboarding() {
         marcarOnboardingConcluido(this)
+        startActivity(Intent(this, GruposActivity::class.java))
         finish()
     }
 

@@ -4,27 +4,20 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.room.AppDatabase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import timber.log.Timber
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var db: AppDatabase
+    private val viewModel: ConfiguracoesGrupoViewModel by viewModels()
 
     private lateinit var grupoAtual: Grupo
 
@@ -71,6 +64,23 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
         preencherFormulario()
 
+        viewModel.salvoComSucesso.observe(this) { grupo ->
+            if (grupo != null) {
+                Toast.makeText(this, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
+                setResult(RESULT_OK, Intent().putExtra("grupo", grupo))
+                finish()
+                viewModel.salvoConsumido()
+            }
+        }
+
+        viewModel.erro.observe(this) { erro ->
+            if (erro != null) {
+                Toast.makeText(this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
+                btnSalvar.isEnabled = true
+                viewModel.erroConsumido()
+            }
+        }
+
         btnSalvar.setOnClickListener { salvar() }
     }
 
@@ -111,25 +121,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         grupoAtual.exigirConfirmacaoCompra = switchExigirConfirmacao.isChecked
 
         btnSalvar.isEnabled = false
-        lifecycleScope.launch {
-            try {
-                val rows = withContext(Dispatchers.IO) {
-                    db.grupoDao().atualizar(grupoAtual)
-                }
-                if (rows > 0) {
-                    Toast.makeText(this@ConfiguracoesGrupoActivity, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK, Intent().putExtra("grupo", grupoAtual))
-                    finish()
-                } else {
-                    Toast.makeText(this@ConfiguracoesGrupoActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
-                    btnSalvar.isEnabled = true
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Erro ao salvar configurações do grupo")
-                Toast.makeText(this@ConfiguracoesGrupoActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
-                btnSalvar.isEnabled = true
-            }
-        }
+        viewModel.salvar(grupoAtual)
     }
 
     override fun onSupportNavigateUp(): Boolean {

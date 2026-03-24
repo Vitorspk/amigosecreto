@@ -33,6 +33,9 @@ abstract class SorteioRoomDao {
     @Query("SELECT * FROM sorteio WHERE grupo_id = :grupoId ORDER BY id DESC LIMIT 1")
     abstract suspend fun buscarUltimoEventoPorGrupo(grupoId: Int): Sorteio?
 
+    @Query("SELECT COUNT(*) FROM sorteio WHERE grupo_id = :grupoId")
+    abstract suspend fun contarPorGrupo(grupoId: Int): Int
+
     /**
      * Salva sorteio completo atomicamente:
      * 1. Insere evento de sorteio com timestamp
