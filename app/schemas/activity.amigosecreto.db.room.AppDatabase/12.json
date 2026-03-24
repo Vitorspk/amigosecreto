@@ -1,0 +1,405 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 12,
+    "identityHash": "7401086f772968dc4c0e0e694d8cf2ca",
+    "entities": [
+      {
+        "tableName": "grupo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT, `data` TEXT, `descricao` TEXT, `data_evento` TEXT, `local_evento` TEXT, `data_limite_sorteio` TEXT, `valor_minimo` REAL NOT NULL DEFAULT 0.0, `valor_maximo` REAL NOT NULL DEFAULT 0.0, `regras` TEXT, `permitir_ver_desejos` INTEGER NOT NULL DEFAULT 1, `exigir_confirmacao_compra` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "data",
+            "columnName": "data",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "descricao",
+            "columnName": "descricao",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dataEvento",
+            "columnName": "data_evento",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "localEvento",
+            "columnName": "local_evento",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dataLimiteSorteio",
+            "columnName": "data_limite_sorteio",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "valorMinimo",
+            "columnName": "valor_minimo",
+            "affinity": "REAL",
+            "notNull": true,
+            "defaultValue": "0.0"
+          },
+          {
+            "fieldPath": "valorMaximo",
+            "columnName": "valor_maximo",
+            "affinity": "REAL",
+            "notNull": true,
+            "defaultValue": "0.0"
+          },
+          {
+            "fieldPath": "regras",
+            "columnName": "regras",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "permitirVerDesejos",
+            "columnName": "permitir_ver_desejos",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "exigirConfirmacaoCompra",
+            "columnName": "exigir_confirmacao_compra",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "participante",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT, `email` TEXT, `telefone` TEXT, `amigo_sorteado_id` INTEGER, `enviado` INTEGER NOT NULL, `grupo_id` INTEGER NOT NULL, `confirmou_presente` INTEGER NOT NULL DEFAULT 0, `foi_notificado` INTEGER NOT NULL DEFAULT 0, `observacoes` TEXT, FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "telefone",
+            "columnName": "telefone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "amigoSorteadoId",
+            "columnName": "amigo_sorteado_id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isEnviado",
+            "columnName": "enviado",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grupoId",
+            "columnName": "grupo_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confirmouPresente",
+            "columnName": "confirmou_presente",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "foiNotificado",
+            "columnName": "foi_notificado",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "observacoes",
+            "columnName": "observacoes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "grupo",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "grupo_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "exclusao",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`participante_id` INTEGER NOT NULL, `excluido_id` INTEGER NOT NULL, PRIMARY KEY(`participante_id`, `excluido_id`), FOREIGN KEY(`participante_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`excluido_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "participanteId",
+            "columnName": "participante_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "excluidoId",
+            "columnName": "excluido_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "participante_id",
+            "excluido_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_exclusao_excluido_id",
+            "unique": false,
+            "columnNames": [
+              "excluido_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `${TABLE_NAME}` (`excluido_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "participante",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "participante_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "participante",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "excluido_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "desejo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `produto` TEXT, `categoria` TEXT, `lojas` TEXT, `preco_minimo` REAL NOT NULL, `preco_maximo` REAL NOT NULL, `participante_id` INTEGER NOT NULL, FOREIGN KEY(`participante_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "produto",
+            "columnName": "produto",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "categoria",
+            "columnName": "categoria",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lojas",
+            "columnName": "lojas",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "precoMinimo",
+            "columnName": "preco_minimo",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "precoMaximo",
+            "columnName": "preco_maximo",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "participanteId",
+            "columnName": "participante_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "participante",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "participante_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sorteio",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `grupo_id` INTEGER NOT NULL, `data_hora` TEXT NOT NULL, FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grupoId",
+            "columnName": "grupo_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataHora",
+            "columnName": "data_hora",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "grupo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "grupo_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sorteio_par",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sorteio_id` INTEGER NOT NULL, `participante_id` INTEGER NOT NULL, `sorteado_id` INTEGER NOT NULL, `nome_participante` TEXT NOT NULL, `nome_sorteado` TEXT NOT NULL, `enviado` INTEGER NOT NULL, PRIMARY KEY(`sorteio_id`, `participante_id`), FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "sorteioId",
+            "columnName": "sorteio_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "participanteId",
+            "columnName": "participante_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sorteadoId",
+            "columnName": "sorteado_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nomeParticipante",
+            "columnName": "nome_participante",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nomeSorteado",
+            "columnName": "nome_sorteado",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enviado",
+            "columnName": "enviado",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sorteio_id",
+            "participante_id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "sorteio",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sorteio_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7401086f772968dc4c0e0e694d8cf2ca')"
+    ]
+  }
+}

@@ -31,4 +31,9 @@
         android:icon="@android:drawable/ic_menu_revert"
         android:title="@string/menu_importar_backup" />
 
+    <item
+        android:id="@+id/action_estatisticas"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="@string/menu_estatisticas" />
+
 </menu>

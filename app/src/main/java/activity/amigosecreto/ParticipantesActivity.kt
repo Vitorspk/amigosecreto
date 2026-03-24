@@ -681,6 +681,20 @@ class ParticipantesActivity : AppCompatActivity() {
                 )
                 true
             }
+            R.id.action_dashboard -> {
+                startActivity(
+                    Intent(this, DashboardActivity::class.java)
+                        .putExtra("grupo", grupoAtual)
+                )
+                true
+            }
+            R.id.action_configuracoes_grupo -> {
+                startActivity(
+                    Intent(this, ConfiguracoesGrupoActivity::class.java)
+                        .putExtra("grupo", grupoAtual)
+                )
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

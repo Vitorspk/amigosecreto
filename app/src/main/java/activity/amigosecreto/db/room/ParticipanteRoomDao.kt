@@ -40,6 +40,15 @@ abstract class ParticipanteRoomDao {
     @Query("UPDATE participante SET enviado = 1 WHERE id = :id")
     abstract suspend fun marcarComoEnviado(id: Int)
 
+    @Query("UPDATE participante SET foi_notificado = 1 WHERE id = :id")
+    abstract suspend fun marcarComoNotificado(id: Int)
+
+    @Query("UPDATE participante SET confirmou_presente = 1 WHERE id = :id")
+    abstract suspend fun marcarConfirmacaoCompra(id: Int)
+
+    @Query("SELECT COUNT(*) FROM participante WHERE grupo_id = :grupoId AND confirmou_presente = 1")
+    abstract suspend fun contarConfirmados(grupoId: Int): Int
+
     // ── Exclusions ────────────────────────────────────────────────────────────
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

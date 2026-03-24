@@ -35,6 +35,12 @@ class Participante(
     var isEnviado: Boolean = false,
     @ColumnInfo(name = "grupo_id")
     var grupoId: Int = 0,
+    @ColumnInfo(name = "confirmou_presente", defaultValue = "0")
+    var confirmouPresente: Boolean = false,
+    @ColumnInfo(name = "foi_notificado", defaultValue = "0")
+    var foiNotificado: Boolean = false,
+    @ColumnInfo(name = "observacoes")
+    var observacoes: String? = null,
 ) : Serializable {
 
     // codigoAcesso: orphaned field — no DB column in any schema version. @Ignore so Room skips it.

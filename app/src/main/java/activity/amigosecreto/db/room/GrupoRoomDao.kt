@@ -37,4 +37,21 @@ interface GrupoRoomDao {
 
     @Query("DELETE FROM sorteio")
     suspend fun deletarTodosSorteios()
+
+    // ── Statistics queries ─────────────────────────────────────────────────────
+
+    @Query("SELECT COUNT(*) FROM grupo")
+    suspend fun contarGrupos(): Int
+
+    @Query("SELECT COUNT(*) FROM participante")
+    suspend fun contarParticipantes(): Int
+
+    @Query("SELECT COUNT(*) FROM sorteio")
+    suspend fun contarSorteios(): Int
+
+    @Query("SELECT COUNT(*) FROM desejo")
+    suspend fun contarDesejos(): Int
+
+    @Query("SELECT AVG((preco_minimo + preco_maximo) / 2.0) FROM desejo WHERE preco_minimo > 0 OR preco_maximo > 0")
+    suspend fun mediaValorDesejos(): Double?
 }

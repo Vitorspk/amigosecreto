@@ -33,7 +33,7 @@ import activity.amigosecreto.db.SorteioPar
         Sorteio::class,
         SorteioPar::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -139,6 +139,33 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migration 11 → 12: adds new columns to grupo and participante for extended
+         * group configuration (event details, value range, rules, preferences) and
+         * participant tracking (confirmation, notification, observations).
+         *
+         * All new columns have default values so existing rows are preserved intact.
+         */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // --- grupo: new configuration columns ---
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `descricao` TEXT")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `data_evento` TEXT")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `local_evento` TEXT")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `data_limite_sorteio` TEXT")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `valor_minimo` REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `valor_maximo` REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `regras` TEXT")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `permitir_ver_desejos` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE grupo ADD COLUMN `exigir_confirmacao_compra` INTEGER NOT NULL DEFAULT 0")
+
+                // --- participante: new tracking columns ---
+                db.execSQL("ALTER TABLE participante ADD COLUMN `confirmou_presente` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE participante ADD COLUMN `foi_notificado` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE participante ADD COLUMN `observacoes` TEXT")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -146,7 +173,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_10_11)
+                    .addMigrations(MIGRATION_10_11, MIGRATION_11_12)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -159,9 +186,14 @@ abstract class AppDatabase : RoomDatabase() {
         @androidx.annotation.VisibleForTesting
         fun initForTesting(context: Context) {
             synchronized(this) {
+                // Close any existing instance before creating a new one.
+                // This prevents the old WAL connection from interfering with the new one
+                // and ensures MySQLiteOpenHelper can see data written by legacy DAOs.
+                INSTANCE?.close()
                 // Usa o mesmo arquivo de banco que MySQLiteOpenHelper para que Room e DAOs legados
                 // compartilhem os mesmos dados nos testes Robolectric.
                 // fallbackToDestructiveMigration evita falhas de schema validation em banco novo.
+                // disableWriteAheadLogging: evita conflito de WAL entre Room e MySQLiteOpenHelper.
                 INSTANCE = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,

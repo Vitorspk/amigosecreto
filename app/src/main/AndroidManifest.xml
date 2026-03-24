@@ -122,6 +122,26 @@
             android:label="@string/qr_menu_item"
             android:exported="false" />
 
+        <activity
+            android:name=".ConfiguracoesGrupoActivity"
+            android:label="@string/configuracoes_grupo_titulo"
+            android:exported="false" />
+
+        <activity
+            android:name=".DashboardActivity"
+            android:label="@string/dashboard_titulo"
+            android:exported="false" />
+
+        <activity
+            android:name=".EstatisticasActivity"
+            android:label="@string/estatisticas_titulo"
+            android:exported="false" />
+
+        <activity
+            android:name=".OnboardingActivity"
+            android:label="@string/app_name"
+            android:exported="false" />
+
         <!-- FileProvider for secure file sharing -->
         <provider
             android:name="androidx.core.content.FileProvider"

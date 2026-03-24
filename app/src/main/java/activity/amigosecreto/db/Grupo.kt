@@ -16,6 +16,24 @@ class Grupo(
     var nome: String? = null,
     @ColumnInfo(name = "data")
     var data: String? = null,
+    @ColumnInfo(name = "descricao")
+    var descricao: String? = null,
+    @ColumnInfo(name = "data_evento")
+    var dataEvento: String? = null,
+    @ColumnInfo(name = "local_evento")
+    var localEvento: String? = null,
+    @ColumnInfo(name = "data_limite_sorteio")
+    var dataLimiteSorteio: String? = null,
+    @ColumnInfo(name = "valor_minimo", defaultValue = "0.0")
+    var valorMinimo: Double = 0.0,
+    @ColumnInfo(name = "valor_maximo", defaultValue = "0.0")
+    var valorMaximo: Double = 0.0,
+    @ColumnInfo(name = "regras")
+    var regras: String? = null,
+    @ColumnInfo(name = "permitir_ver_desejos", defaultValue = "1")
+    var permitirVerDesejos: Boolean = true,
+    @ColumnInfo(name = "exigir_confirmacao_compra", defaultValue = "0")
+    var exigirConfirmacaoCompra: Boolean = false,
 ) : Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
