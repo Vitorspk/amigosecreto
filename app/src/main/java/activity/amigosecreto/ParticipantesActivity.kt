@@ -83,6 +83,23 @@ class ParticipantesActivity : AppCompatActivity() {
     private lateinit var grupoAtual: Grupo
     private lateinit var stateHelper: StateViewHelper
 
+    private val configuracoesGrupoLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            // Atualiza grupoAtual com os dados editados retornados pela ConfiguracoesGrupoActivity
+            @Suppress("DEPRECATION")
+            val grupoAtualizado = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                result.data?.getSerializableExtra("grupo", Grupo::class.java)
+            } else {
+                result.data?.getSerializableExtra("grupo") as? Grupo
+            }
+            if (grupoAtualizado != null) {
+                grupoAtual = grupoAtualizado
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -689,7 +706,7 @@ class ParticipantesActivity : AppCompatActivity() {
                 true
             }
             R.id.action_configuracoes_grupo -> {
-                startActivity(
+                configuracoesGrupoLauncher.launch(
                     Intent(this, ConfiguracoesGrupoActivity::class.java)
                         .putExtra("grupo", grupoAtual)
                 )

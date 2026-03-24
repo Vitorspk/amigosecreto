@@ -1,9 +1,10 @@
 package activity.amigosecreto
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.widget.Switch
 import android.widget.Toast
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -34,13 +35,13 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
     private lateinit var etRegras: TextInputEditText
     private lateinit var etValorMinimo: TextInputEditText
     private lateinit var etValorMaximo: TextInputEditText
-    private lateinit var switchPermitirVerDesejos: Switch
-    private lateinit var switchExigirConfirmacao: Switch
+    private lateinit var switchPermitirVerDesejos: SwitchMaterial
+    private lateinit var switchExigirConfirmacao: SwitchMaterial
     private lateinit var btnSalvar: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_configuracoes_grupo)
 
         @Suppress("DEPRECATION")
@@ -92,13 +93,20 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
             return
         }
 
+        val valorMinimo = etValorMinimo.text?.toString()?.toDoubleOrNull() ?: 0.0
+        val valorMaximo = etValorMaximo.text?.toString()?.toDoubleOrNull() ?: 0.0
+        if (valorMinimo > 0 && valorMaximo > 0 && valorMinimo > valorMaximo) {
+            Toast.makeText(this, R.string.configuracoes_erro_faixa_valor, Toast.LENGTH_SHORT).show()
+            return
+        }
+
         grupoAtual.nome = nome
         grupoAtual.descricao = etDescricao.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         grupoAtual.localEvento = etLocalEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         grupoAtual.dataLimiteSorteio = etDataLimiteSorteio.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         grupoAtual.regras = etRegras.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        grupoAtual.valorMinimo = etValorMinimo.text?.toString()?.toDoubleOrNull() ?: 0.0
-        grupoAtual.valorMaximo = etValorMaximo.text?.toString()?.toDoubleOrNull() ?: 0.0
+        grupoAtual.valorMinimo = valorMinimo
+        grupoAtual.valorMaximo = valorMaximo
         grupoAtual.permitirVerDesejos = switchPermitirVerDesejos.isChecked
         grupoAtual.exigirConfirmacaoCompra = switchExigirConfirmacao.isChecked
 
@@ -110,7 +118,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
                 }
                 if (rows > 0) {
                     Toast.makeText(this@ConfiguracoesGrupoActivity, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK)
+                    setResult(RESULT_OK, Intent().putExtra("grupo", grupoAtual))
                     finish()
                 } else {
                     Toast.makeText(this@ConfiguracoesGrupoActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()

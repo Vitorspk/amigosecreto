@@ -164,7 +164,7 @@
                     android:text="@string/configuracoes_label_permitir_ver_desejos"
                     android:textSize="16sp" />
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_permitir_ver_desejos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -186,7 +186,7 @@
                     android:text="@string/configuracoes_label_exigir_confirmacao"
                     android:textSize="16sp" />
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_exigir_confirmacao"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

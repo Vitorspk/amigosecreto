@@ -2,6 +2,7 @@ package activity.amigosecreto
 
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -12,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.Locale
+import activity.amigosecreto.util.WindowInsetsUtils
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,8 +29,8 @@ class EstatisticasActivity : AppCompatActivity() {
     private lateinit var tvEstatMediaValor: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_estatisticas)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar_estatisticas)
@@ -70,12 +71,13 @@ class EstatisticasActivity : AppCompatActivity() {
                 tvEstatTotalSorteios.text = totalSorteios.toString()
                 tvEstatTotalDesejos.text = totalDesejos.toString()
                 tvEstatMediaValor.text = if (mediaValor != null && mediaValor > 0) {
-                    getString(R.string.estatisticas_valor_format, String.format(Locale("pt", "BR"), "%.2f", mediaValor))
+                    getString(R.string.estatisticas_valor_format, WindowInsetsUtils.numberFormatPtBr().format(mediaValor))
                 } else {
                     getString(R.string.dashboard_nao_definido)
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar estatísticas")
+                Toast.makeText(this@EstatisticasActivity, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -43,27 +43,27 @@ class OnboardingActivity : AppCompatActivity() {
 
     private val paginas = listOf(
         OnboardingPage(
-            iconRes = android.R.drawable.ic_menu_agenda,
+            iconRes = R.drawable.ic_gift,
             titleRes = R.string.onboarding_titulo_1,
             descriptionRes = R.string.onboarding_desc_1,
         ),
         OnboardingPage(
-            iconRes = android.R.drawable.ic_menu_add,
+            iconRes = R.drawable.ic_add,
             titleRes = R.string.onboarding_titulo_2,
             descriptionRes = R.string.onboarding_desc_2,
         ),
         OnboardingPage(
-            iconRes = android.R.drawable.ic_menu_myplaces,
+            iconRes = R.drawable.ic_person_add,
             titleRes = R.string.onboarding_titulo_3,
             descriptionRes = R.string.onboarding_desc_3,
         ),
         OnboardingPage(
-            iconRes = android.R.drawable.ic_menu_rotate,
+            iconRes = R.drawable.ic_dice,
             titleRes = R.string.onboarding_titulo_4,
             descriptionRes = R.string.onboarding_desc_4,
         ),
         OnboardingPage(
-            iconRes = android.R.drawable.ic_menu_share,
+            iconRes = R.drawable.ic_share,
             titleRes = R.string.onboarding_titulo_5,
             descriptionRes = R.string.onboarding_desc_5,
         ),
@@ -74,8 +74,8 @@ class OnboardingActivity : AppCompatActivity() {
     private lateinit var btnAvancar: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_onboarding)
 
         viewPager = findViewById(R.id.vp_onboarding)

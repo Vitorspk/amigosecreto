@@ -318,6 +318,7 @@
     <string name="configuracoes_label_permitir_ver_desejos">Permitir ver desejos</string>
     <string name="configuracoes_label_exigir_confirmacao">Exigir confirmação de compra</string>
     <string name="configuracoes_salvas">Configurações salvas com sucesso</string>
+    <string name="configuracoes_erro_faixa_valor">Valor mínimo não pode ser maior que o máximo</string>
 
     <!-- Dashboard -->
     <string name="dashboard_titulo">Dashboard do Grupo</string>

@@ -3,6 +3,7 @@ package activity.amigosecreto
 import android.os.Build
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -32,8 +33,8 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var tvDashLocalEvento: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_dashboard)
 
         @Suppress("DEPRECATION")
@@ -92,6 +93,7 @@ class DashboardActivity : AppCompatActivity() {
                 else getString(R.string.dashboard_nao_definido)
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar dados do dashboard")
+                Toast.makeText(this@DashboardActivity, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
             }
         }
     }
