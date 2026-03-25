@@ -147,7 +147,7 @@ class GrupoDAOTest {
         assertEquals("Grupo 2", lista[0].nome)
     }
 
-    // --- migration v11 → v12: novos campos com defaults corretos ---
+    // --- schema v12: defaults ---
 
     @Test
     fun schema_v12_novos_campos_tem_defaults_corretos_ao_inserir() = runTest {
