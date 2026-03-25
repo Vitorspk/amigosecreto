@@ -85,8 +85,9 @@ class DashboardActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Recarrega do banco a cada retorno para refletir edições feitas em ConfiguracoesGrupoActivity
-        viewModel.carregarDados(grupoId)
+        // Recarrega do banco a cada retorno para refletir edições feitas em ConfiguracoesGrupoActivity.
+        // Guarda contra grupoId = -1 caso finish() ainda não tenha destruído a Activity.
+        if (grupoId != -1) viewModel.carregarDados(grupoId)
     }
 
     override fun onSupportNavigateUp(): Boolean {

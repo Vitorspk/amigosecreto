@@ -30,6 +30,9 @@ abstract class SorteioRoomDao {
     @Query("SELECT * FROM sorteio_par WHERE sorteio_id = :sorteioId")
     abstract suspend fun listarParesPorSorteio(sorteioId: Int): List<SorteioPar>
 
+    @androidx.room.RawQuery
+    protected abstract suspend fun listarParesBatchRaw(query: androidx.sqlite.db.SupportSQLiteQuery): List<SorteioPar>
+
     @Query("SELECT * FROM sorteio WHERE grupo_id = :grupoId ORDER BY id DESC LIMIT 1")
     abstract suspend fun buscarUltimoEventoPorGrupo(grupoId: Int): Sorteio?
 
@@ -70,14 +73,22 @@ abstract class SorteioRoomDao {
 
     /**
      * Carrega sorteios de um grupo com seus pares populados.
-     * Dois passes para evitar N+1: (1) sorteios, (2) todos os pares em batch por sorteio_id.
+     * Dois passes para evitar N+1:
+     * (1) busca sorteios do grupo;
+     * (2) busca todos os pares em uma única query com IN e agrupa no Kotlin.
      */
     @Transaction
     open suspend fun listarPorGrupo(grupoId: Int): List<Sorteio> {
         val sorteios = listarEventosPorGrupo(grupoId)
-        sorteios.forEach { s ->
-            s.pares = listarParesPorSorteio(s.id)
-        }
+        if (sorteios.isEmpty()) return sorteios
+        val ids = sorteios.map { it.id }
+        val placeholders = ids.joinToString(",") { "?" }
+        val query = androidx.sqlite.db.SimpleSQLiteQuery(
+            "SELECT * FROM sorteio_par WHERE sorteio_id IN ($placeholders)",
+            ids.toTypedArray()
+        )
+        val paresPorSorteio = listarParesBatchRaw(query).groupBy { it.sorteioId }
+        sorteios.forEach { s -> s.pares = paresPorSorteio[s.id] ?: emptyList() }
         return sorteios
     }
 
