@@ -140,6 +140,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
         val grupoParaSalvar = Grupo().apply {
             id = grupoAtual.id
+            data = grupoAtual.data
             this.nome = nome
             descricao = etDescricao.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
             localEvento = etLocalEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }

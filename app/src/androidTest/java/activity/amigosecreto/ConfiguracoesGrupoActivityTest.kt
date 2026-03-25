@@ -62,7 +62,7 @@ class ConfiguracoesGrupoActivityTest {
         grupo = runBlocking { db.grupoDao().buscarPorId(grupoId) }!!
 
         val intent = Intent(ctx, ConfiguracoesGrupoActivity::class.java)
-            .putExtra("grupo", grupo)
+            .putExtra(Grupo.EXTRA_GRUPO, grupo)
         scenario = ActivityScenario.launch(intent)
     }
 

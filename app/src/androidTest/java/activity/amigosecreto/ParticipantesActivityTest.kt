@@ -52,7 +52,7 @@ class ParticipantesActivityTest {
         }
 
         val intent = Intent(ApplicationProvider.getApplicationContext(), ParticipantesActivity::class.java)
-        intent.putExtra("grupo", grupo)
+        intent.putExtra(Grupo.EXTRA_GRUPO, grupo)
         scenario = ActivityScenario.launch(intent)
     }
 

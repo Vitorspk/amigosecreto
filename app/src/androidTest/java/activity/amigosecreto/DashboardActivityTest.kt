@@ -75,7 +75,7 @@ class DashboardActivityTest {
         val grupo = runBlocking { db.grupoDao().buscarPorId(grupoId) }!!
 
         val intent = Intent(ctx, DashboardActivity::class.java)
-            .putExtra("grupo", grupo)
+            .putExtra(Grupo.EXTRA_GRUPO, grupo)
         scenario = ActivityScenario.launch(intent)
 
         return grupo
