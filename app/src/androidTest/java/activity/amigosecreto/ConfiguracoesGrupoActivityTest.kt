@@ -3,6 +3,7 @@ package activity.amigosecreto
 import android.Manifest
 import android.content.Intent
 import android.os.Build
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso
@@ -111,8 +112,12 @@ class ConfiguracoesGrupoActivityTest {
         // Clicar em salvar — o ViewModel persiste e finaliza a Activity (RESULT_OK).
         onView(withId(R.id.btn_salvar_configuracoes)).perform(scrollTo(), click())
 
-        // Aguardar a coroutine de salvar completar e a Activity fechar.
-        Thread.sleep(1000)
+        // Aguardar a Activity atingir o estado DESTROYED (chamado apos finish() no sucesso).
+        // Timeout de 3 segundos para cobrir a latencia do Dispatchers.IO em CI.
+        val deadline = System.currentTimeMillis() + 3000
+        while (scenario.state != Lifecycle.State.DESTROYED && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100)
+        }
 
         // Apos salvar, a Activity fecha. Verificamos no banco que o nome foi atualizado.
         val grupoAtualizado = runBlocking { db.grupoDao().buscarPorId(grupo.id) }
