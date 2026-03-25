@@ -1,11 +1,13 @@
 package activity.amigosecreto
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import activity.amigosecreto.db.room.GrupoRoomDao
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,6 +28,9 @@ class EstatisticasViewModel @Inject constructor(
     private val grupoDao: GrupoRoomDao,
 ) : ViewModel() {
 
+    @VisibleForTesting
+    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
     private val _uiState = MutableLiveData<EstatisticasUiState>()
     val uiState: LiveData<EstatisticasUiState> = _uiState
 
@@ -38,7 +43,7 @@ class EstatisticasViewModel @Inject constructor(
                 val totalDesejos: Int
                 val mediaValor: Double?
 
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     totalGrupos = grupoDao.contarGrupos()
                     totalParticipantes = grupoDao.contarParticipantes()
                     totalSorteios = grupoDao.contarSorteios()

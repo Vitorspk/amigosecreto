@@ -1,5 +1,6 @@
 package activity.amigosecreto
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -7,46 +8,49 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.room.GrupoRoomDao
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
+sealed class SalvarResultado {
+    data class Sucesso(val grupo: Grupo) : SalvarResultado()
+    data object SemLinhasAfetadas : SalvarResultado()
+    data class Falha(val causa: Throwable) : SalvarResultado()
+}
+
 @HiltViewModel
 class ConfiguracoesGrupoViewModel @Inject constructor(
     private val grupoDao: GrupoRoomDao,
 ) : ViewModel() {
 
-    private val _salvoComSucesso = MutableLiveData<Grupo?>()
-    val salvoComSucesso: LiveData<Grupo?> = _salvoComSucesso
+    @VisibleForTesting
+    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    private val _erro = MutableLiveData<String?>()
-    val erro: LiveData<String?> = _erro
+    private val _resultado = MutableLiveData<SalvarResultado?>()
+    val resultado: LiveData<SalvarResultado?> = _resultado
 
     fun salvar(grupo: Grupo) {
         viewModelScope.launch {
             try {
-                val rows = withContext(Dispatchers.IO) {
+                val rows = withContext(ioDispatcher) {
                     grupoDao.atualizar(grupo)
                 }
-                if (rows > 0) {
-                    _salvoComSucesso.value = grupo
+                _resultado.value = if (rows > 0) {
+                    SalvarResultado.Sucesso(grupo)
                 } else {
-                    _erro.value = "rows_zero"
+                    SalvarResultado.SemLinhasAfetadas
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao salvar configurações do grupo")
-                _erro.value = e.message
+                _resultado.value = SalvarResultado.Falha(e)
             }
         }
     }
 
-    fun erroConsumido() {
-        _erro.value = null
-    }
-
-    fun salvoConsumido() {
-        _salvoComSucesso.value = null
+    fun resultadoConsumido() {
+        _resultado.value = null
     }
 }

@@ -38,11 +38,13 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         setContentView(R.layout.activity_configuracoes_grupo)
 
         @Suppress("DEPRECATION")
-        grupoAtual = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)!!
+        val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra("grupo", Grupo::class.java)
         } else {
-            intent.getSerializableExtra("grupo") as Grupo
+            intent.getSerializableExtra("grupo") as? Grupo
         }
+        if (g == null) { finish(); return }
+        grupoAtual = g
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar_configuracoes_grupo)
         setSupportActionBar(toolbar)
@@ -64,21 +66,20 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
         preencherFormulario()
 
-        viewModel.salvoComSucesso.observe(this) { grupo ->
-            if (grupo != null) {
-                Toast.makeText(this, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
-                setResult(RESULT_OK, Intent().putExtra("grupo", grupo))
-                finish()
-                viewModel.salvoConsumido()
+        viewModel.resultado.observe(this) { resultado ->
+            when (resultado) {
+                is SalvarResultado.Sucesso -> {
+                    Toast.makeText(this, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK, Intent().putExtra("grupo", resultado.grupo))
+                    finish()
+                }
+                is SalvarResultado.SemLinhasAfetadas, is SalvarResultado.Falha -> {
+                    Toast.makeText(this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
+                    btnSalvar.isEnabled = true
+                }
+                null -> Unit
             }
-        }
-
-        viewModel.erro.observe(this) { erro ->
-            if (erro != null) {
-                Toast.makeText(this, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
-                btnSalvar.isEnabled = true
-                viewModel.erroConsumido()
-            }
+            if (resultado != null) viewModel.resultadoConsumido()
         }
 
         btnSalvar.setOnClickListener { salvar() }

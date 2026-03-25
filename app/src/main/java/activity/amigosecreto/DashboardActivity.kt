@@ -16,7 +16,7 @@ class DashboardActivity : AppCompatActivity() {
 
     private val viewModel: DashboardViewModel by viewModels()
 
-    private lateinit var grupoAtual: Grupo
+    private var grupoId: Int = -1
 
     private lateinit var tvDashNomeGrupo: TextView
     private lateinit var tvDashTotalParticipantes: TextView
@@ -31,11 +31,13 @@ class DashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_dashboard)
 
         @Suppress("DEPRECATION")
-        grupoAtual = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)!!
+        val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra("grupo", Grupo::class.java)
         } else {
-            intent.getSerializableExtra("grupo") as Grupo
+            intent.getSerializableExtra("grupo") as? Grupo
         }
+        if (g == null) { finish(); return }
+        grupoId = g.id
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar_dashboard)
         setSupportActionBar(toolbar)
@@ -51,20 +53,19 @@ class DashboardActivity : AppCompatActivity() {
         tvDashDataEvento = findViewById(R.id.tv_dash_data_evento)
         tvDashLocalEvento = findViewById(R.id.tv_dash_local_evento)
 
-        tvDashNomeGrupo.text = grupoAtual.nome
-
-        val dataEvento = grupoAtual.dataEvento
-        tvDashDataEvento.text = if (!dataEvento.isNullOrEmpty()) dataEvento
-        else getString(R.string.dashboard_nao_definido)
-
-        val localEvento = grupoAtual.localEvento
-        tvDashLocalEvento.text = if (!localEvento.isNullOrEmpty()) localEvento
-        else getString(R.string.dashboard_nao_definido)
-
         viewModel.uiState.observe(this) { state ->
             if (state.error != null) {
                 Toast.makeText(this, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
                 return@observe
+            }
+            state.grupo?.let { grupo ->
+                tvDashNomeGrupo.text = grupo.nome
+                val dataEvento = grupo.dataEvento
+                tvDashDataEvento.text = if (!dataEvento.isNullOrEmpty()) dataEvento
+                else getString(R.string.dashboard_nao_definido)
+                val localEvento = grupo.localEvento
+                tvDashLocalEvento.text = if (!localEvento.isNullOrEmpty()) localEvento
+                else getString(R.string.dashboard_nao_definido)
             }
             tvDashTotalParticipantes.text = state.totalParticipantes.toString()
             tvDashSorteioRealizado.text = if (state.sorteioRealizado)
@@ -73,8 +74,12 @@ class DashboardActivity : AppCompatActivity() {
                 getString(R.string.dashboard_nao)
             tvDashConfirmados.text = state.confirmados.toString()
         }
+    }
 
-        viewModel.carregarDados(grupoAtual.id)
+    override fun onResume() {
+        super.onResume()
+        // Recarrega do banco a cada retorno para refletir edições feitas em ConfiguracoesGrupoActivity
+        viewModel.carregarDados(grupoId)
     }
 
     override fun onSupportNavigateUp(): Boolean {

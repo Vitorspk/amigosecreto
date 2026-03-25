@@ -55,7 +55,7 @@ class EstatisticasActivity : AppCompatActivity() {
                     WindowInsetsUtils.numberFormatPtBr().format(mediaValor)
                 )
             } else {
-                getString(R.string.dashboard_nao_definido)
+                getString(R.string.estatisticas_sem_dados)
             }
         }
 

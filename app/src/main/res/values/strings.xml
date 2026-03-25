@@ -339,6 +339,7 @@
     <string name="estatisticas_label_total_desejos">Total de Desejos Cadastrados</string>
     <string name="estatisticas_label_media_valor">Média de Valor dos Desejos</string>
     <string name="estatisticas_valor_format">R$ %1$s</string>
+    <string name="estatisticas_sem_dados">Sem dados</string>
     <string name="menu_estatisticas">Estatísticas</string>
 
     <!-- Onboarding -->
