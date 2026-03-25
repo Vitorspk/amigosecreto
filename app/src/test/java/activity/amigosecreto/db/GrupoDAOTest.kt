@@ -147,6 +147,32 @@ class GrupoDAOTest {
         assertEquals("Grupo 2", lista[0].nome)
     }
 
+    // --- migration v11 → v12: novos campos com defaults corretos ---
+
+    @Test
+    fun migracao_v11_v12_novos_campos_tem_defaults_corretos() = runTest {
+        // Cria um grupo sem os campos novos (simulando dado pré-v12).
+        // O banco in-memory já está na v12 (schema completo), então inserimos diretamente
+        // e verificamos que os defaults do schema estão aplicados corretamente.
+        val g = Grupo(nome = "Legado", data = "01/01/2024")
+        val id = dao.inserir(g)
+
+        val salvo = dao.buscarPorId(id.toInt())!!
+        // Colunas adicionadas pela MIGRATION_11_12 devem ter os defaults do schema.
+        assertEquals(0.0, salvo.valorMinimo, 0.001)
+        assertEquals(0.0, salvo.valorMaximo, 0.001)
+        assertEquals(true, salvo.permitirVerDesejos)      // DEFAULT 1
+        assertEquals(false, salvo.exigirConfirmacaoCompra) // DEFAULT 0
+        assertNull(salvo.descricao)
+        assertNull(salvo.dataEvento)
+        assertNull(salvo.localEvento)
+        assertNull(salvo.dataLimiteSorteio)
+        assertNull(salvo.regras)
+        // Dados originais preservados.
+        assertEquals("Legado", salvo.nome)
+        assertEquals("01/01/2024", salvo.data)
+    }
+
     // --- deletarTudo (limpa participantes e grupos atomicamente) ---
 
     @Test

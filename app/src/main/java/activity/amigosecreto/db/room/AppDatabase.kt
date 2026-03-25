@@ -145,6 +145,9 @@ abstract class AppDatabase : RoomDatabase() {
          * participant tracking (confirmation, notification, observations).
          *
          * All new columns have default values so existing rows are preserved intact.
+         *
+         * Note: sorteio and sorteio_par already exist — they were created in MIGRATION_10_11.
+         * This migration only alters grupo and participante via ALTER TABLE ADD COLUMN.
          */
         val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
