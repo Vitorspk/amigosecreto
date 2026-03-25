@@ -33,9 +33,9 @@ class DashboardActivity : AppCompatActivity() {
 
         @Suppress("DEPRECATION")
         val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO, Grupo::class.java)
         } else {
-            intent.getSerializableExtra("grupo") as? Grupo
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO) as? Grupo
         }
         if (g == null) { finish(); return }
         grupoId = savedInstanceState?.getInt("grupoId") ?: g.id

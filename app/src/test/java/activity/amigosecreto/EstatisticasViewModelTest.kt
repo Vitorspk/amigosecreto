@@ -20,6 +20,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -125,5 +127,22 @@ class EstatisticasViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull(state)
         assertNull(state!!.mediaValor)
+    }
+
+    @Test
+    fun carregarEstatisticas_daoLancaExcecao_emiteErroNoState() {
+        val daoMock = mock(GrupoRoomDao::class.java)
+        runBlocking {
+            `when`(daoMock.contarGrupos()).thenThrow(RuntimeException("Erro simulado"))
+        }
+        val vmErro = EstatisticasViewModel(daoMock).also {
+            it.ioDispatcher = testDispatcher
+        }
+
+        vmErro.carregarEstatisticas()
+
+        val state = vmErro.uiState.value
+        assertNotNull(state)
+        assertNotNull("error deve ser não-nulo após exceção", state!!.error)
     }
 }

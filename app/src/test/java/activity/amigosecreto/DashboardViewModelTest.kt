@@ -22,6 +22,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -144,5 +146,24 @@ class DashboardViewModelTest {
         assertNotNull(state)
         assertEquals(2, state!!.totalParticipantes)
         assertEquals(1, state.confirmados)
+    }
+
+    @Test
+    fun carregarDados_daoLancaExcecao_emiteErroNoState() {
+        val grupoMock = mock(GrupoRoomDao::class.java)
+        val participanteMock = mock(ParticipanteRoomDao::class.java)
+        val sorteioMock = mock(SorteioRoomDao::class.java)
+        runBlocking {
+            `when`(grupoMock.buscarPorId(grupoId)).thenThrow(RuntimeException("Erro simulado"))
+        }
+        val vmErro = DashboardViewModel(grupoMock, participanteMock, sorteioMock).also {
+            it.ioDispatcher = testDispatcher
+        }
+
+        vmErro.carregarDados(grupoId)
+
+        val state = vmErro.uiState.value
+        assertNotNull(state)
+        assertNotNull("error deve ser não-nulo após exceção", state!!.error)
     }
 }

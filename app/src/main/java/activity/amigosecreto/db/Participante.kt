@@ -70,7 +70,7 @@ class Participante(
     }
 
     companion object {
-        private const val serialVersionUID: Long = 1L
+        private const val serialVersionUID: Long = 2L
     }
 
     override fun toString(): String = nome ?: ""

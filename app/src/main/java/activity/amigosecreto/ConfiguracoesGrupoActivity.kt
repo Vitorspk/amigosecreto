@@ -41,9 +41,9 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
         @Suppress("DEPRECATION")
         val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO, Grupo::class.java)
         } else {
-            intent.getSerializableExtra("grupo") as? Grupo
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO) as? Grupo
         }
         if (g == null) { finish(); return }
         grupoAtual = g
@@ -76,7 +76,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
                 is SalvarResultado.Sucesso -> {
                     grupoAtual = resultado.grupo
                     Toast.makeText(this, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK, Intent().putExtra("grupo", resultado.grupo))
+                    setResult(RESULT_OK, Intent().putExtra(Grupo.EXTRA_GRUPO, resultado.grupo))
                     finish()
                 }
                 is SalvarResultado.SemLinhasAfetadas, is SalvarResultado.Falha -> {
@@ -111,8 +111,18 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
             return
         }
 
-        val valorMinimo = etValorMinimo.text?.toString()?.toDoubleOrNull() ?: 0.0
-        val valorMaximo = etValorMaximo.text?.toString()?.toDoubleOrNull() ?: 0.0
+        val textoMinimo = etValorMinimo.text?.toString()?.trim() ?: ""
+        val textoMaximo = etValorMaximo.text?.toString()?.trim() ?: ""
+        if (textoMinimo.isNotEmpty() && textoMinimo.toDoubleOrNull() == null) {
+            Toast.makeText(this, R.string.configuracoes_erro_valor_invalido, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (textoMaximo.isNotEmpty() && textoMaximo.toDoubleOrNull() == null) {
+            Toast.makeText(this, R.string.configuracoes_erro_valor_invalido, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val valorMinimo = textoMinimo.toDoubleOrNull() ?: 0.0
+        val valorMaximo = textoMaximo.toDoubleOrNull() ?: 0.0
         if (valorMinimo < 0 || valorMaximo < 0) {
             Toast.makeText(this, R.string.configuracoes_erro_valor_negativo, Toast.LENGTH_SHORT).show()
             return

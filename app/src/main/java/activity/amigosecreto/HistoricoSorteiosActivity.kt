@@ -30,9 +30,9 @@ class HistoricoSorteiosActivity : AppCompatActivity() {
 
         @Suppress("DEPRECATION")
         grupoAtual = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)!!
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO, Grupo::class.java)!!
         } else {
-            intent.getSerializableExtra("grupo") as Grupo
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO) as Grupo
         }
 
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar_historico)

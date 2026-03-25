@@ -435,7 +435,7 @@ class GruposActivity : AppCompatActivity() {
                     if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
                     val g = itens[pos]
                     val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
-                    intent.putExtra("grupo", g)
+                    intent.putExtra(Grupo.EXTRA_GRUPO, g)
                     startActivity(intent)
                 }
                 itemView.setOnLongClickListener { v ->

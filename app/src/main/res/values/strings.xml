@@ -324,6 +324,7 @@
     <string name="configuracoes_erro_faixa_valor">Valor mínimo não pode ser maior que o máximo</string>
     <string name="configuracoes_erro_valor_negativo">Valores mínimo e máximo não podem ser negativos</string>
     <string name="configuracoes_erro_maximo_nao_definido">Defina também o valor máximo quando o mínimo estiver preenchido</string>
+    <string name="configuracoes_erro_valor_invalido">Valor inválido: use apenas números (ex: 50 ou 49.99)</string>
 
     <!-- Dashboard -->
     <string name="dashboard_titulo">Dashboard do Grupo</string>

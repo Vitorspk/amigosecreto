@@ -39,6 +39,7 @@ class Grupo(
 ) : Serializable {
     companion object {
         private const val serialVersionUID: Long = 2L
+        const val EXTRA_GRUPO = "grupo"
     }
 
     override fun toString(): String = nome ?: ""
