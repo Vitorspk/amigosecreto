@@ -28,19 +28,19 @@ abstract class GrupoRoomDao {
     abstract suspend fun buscarPorId(id: Int): Grupo?
 
     @Query("DELETE FROM participante")
-    abstract suspend fun deletarTodosParticipantes()
+    protected abstract suspend fun deletarTodosParticipantes()
 
     @Query("DELETE FROM grupo")
-    abstract suspend fun deletarTodosGrupos()
+    protected abstract suspend fun deletarTodosGrupos()
 
     @Query("DELETE FROM desejo")
-    abstract suspend fun deletarTodosDesejos()
+    protected abstract suspend fun deletarTodosDesejos()
 
     @Query("DELETE FROM sorteio_par")
-    abstract suspend fun deletarTodosSorteioPares()
+    protected abstract suspend fun deletarTodosSorteioPares()
 
     @Query("DELETE FROM sorteio")
-    abstract suspend fun deletarTodosSorteios()
+    protected abstract suspend fun deletarTodosSorteios()
 
     /**
      * Remove todos os dados de forma atômica respeitando ordem das FKs:

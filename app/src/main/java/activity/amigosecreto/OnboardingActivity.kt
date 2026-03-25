@@ -31,7 +31,7 @@ class OnboardingActivity : AppCompatActivity() {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_ONBOARDING_CONCLUIDO, true)
-                .apply()
+                .commit()
         }
 
         @androidx.annotation.VisibleForTesting
@@ -39,7 +39,7 @@ class OnboardingActivity : AppCompatActivity() {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_ONBOARDING_CONCLUIDO, false)
-                .apply()
+                .commit()
         }
 
         // Lista imutável e idêntica para todas as instâncias — companion evita realocação em rotações.
