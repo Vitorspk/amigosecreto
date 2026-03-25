@@ -155,6 +155,9 @@ class GrupoDAOTest {
         // O banco in-memory parte sempre do schema completo (v12) — não exercita o caminho
         // real da migration. Para testar dados existentes pré-v12, seria necessário
         // MigrationTestHelper (androidTest) conforme documentado no TEST_PLAN.
+        // TODO: adicionar MigrationTestHelper (androidTest) para testar rows pré-v12
+        //       sendo migradas corretamente via MIGRATION_11_12 — garante que
+        //       ALTER TABLE ADD COLUMN preserva dados existentes em devices reais.
         val g = Grupo(nome = "Legado", data = "01/01/2024")
         val id = dao.inserir(g)
 
