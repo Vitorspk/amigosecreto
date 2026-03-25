@@ -18,6 +18,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -98,5 +100,22 @@ class ConfiguracoesGrupoViewModelTest {
         assertNotNull(gravado)
         assertEquals("Novo Nome", gravado!!.nome)
         assertEquals("Desc", gravado.descricao)
+    }
+
+    @Test
+    fun salvar_daoLancaExcecao_emiteFalha() {
+        val daoMock = mock(GrupoRoomDao::class.java)
+        val vmComFalha = ConfiguracoesGrupoViewModel(daoMock).also {
+            it.ioDispatcher = testDispatcher
+        }
+        val causa = RuntimeException("Erro simulado")
+        runBlocking {
+            `when`(daoMock.atualizar(grupoExistente)).thenThrow(causa)
+        }
+
+        vmComFalha.salvar(grupoExistente)
+
+        val resultado = vmComFalha.resultado.value
+        assertTrue("Esperava SalvarResultado.Falha, mas foi: $resultado", resultado is SalvarResultado.Falha)
     }
 }

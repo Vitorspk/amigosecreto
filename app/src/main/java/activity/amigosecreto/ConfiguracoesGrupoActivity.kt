@@ -13,6 +13,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
+import activity.amigosecreto.util.WindowInsetsUtils
 
 @AndroidEntryPoint
 class ConfiguracoesGrupoActivity : AppCompatActivity() {
@@ -65,6 +66,8 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         switchPermitirVerDesejos = findViewById(R.id.switch_permitir_ver_desejos)
         switchExigirConfirmacao = findViewById(R.id.switch_exigir_confirmacao)
         btnSalvar = findViewById(R.id.btn_salvar_configuracoes)
+
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_configuracoes_grupo))
 
         preencherFormulario()
 

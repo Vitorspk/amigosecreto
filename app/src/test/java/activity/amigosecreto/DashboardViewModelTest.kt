@@ -2,6 +2,7 @@ package activity.amigosecreto
 
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.db.Sorteio
 import activity.amigosecreto.db.room.AppDatabase
 import activity.amigosecreto.db.room.GrupoRoomDao
 import activity.amigosecreto.db.room.ParticipanteRoomDao
@@ -114,5 +115,18 @@ class DashboardViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull(state)
         assertFalse(state!!.sorteioRealizado)
+    }
+
+    @Test
+    fun carregarDados_comSorteio_sorteioRealizadoVerdadeiro() {
+        runBlocking {
+            sorteioDao.inserirSorteio(Sorteio(grupoId = grupoId, dataHora = "2025-01-01T00:00:00"))
+        }
+
+        viewModel.carregarDados(grupoId)
+
+        val state = viewModel.uiState.value
+        assertNotNull(state)
+        assertTrue(state!!.sorteioRealizado)
     }
 }

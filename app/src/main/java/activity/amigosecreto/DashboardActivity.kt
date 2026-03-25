@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
+import activity.amigosecreto.util.WindowInsetsUtils
 
 @AndroidEntryPoint
 class DashboardActivity : AppCompatActivity() {
@@ -45,6 +46,8 @@ class DashboardActivity : AppCompatActivity() {
             title = getString(R.string.dashboard_titulo)
             setDisplayHomeAsUpEnabled(true)
         }
+
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_dashboard))
 
         tvDashNomeGrupo = findViewById(R.id.tv_dash_nome_grupo)
         tvDashTotalParticipantes = findViewById(R.id.tv_dash_total_participantes)

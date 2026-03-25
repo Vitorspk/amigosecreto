@@ -33,6 +33,8 @@ class EstatisticasActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
         }
 
+        WindowInsetsUtils.applyImeBottomPadding(findViewById(R.id.scroll_estatisticas))
+
         tvEstatTotalGrupos = findViewById(R.id.tv_estat_total_grupos)
         tvEstatTotalParticipantes = findViewById(R.id.tv_estat_total_participantes)
         tvEstatTotalSorteios = findViewById(R.id.tv_estat_total_sorteios)

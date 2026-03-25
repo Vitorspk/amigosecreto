@@ -1,5 +1,6 @@
 package activity.amigosecreto
 
+import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.db.room.AppDatabase
@@ -95,5 +96,34 @@ class EstatisticasViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull(state)
         assertEquals(2, state!!.totalParticipantes)
+    }
+
+    @Test
+    fun carregarEstatisticas_comDesejos_calculaMediaValor() {
+        runBlocking {
+            val grupoId = grupoDao.inserir(Grupo().apply { nome = "G" }).toInt()
+            val participanteId = db.participanteDao()
+                .inserir(Participante().apply { nome = "P"; this.grupoId = grupoId }).toInt()
+            // desejo 1: média = (100+200)/2 = 150
+            db.desejoDao().inserir(Desejo(produto = "A", precoMinimo = 100.0, precoMaximo = 200.0, participanteId = participanteId))
+            // desejo 2: média = (50+50)/2 = 50
+            db.desejoDao().inserir(Desejo(produto = "B", precoMinimo = 50.0, precoMaximo = 50.0, participanteId = participanteId))
+        }
+
+        viewModel.carregarEstatisticas()
+
+        val state = viewModel.uiState.value
+        assertNotNull(state)
+        assertNotNull(state!!.mediaValor)
+        assertEquals(100.0, state.mediaValor!!, 0.01)
+    }
+
+    @Test
+    fun carregarEstatisticas_semDesejos_mediaValorNula() {
+        viewModel.carregarEstatisticas()
+
+        val state = viewModel.uiState.value
+        assertNotNull(state)
+        assertNull(state!!.mediaValor)
     }
 }

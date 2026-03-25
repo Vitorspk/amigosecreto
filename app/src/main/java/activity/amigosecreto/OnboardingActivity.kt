@@ -31,7 +31,7 @@ class OnboardingActivity : AppCompatActivity() {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_ONBOARDING_CONCLUIDO, true)
-                .commit()
+                .apply()
         }
 
         @androidx.annotation.VisibleForTesting
@@ -39,42 +39,43 @@ class OnboardingActivity : AppCompatActivity() {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_ONBOARDING_CONCLUIDO, false)
-                .commit()
+                .apply()
         }
+
+        // Lista imutável e idêntica para todas as instâncias — companion evita realocação em rotações.
+        val PAGINAS = listOf(
+            OnboardingPage(
+                iconRes = R.drawable.ic_gift,
+                titleRes = R.string.onboarding_titulo_1,
+                descriptionRes = R.string.onboarding_desc_1,
+            ),
+            OnboardingPage(
+                iconRes = R.drawable.ic_add,
+                titleRes = R.string.onboarding_titulo_2,
+                descriptionRes = R.string.onboarding_desc_2,
+            ),
+            OnboardingPage(
+                iconRes = R.drawable.ic_person_add,
+                titleRes = R.string.onboarding_titulo_3,
+                descriptionRes = R.string.onboarding_desc_3,
+            ),
+            OnboardingPage(
+                iconRes = R.drawable.ic_dice,
+                titleRes = R.string.onboarding_titulo_4,
+                descriptionRes = R.string.onboarding_desc_4,
+            ),
+            OnboardingPage(
+                iconRes = R.drawable.ic_share,
+                titleRes = R.string.onboarding_titulo_5,
+                descriptionRes = R.string.onboarding_desc_5,
+            ),
+        )
     }
 
     data class OnboardingPage(
         val iconRes: Int,
         val titleRes: Int,
         val descriptionRes: Int,
-    )
-
-    private val paginas = listOf(
-        OnboardingPage(
-            iconRes = R.drawable.ic_gift,
-            titleRes = R.string.onboarding_titulo_1,
-            descriptionRes = R.string.onboarding_desc_1,
-        ),
-        OnboardingPage(
-            iconRes = R.drawable.ic_add,
-            titleRes = R.string.onboarding_titulo_2,
-            descriptionRes = R.string.onboarding_desc_2,
-        ),
-        OnboardingPage(
-            iconRes = R.drawable.ic_person_add,
-            titleRes = R.string.onboarding_titulo_3,
-            descriptionRes = R.string.onboarding_desc_3,
-        ),
-        OnboardingPage(
-            iconRes = R.drawable.ic_dice,
-            titleRes = R.string.onboarding_titulo_4,
-            descriptionRes = R.string.onboarding_desc_4,
-        ),
-        OnboardingPage(
-            iconRes = R.drawable.ic_share,
-            titleRes = R.string.onboarding_titulo_5,
-            descriptionRes = R.string.onboarding_desc_5,
-        ),
     )
 
     private lateinit var viewPager: ViewPager2
@@ -90,7 +91,7 @@ class OnboardingActivity : AppCompatActivity() {
         tabLayout = findViewById(R.id.tab_onboarding_dots)
         btnAvancar = findViewById(R.id.btn_onboarding_avancar)
 
-        viewPager.adapter = OnboardingAdapter(paginas)
+        viewPager.adapter = OnboardingAdapter(PAGINAS)
 
         TabLayoutMediator(tabLayout, viewPager) { _, _ -> }.attach()
 
@@ -104,7 +105,7 @@ class OnboardingActivity : AppCompatActivity() {
 
         btnAvancar.setOnClickListener {
             val posicaoAtual = viewPager.currentItem
-            if (posicaoAtual < paginas.size - 1) {
+            if (posicaoAtual < PAGINAS.size - 1) {
                 viewPager.currentItem = posicaoAtual + 1
             } else {
                 concluirOnboarding()
@@ -113,7 +114,7 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun atualizarBotao(posicao: Int) {
-        btnAvancar.text = if (posicao == paginas.size - 1) {
+        btnAvancar.text = if (posicao == PAGINAS.size - 1) {
             getString(R.string.onboarding_btn_comecar)
         } else {
             getString(R.string.onboarding_btn_proximo)
