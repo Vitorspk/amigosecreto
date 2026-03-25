@@ -87,7 +87,8 @@ class ConfiguracoesGrupoActivityTest {
 
     @Test
     fun botao_salvar_habilitado_com_nome() {
-        // Botao de salvar deve estar visivel e habilitado quando ha um nome no formulario.
+        // Rolar até o botão (formulário é longo) antes de verificar visibilidade.
+        onView(withId(R.id.btn_salvar_configuracoes)).perform(scrollTo())
         onView(withId(R.id.btn_salvar_configuracoes)).check(matches(isDisplayed()))
         onView(withId(R.id.btn_salvar_configuracoes)).check(matches(isEnabled()))
     }
