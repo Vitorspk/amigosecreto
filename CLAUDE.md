@@ -743,6 +743,8 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 18 | **Configurações de grupo + migração v12** — colunas de config do grupo, `sorteio_par`, campos de participante | ✅ Concluído | #67 |
 | 16 | **Suporte a tablets** — margens responsivas e detecção `is_tablet` | ✅ Concluído | #64 |
 | 17 | **Fix race condition SQLite + scroll** — singleton MySQLiteOpenHelper, close() no-op, Room eager init, paddingBottom dinâmico | ✅ Concluído | #65 |
+| 19 | **Aplicar `permitirVerDesejos`** — ocultar "Ver Desejos" na UI quando false | 🔲 Pendente | — |
+| 20 | **Aplicar `exigirConfirmacaoCompra`** — bloquear compartilhamento até `confirmou_presente = true` | 🔲 Pendente | — |
 
 ### Arquitetura (Concluído)
 - [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
