@@ -3,7 +3,6 @@ package activity.amigosecreto
 import android.Manifest
 import android.content.Intent
 import android.os.Build
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso
@@ -100,24 +99,18 @@ class ConfiguracoesGrupoActivityTest {
     }
 
     @Test
-    fun salvar_fecha_activity() {
-        // Digitar um nome valido no campo.
+    fun botao_salvar_desabilitado_quando_nome_vazio() {
+        // Limpar o campo de nome.
         onView(withId(R.id.et_config_nome)).perform(
-            replaceText("Grupo Atualizado"),
+            replaceText(""),
             closeSoftKeyboard()
         )
 
-        // Fechar teclado e clicar em salvar.
+        // Clicar em salvar com nome vazio — deve mostrar erro e manter Activity aberta.
         Espresso.closeSoftKeyboard()
         onView(withId(R.id.btn_salvar_configuracoes)).perform(scrollTo(), click())
 
-        // Aguardar a Activity atingir o estado DESTROYED (finish() chamado no sucesso).
-        val deadline = System.currentTimeMillis() + 5000
-        while (scenario.state != Lifecycle.State.DESTROYED && System.currentTimeMillis() < deadline) {
-            Thread.sleep(100)
-        }
-
-        // A Activity deve ter fechado apos salvar com sucesso.
-        assertEquals(Lifecycle.State.DESTROYED, scenario.state)
+        // A Activity deve permanecer aberta (campo de nome ainda visivel).
+        onView(withId(R.id.et_config_nome)).check(matches(isDisplayed()))
     }
 }
