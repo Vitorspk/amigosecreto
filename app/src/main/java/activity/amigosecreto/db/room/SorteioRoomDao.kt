@@ -17,8 +17,9 @@ abstract class SorteioRoomDao {
 
     companion object {
         // ThreadLocal para garantir thread-safety — SimpleDateFormat não é thread-safe.
-        private val DATE_FORMAT = ThreadLocal.withInitial {
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+        // Inicialização lazy compatível com API 21+ (ThreadLocal.withInitial requer API 26).
+        private val DATE_FORMAT = object : ThreadLocal<SimpleDateFormat>() {
+            override fun initialValue() = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
         }
     }
 
