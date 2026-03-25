@@ -24,6 +24,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
     private lateinit var etNome: TextInputEditText
     private lateinit var etDescricao: TextInputEditText
     private lateinit var etLocalEvento: TextInputEditText
+    private lateinit var etDataEvento: TextInputEditText
     private lateinit var etDataLimiteSorteio: TextInputEditText
     private lateinit var etRegras: TextInputEditText
     private lateinit var etValorMinimo: TextInputEditText
@@ -56,6 +57,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         etNome = findViewById(R.id.et_config_nome)
         etDescricao = findViewById(R.id.et_config_descricao)
         etLocalEvento = findViewById(R.id.et_config_local_evento)
+        etDataEvento = findViewById(R.id.et_config_data_evento)
         etDataLimiteSorteio = findViewById(R.id.et_config_data_limite)
         etRegras = findViewById(R.id.et_config_regras)
         etValorMinimo = findViewById(R.id.et_config_valor_minimo)
@@ -90,6 +92,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         etNome.setText(grupoAtual.nome)
         etDescricao.setText(grupoAtual.descricao)
         etLocalEvento.setText(grupoAtual.localEvento)
+        etDataEvento.setText(grupoAtual.dataEvento)
         etDataLimiteSorteio.setText(grupoAtual.dataLimiteSorteio)
         etRegras.setText(grupoAtual.regras)
         if (grupoAtual.valorMinimo > 0) etValorMinimo.setText(grupoAtual.valorMinimo.toString())
@@ -121,6 +124,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
             this.nome = nome
             descricao = etDescricao.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
             localEvento = etLocalEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            dataEvento = etDataEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
             dataLimiteSorteio = etDataLimiteSorteio.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
             regras = etRegras.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
             this.valorMinimo = valorMinimo

@@ -82,6 +82,21 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:hint="@string/configuracoes_hint_data_evento"
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_config_data_evento"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="datetime" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:hint="@string/configuracoes_hint_data_limite"
                 android:layout_marginBottom="12dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">

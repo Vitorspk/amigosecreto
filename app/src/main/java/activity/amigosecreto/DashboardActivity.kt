@@ -53,6 +53,13 @@ class DashboardActivity : AppCompatActivity() {
         tvDashDataEvento = findViewById(R.id.tv_dash_data_evento)
         tvDashLocalEvento = findViewById(R.id.tv_dash_local_evento)
 
+        // Preencher imediatamente com dados do intent para evitar flash de tela vazia.
+        tvDashNomeGrupo.text = g.nome
+        tvDashDataEvento.text = g.dataEvento?.takeIf { it.isNotEmpty() }
+            ?: getString(R.string.dashboard_nao_definido)
+        tvDashLocalEvento.text = g.localEvento?.takeIf { it.isNotEmpty() }
+            ?: getString(R.string.dashboard_nao_definido)
+
         viewModel.uiState.observe(this) { state ->
             if (state.error != null) {
                 Toast.makeText(this, R.string.dashboard_erro_carregar, Toast.LENGTH_SHORT).show()

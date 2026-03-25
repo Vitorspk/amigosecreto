@@ -31,7 +31,7 @@ class OnboardingActivity : AppCompatActivity() {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_ONBOARDING_CONCLUIDO, true)
-                .apply()
+                .commit()
         }
 
         @androidx.annotation.VisibleForTesting
@@ -121,12 +121,7 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun concluirOnboarding() {
-        // commit() garante escrita síncrona antes do finish() — evita re-exibição do onboarding
-        // se o processo for morto antes do flush assíncrono do apply().
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_ONBOARDING_CONCLUIDO, true)
-            .commit()
+        marcarOnboardingConcluido(this)
         startActivity(Intent(this, GruposActivity::class.java))
         finish()
     }

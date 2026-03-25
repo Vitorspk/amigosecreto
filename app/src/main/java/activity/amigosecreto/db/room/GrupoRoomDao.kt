@@ -52,6 +52,14 @@ interface GrupoRoomDao {
     @Query("SELECT COUNT(*) FROM desejo")
     suspend fun contarDesejos(): Int
 
-    @Query("SELECT AVG((preco_minimo + preco_maximo) / 2.0) FROM desejo WHERE preco_minimo > 0 OR preco_maximo > 0")
+    @Query("""
+        SELECT AVG(
+            CASE
+                WHEN preco_minimo > 0 AND preco_maximo > 0 THEN (preco_minimo + preco_maximo) / 2.0
+                WHEN preco_minimo > 0 THEN preco_minimo
+                ELSE preco_maximo
+            END
+        ) FROM desejo WHERE preco_minimo > 0 OR preco_maximo > 0
+    """)
     suspend fun mediaValorDesejos(): Double?
 }

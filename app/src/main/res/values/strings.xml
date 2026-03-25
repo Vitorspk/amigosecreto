@@ -313,6 +313,7 @@
     <string name="configuracoes_grupo_titulo">Configurações do Grupo</string>
     <string name="configuracoes_hint_descricao">Descrição</string>
     <string name="configuracoes_hint_local_evento">Local do Evento</string>
+    <string name="configuracoes_hint_data_evento">Data do Evento</string>
     <string name="configuracoes_hint_data_limite">Data Limite do Sorteio</string>
     <string name="configuracoes_hint_regras">Regras do Grupo</string>
     <string name="configuracoes_hint_valor_minimo">R$ Mínimo</string>

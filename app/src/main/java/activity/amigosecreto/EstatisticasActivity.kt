@@ -59,6 +59,10 @@ class EstatisticasActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
         viewModel.carregarEstatisticas()
     }
 
