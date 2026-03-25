@@ -111,6 +111,9 @@ class ConfiguracoesGrupoActivityTest {
         // Clicar em salvar — o ViewModel persiste e finaliza a Activity (RESULT_OK).
         onView(withId(R.id.btn_salvar_configuracoes)).perform(scrollTo(), click())
 
+        // Aguardar a coroutine de salvar completar e a Activity fechar.
+        Thread.sleep(1000)
+
         // Apos salvar, a Activity fecha. Verificamos no banco que o nome foi atualizado.
         val grupoAtualizado = runBlocking { db.grupoDao().buscarPorId(grupo.id) }
         assert(grupoAtualizado?.nome == "Grupo Atualizado") {
