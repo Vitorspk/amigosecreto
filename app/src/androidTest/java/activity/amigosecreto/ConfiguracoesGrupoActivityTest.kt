@@ -5,10 +5,12 @@ import android.content.Intent
 import android.os.Build
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
@@ -103,8 +105,11 @@ class ConfiguracoesGrupoActivityTest {
             closeSoftKeyboard()
         )
 
+        // Fechar teclado antes de rolar e clicar no botao salvar.
+        Espresso.closeSoftKeyboard()
+
         // Clicar em salvar — o ViewModel persiste e finaliza a Activity (RESULT_OK).
-        onView(withId(R.id.btn_salvar_configuracoes)).perform(click())
+        onView(withId(R.id.btn_salvar_configuracoes)).perform(scrollTo(), click())
 
         // Apos salvar, a Activity fecha. Verificamos no banco que o nome foi atualizado.
         val grupoAtualizado = runBlocking { db.grupoDao().buscarPorId(grupo.id) }
