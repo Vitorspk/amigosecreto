@@ -41,7 +41,7 @@ class EstatisticasActivity : AppCompatActivity() {
 
         viewModel.uiState.observe(this) { state ->
             if (state.error != null) {
-                Toast.makeText(this, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.estatisticas_erro_carregar, Toast.LENGTH_SHORT).show()
                 return@observe
             }
             tvEstatTotalGrupos.text = state.totalGrupos.toString()

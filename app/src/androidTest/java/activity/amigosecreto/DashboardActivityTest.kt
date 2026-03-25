@@ -80,9 +80,6 @@ class DashboardActivityTest {
             .putExtra("grupo", grupo)
         scenario = ActivityScenario.launch(intent)
 
-        // Aguardar LiveData ser observado pela Activity (coroutine de IO + postValue).
-        Thread.sleep(500)
-
         return grupo
     }
 
@@ -117,7 +114,6 @@ class DashboardActivityTest {
 
         // Recarregar dados via onResume simulando retorno de outra Activity.
         scenario.recreate()
-        Thread.sleep(500)
 
         // Total de participantes deve exibir "2".
         onView(withId(R.id.tv_dash_total_participantes)).check(matches(withText("2")))

@@ -49,10 +49,7 @@ class OnboardingActivityTest {
         }
 
         // Limpar o prefs de onboarding para que OnboardingActivity seja exibida normalmente.
-        ctx.getSharedPreferences("amigosecreto_prefs", android.content.Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("onboarding_concluido", false)
-            .commit()
+        OnboardingActivity.limparOnboarding(ctx)
 
         // Activity lancada APOS limpar o banco e os prefs.
         scenario = ActivityScenario.launch(OnboardingActivity::class.java)

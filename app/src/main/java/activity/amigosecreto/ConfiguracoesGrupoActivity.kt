@@ -69,6 +69,7 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
         viewModel.resultado.observe(this) { resultado ->
             when (resultado) {
                 is SalvarResultado.Sucesso -> {
+                    grupoAtual = resultado.grupo
                     Toast.makeText(this, R.string.configuracoes_salvas, Toast.LENGTH_SHORT).show()
                     setResult(RESULT_OK, Intent().putExtra("grupo", resultado.grupo))
                     finish()
@@ -115,18 +116,21 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
             return
         }
 
-        grupoAtual.nome = nome
-        grupoAtual.descricao = etDescricao.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        grupoAtual.localEvento = etLocalEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        grupoAtual.dataLimiteSorteio = etDataLimiteSorteio.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        grupoAtual.regras = etRegras.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        grupoAtual.valorMinimo = valorMinimo
-        grupoAtual.valorMaximo = valorMaximo
-        grupoAtual.permitirVerDesejos = switchPermitirVerDesejos.isChecked
-        grupoAtual.exigirConfirmacaoCompra = switchExigirConfirmacao.isChecked
+        val grupoParaSalvar = Grupo().apply {
+            id = grupoAtual.id
+            this.nome = nome
+            descricao = etDescricao.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            localEvento = etLocalEvento.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            dataLimiteSorteio = etDataLimiteSorteio.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            regras = etRegras.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            this.valorMinimo = valorMinimo
+            this.valorMaximo = valorMaximo
+            permitirVerDesejos = switchPermitirVerDesejos.isChecked
+            exigirConfirmacaoCompra = switchExigirConfirmacao.isChecked
+        }
 
         btnSalvar.isEnabled = false
-        viewModel.salvar(grupoAtual)
+        viewModel.salvar(grupoParaSalvar)
     }
 
     override fun onSupportNavigateUp(): Boolean {

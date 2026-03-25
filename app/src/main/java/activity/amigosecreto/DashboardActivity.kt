@@ -55,7 +55,7 @@ class DashboardActivity : AppCompatActivity() {
 
         viewModel.uiState.observe(this) { state ->
             if (state.error != null) {
-                Toast.makeText(this, R.string.error_load_share_data, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.dashboard_erro_carregar, Toast.LENGTH_SHORT).show()
                 return@observe
             }
             state.grupo?.let { grupo ->
