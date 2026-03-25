@@ -12,6 +12,7 @@ import activity.amigosecreto.db.room.ParticipanteRoomDao
 import activity.amigosecreto.db.room.SorteioRoomDao
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -41,24 +42,19 @@ class DashboardViewModel @Inject constructor(
     fun carregarDados(grupoId: Int) {
         viewModelScope.launch {
             try {
-                val grupo: Grupo?
-                val totalParticipantes: Int
-                val sorteioRealizado: Boolean
-                val confirmados: Int
-
-                withContext(ioDispatcher) {
-                    grupo = grupoDao.buscarPorId(grupoId)
-                    totalParticipantes = participanteDao.contarPorGrupo(grupoId)
-                    sorteioRealizado = sorteioDao.contarPorGrupo(grupoId) > 0
-                    confirmados = participanteDao.contarConfirmados(grupoId)
+                val state = withContext(ioDispatcher) {
+                    val grupo = async { grupoDao.buscarPorId(grupoId) }
+                    val totalParticipantes = async { participanteDao.contarPorGrupo(grupoId) }
+                    val sorteioRealizado = async { sorteioDao.contarPorGrupo(grupoId) > 0 }
+                    val confirmados = async { participanteDao.contarConfirmados(grupoId) }
+                    DashboardUiState(
+                        grupo = grupo.await(),
+                        totalParticipantes = totalParticipantes.await(),
+                        sorteioRealizado = sorteioRealizado.await(),
+                        confirmados = confirmados.await(),
+                    )
                 }
-
-                _uiState.value = DashboardUiState(
-                    grupo = grupo,
-                    totalParticipantes = totalParticipantes,
-                    sorteioRealizado = sorteioRealizado,
-                    confirmados = confirmados,
-                )
+                _uiState.value = state
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar dados do dashboard")
                 _uiState.value = DashboardUiState(error = e.message ?: "Erro desconhecido")

@@ -59,6 +59,9 @@ abstract class SorteioRoomDao {
         participantes: List<Participante>,
         sorteados: List<Participante>,
     ): Long {
+        require(participantes.size == sorteados.size) {
+            "participantes.size (${participantes.size}) != sorteados.size (${sorteados.size})"
+        }
         val dataHora = DATE_FORMAT.get()!!.format(Date())
         val sorteio = Sorteio(grupoId = grupoId, dataHora = dataHora)
         val sorteioId = inserirSorteio(sorteio).toInt()
@@ -93,7 +96,7 @@ abstract class SorteioRoomDao {
         val placeholders = ids.joinToString(",") { "?" }
         val query = androidx.sqlite.db.SimpleSQLiteQuery(
             "SELECT * FROM sorteio_par WHERE sorteio_id IN ($placeholders)",
-            ids.map { it as Any? }.toTypedArray()
+            ids.toTypedArray<Any?>()
         )
         val paresPorSorteio = listarParesBatchRaw(query).groupBy { it.sorteioId }
         sorteios.forEach { s -> s.pares = paresPorSorteio[s.id] ?: emptyList() }

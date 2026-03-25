@@ -43,7 +43,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
 
         // Lista imutável e idêntica para todas as instâncias — companion evita realocação em rotações.
-        val PAGINAS = listOf(
+        private val PAGINAS = listOf(
             OnboardingPage(
                 iconRes = R.drawable.ic_gift,
                 titleRes = R.string.onboarding_titulo_1,
@@ -126,30 +126,31 @@ class OnboardingActivity : AppCompatActivity() {
         startActivity(Intent(this, GruposActivity::class.java))
         finish()
     }
+}
 
-    private inner class OnboardingAdapter(
-        private val paginas: List<OnboardingPage>
-    ) : RecyclerView.Adapter<OnboardingAdapter.ViewHolder>() {
+// Classe standalone — não captura referência à Activity (sem vazamento de memória).
+private class OnboardingAdapter(
+    private val paginas: List<OnboardingActivity.OnboardingPage>
+) : RecyclerView.Adapter<OnboardingAdapter.ViewHolder>() {
 
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val ivIcone: ImageView = view.findViewById(R.id.iv_onboarding_icone)
-            val tvTitulo: TextView = view.findViewById(R.id.tv_onboarding_titulo)
-            val tvDescricao: TextView = view.findViewById(R.id.tv_onboarding_descricao)
-        }
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val ivIcone: ImageView = view.findViewById(R.id.iv_onboarding_icone)
+        val tvTitulo: TextView = view.findViewById(R.id.tv_onboarding_titulo)
+        val tvDescricao: TextView = view.findViewById(R.id.tv_onboarding_descricao)
+    }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_onboarding, parent, false)
-            return ViewHolder(view)
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_onboarding, parent, false)
+        return ViewHolder(view)
+    }
 
-        override fun getItemCount() = paginas.size
+    override fun getItemCount() = paginas.size
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val pagina = paginas[position]
-            holder.ivIcone.setImageResource(pagina.iconRes)
-            holder.tvTitulo.setText(pagina.titleRes)
-            holder.tvDescricao.setText(pagina.descriptionRes)
-        }
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val pagina = paginas[position]
+        holder.ivIcone.setImageResource(pagina.iconRes)
+        holder.tvTitulo.setText(pagina.titleRes)
+        holder.tvDescricao.setText(pagina.descriptionRes)
     }
 }

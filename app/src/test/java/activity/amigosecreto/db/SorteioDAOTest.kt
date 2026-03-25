@@ -108,19 +108,12 @@ class SorteioDAOTest {
         assertEquals(bruno.id, anaAtualizada.amigoSorteadoId ?: -1)
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun salvarSorteioCompleto_listas_tamanhos_diferentes_lanca_excecao() = runTest {
         val ana = criarParticipante("Ana")
         val bruno = criarParticipante("Bruno")
-
-        // Room DAO does not return -1; mismatched sizes cause IndexOutOfBoundsException
-        try {
-            dao.salvarSorteioCompleto(grupoId, listOf(ana), listOf(ana, bruno))
-            // If no exception was thrown (e.g., sorteados larger than participantes), that's also acceptable
-        } catch (_: IndexOutOfBoundsException) {
-            // Expected when sorteados is shorter than participantes
-        }
-        // Verify no inconsistent state: at most 1 participante in this test
+        // require() em salvarSorteioCompleto lança IllegalArgumentException imediatamente.
+        dao.salvarSorteioCompleto(grupoId, listOf(ana), listOf(ana, bruno))
     }
 
     @Test
