@@ -33,21 +33,27 @@ abstract class GrupoRoomDao {
     @Query("DELETE FROM grupo")
     abstract suspend fun deletarTodosGrupos()
 
-    /**
-     * Remove todos os dados de forma atômica respeitando a FK participante.grupo_id → grupo.id
-     * (ON DELETE NO ACTION): participantes antes de grupos.
-     */
-    @Transaction
-    open suspend fun deletarTudo() {
-        deletarTodosParticipantes()
-        deletarTodosGrupos()
-    }
-
     @Query("DELETE FROM desejo")
     abstract suspend fun deletarTodosDesejos()
 
+    @Query("DELETE FROM sorteio_par")
+    abstract suspend fun deletarTodosSorteioPares()
+
     @Query("DELETE FROM sorteio")
     abstract suspend fun deletarTodosSorteios()
+
+    /**
+     * Remove todos os dados de forma atômica respeitando ordem das FKs:
+     * desejos e pares de sorteio antes dos participantes; sorteios antes dos grupos.
+     */
+    @Transaction
+    open suspend fun deletarTudo() {
+        deletarTodosDesejos()
+        deletarTodosSorteioPares()
+        deletarTodosSorteios()
+        deletarTodosParticipantes()
+        deletarTodosGrupos()
+    }
 
     // ── Statistics queries ─────────────────────────────────────────────────────
 

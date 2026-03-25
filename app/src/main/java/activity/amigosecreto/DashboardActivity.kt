@@ -38,7 +38,7 @@ class DashboardActivity : AppCompatActivity() {
             intent.getSerializableExtra("grupo") as? Grupo
         }
         if (g == null) { finish(); return }
-        grupoId = g.id
+        grupoId = savedInstanceState?.getInt("grupoId") ?: g.id
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar_dashboard)
         setSupportActionBar(toolbar)
@@ -93,6 +93,11 @@ class DashboardActivity : AppCompatActivity() {
         // Recarrega do banco a cada retorno para refletir edições feitas em ConfiguracoesGrupoActivity.
         // Guarda contra grupoId = -1 caso finish() ainda não tenha destruído a Activity.
         if (grupoId != -1) viewModel.carregarDados(grupoId)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("grupoId", grupoId)
     }
 
     override fun onSupportNavigateUp(): Boolean {

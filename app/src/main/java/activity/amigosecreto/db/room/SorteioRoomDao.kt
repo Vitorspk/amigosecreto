@@ -62,7 +62,7 @@ abstract class SorteioRoomDao {
         require(participantes.size == sorteados.size) {
             "participantes.size (${participantes.size}) != sorteados.size (${sorteados.size})"
         }
-        val dataHora = DATE_FORMAT.get()!!.format(Date())
+        val dataHora = (DATE_FORMAT.get() ?: SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)).format(Date())
         val sorteio = Sorteio(grupoId = grupoId, dataHora = dataHora)
         val sorteioId = inserirSorteio(sorteio).toInt()
 
