@@ -150,10 +150,11 @@ class GrupoDAOTest {
     // --- migration v11 → v12: novos campos com defaults corretos ---
 
     @Test
-    fun migracao_v11_v12_novos_campos_tem_defaults_corretos() = runTest {
-        // Cria um grupo sem os campos novos (simulando dado pré-v12).
-        // O banco in-memory já está na v12 (schema completo), então inserimos diretamente
-        // e verificamos que os defaults do schema estão aplicados corretamente.
+    fun schema_v12_novos_campos_tem_defaults_corretos_ao_inserir() = runTest {
+        // Verifica que os defaults do schema v12 estão corretos ao inserir um novo grupo.
+        // O banco in-memory parte sempre do schema completo (v12) — não exercita o caminho
+        // real da migration. Para testar dados existentes pré-v12, seria necessário
+        // MigrationTestHelper (androidTest) conforme documentado no TEST_PLAN.
         val g = Grupo(nome = "Legado", data = "01/01/2024")
         val id = dao.inserir(g)
 
