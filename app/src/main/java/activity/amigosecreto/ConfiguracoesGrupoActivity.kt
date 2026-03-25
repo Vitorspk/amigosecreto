@@ -106,6 +106,10 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
 
         val valorMinimo = etValorMinimo.text?.toString()?.toDoubleOrNull() ?: 0.0
         val valorMaximo = etValorMaximo.text?.toString()?.toDoubleOrNull() ?: 0.0
+        if (valorMinimo < 0 || valorMaximo < 0) {
+            Toast.makeText(this, R.string.configuracoes_erro_valor_negativo, Toast.LENGTH_SHORT).show()
+            return
+        }
         if (valorMinimo > 0 && valorMaximo > 0 && valorMinimo > valorMaximo) {
             Toast.makeText(this, R.string.configuracoes_erro_faixa_valor, Toast.LENGTH_SHORT).show()
             return

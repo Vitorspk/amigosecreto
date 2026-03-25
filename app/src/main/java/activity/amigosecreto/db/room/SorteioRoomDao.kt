@@ -48,7 +48,7 @@ abstract class SorteioRoomDao {
         participantes: List<Participante>,
         sorteados: List<Participante>,
     ): Long {
-        val dataHora = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        val dataHora = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date())
         val sorteio = Sorteio(grupoId = grupoId, dataHora = dataHora)
         val sorteioId = inserirSorteio(sorteio).toInt()
 

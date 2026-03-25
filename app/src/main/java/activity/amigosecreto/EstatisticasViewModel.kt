@@ -60,7 +60,7 @@ class EstatisticasViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar estatísticas")
-                _uiState.value = EstatisticasUiState(error = e.message)
+                _uiState.value = EstatisticasUiState(error = e.message ?: "Erro desconhecido")
             }
         }
     }

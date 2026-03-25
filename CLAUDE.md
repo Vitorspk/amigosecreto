@@ -141,7 +141,7 @@ O `build.gradle` suporta dois modos:
 
 ## Banco de Dados
 
-### Nome: `amigosecreto_v10.db` (versão 11 — Room — PR #63)
+### Nome: `amigosecreto_v10.db` (versão 12 — Room — PR #67)
 
 ```sql
 CREATE TABLE grupo (
@@ -188,6 +188,7 @@ CREATE TABLE desejo (
 - `v8 → v9` → adiciona `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` (PR #47)
 - `v9 → v10` → adiciona tabelas `sorteio` e `sorteio_par` para histórico de sorteios (PR #56)
 - `v10 → v11` → Room assume gerenciamento; recria `participante` e `desejo` com `NOT NULL`; adiciona índice `index_exclusao_excluido_id` (PR #63)
+- `v11 → v12` → adiciona colunas de configuração do grupo (`descricao`, `data_evento`, `local_evento`, `data_limite_sorteio`, `valor_minimo`, `valor_maximo`, `regras`, `permitir_ver_desejos`, `exigir_confirmacao_compra`) e tabela `sorteio_par`; adiciona `confirmou_presente`, `foi_notificado`, `observacoes` em `participante` (PR #67)
 
 ---
 
@@ -739,6 +740,7 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 13 | **Timber** — logging estruturado substituindo `android.util.Log` | ✅ Concluído | #61 |
 | 14 | **Modo escuro** — suporte completo com `values-night/`, `drawable-night/`, WCAG AA | ✅ Concluído | #62 |
 | 15 | **Migração Room** — banco migrado para Room v11; DAOs legados mantidos via singleton | ✅ Concluído | #63 |
+| 18 | **Configurações de grupo + migração v12** — colunas de config do grupo, `sorteio_par`, campos de participante | ✅ Concluído | #67 |
 | 16 | **Suporte a tablets** — margens responsivas e detecção `is_tablet` | ✅ Concluído | #64 |
 | 17 | **Fix race condition SQLite + scroll** — singleton MySQLiteOpenHelper, close() no-op, Room eager init, paddingBottom dinâmico | ✅ Concluído | #65 |
 

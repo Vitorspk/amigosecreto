@@ -61,7 +61,7 @@ class DashboardViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar dados do dashboard")
-                _uiState.value = DashboardUiState(error = e.message)
+                _uiState.value = DashboardUiState(error = e.message ?: "Erro desconhecido")
             }
         }
     }
