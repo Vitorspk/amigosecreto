@@ -103,6 +103,8 @@
     <string name="error_load_wish">Erro ao carregar desejo</string>
     <string name="error_load_wishes">Erro ao carregar lista de desejos. Tente novamente.</string>
     <string name="error_load_groups">Erro ao carregar grupos. Tente novamente.</string>
+    <string name="dashboard_erro_carregar">Erro ao carregar dados do grupo. Tente novamente.</string>
+    <string name="estatisticas_erro_carregar">Erro ao carregar estatísticas. Tente novamente.</string>
     <string name="error_save_wish_format">Erro ao salvar desejo: %1$s</string>
     <string name="error_update_wish_format">Erro ao atualizar desejo: %1$s</string>
     <string name="error_generic_format">Erro: %1$s</string>
@@ -306,5 +308,62 @@
         <item quantity="one">Você tem %1$d grupo aguardando o sorteio. Toque para realizar agora!</item>
         <item quantity="other">Você tem %1$d grupos aguardando o sorteio. Toque para realizar agora!</item>
     </plurals>
+
+    <!-- Configurações do Grupo -->
+    <string name="configuracoes_grupo_titulo">Configurações do Grupo</string>
+    <string name="configuracoes_hint_descricao">Descrição</string>
+    <string name="configuracoes_hint_local_evento">Local do Evento</string>
+    <string name="configuracoes_hint_data_evento">Data do Evento</string>
+    <string name="configuracoes_hint_data_limite">Data Limite do Sorteio</string>
+    <string name="configuracoes_hint_regras">Regras do Grupo</string>
+    <string name="configuracoes_hint_valor_minimo">R$ Mínimo</string>
+    <string name="configuracoes_hint_valor_maximo">R$ Máximo</string>
+    <string name="configuracoes_label_permitir_ver_desejos">Permitir ver desejos</string>
+    <string name="configuracoes_label_exigir_confirmacao">Exigir confirmação de compra</string>
+    <string name="configuracoes_salvas">Configurações salvas com sucesso</string>
+    <string name="configuracoes_erro_faixa_valor">Valor mínimo não pode ser maior que o máximo</string>
+    <string name="configuracoes_erro_valor_negativo">Valores mínimo e máximo não podem ser negativos</string>
+    <string name="configuracoes_erro_maximo_nao_definido">Defina também o valor máximo quando o mínimo estiver preenchido</string>
+    <string name="configuracoes_erro_valor_invalido">Valor inválido: use apenas números (ex: 50 ou 49.99)</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_titulo">Dashboard do Grupo</string>
+    <string name="dashboard_label_total_participantes">Total de Participantes</string>
+    <string name="dashboard_label_sorteio_realizado">Sorteio Realizado</string>
+    <string name="dashboard_label_confirmados">Confirmaram Compra</string>
+    <string name="dashboard_label_data_evento">Data do Evento</string>
+    <string name="dashboard_label_local_evento">Local do Evento</string>
+    <string name="dashboard_sim">Sim</string>
+    <string name="dashboard_nao">Não</string>
+    <string name="dashboard_nao_definido">Não definido</string>
+
+    <!-- Estatísticas -->
+    <string name="estatisticas_titulo">Estatísticas Globais</string>
+    <string name="estatisticas_label_total_grupos">Total de Grupos</string>
+    <string name="estatisticas_label_total_participantes">Total de Participantes</string>
+    <string name="estatisticas_label_total_sorteios">Total de Sorteios Realizados</string>
+    <string name="estatisticas_label_total_desejos">Total de Desejos Cadastrados</string>
+    <string name="estatisticas_label_media_valor">Média de Valor dos Desejos</string>
+    <string name="estatisticas_valor_format">R$ %1$s</string>
+    <string name="estatisticas_sem_dados">Sem dados</string>
+    <string name="menu_estatisticas">Estatísticas</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_btn_proximo">Próximo</string>
+    <string name="onboarding_btn_comecar">Começar</string>
+    <string name="onboarding_titulo_1">Bem-vindo!</string>
+    <string name="onboarding_desc_1">Organize seus sorteios de amigo secreto de forma fácil e divertida.</string>
+    <string name="onboarding_titulo_2">Crie Grupos</string>
+    <string name="onboarding_desc_2">Crie grupos para separar diferentes confraternizações — família, trabalho ou amigos.</string>
+    <string name="onboarding_titulo_3">Adicione Participantes</string>
+    <string name="onboarding_desc_3">Adicione participantes manualmente ou importe diretamente dos seus contatos.</string>
+    <string name="onboarding_titulo_4">Realize o Sorteio</string>
+    <string name="onboarding_desc_4">O sorteio é feito automaticamente, respeitando as restrições que você definir.</string>
+    <string name="onboarding_titulo_5">Compartilhe</string>
+    <string name="onboarding_desc_5">Compartilhe os resultados via WhatsApp, SMS ou outros aplicativos.</string>
+
+    <!-- Menu itens novos -->
+    <string name="menu_dashboard">Dashboard</string>
+    <string name="menu_configuracoes_grupo">Configurações do Grupo</string>
 
 </resources>

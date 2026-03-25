@@ -40,6 +40,15 @@ abstract class ParticipanteRoomDao {
     @Query("UPDATE participante SET enviado = 1 WHERE id = :id")
     abstract suspend fun marcarComoEnviado(id: Int)
 
+    @Query("UPDATE participante SET foi_notificado = 1 WHERE id = :id")
+    abstract suspend fun marcarComoNotificado(id: Int)
+
+    @Query("UPDATE participante SET confirmou_presente = 1 WHERE id = :id")
+    abstract suspend fun marcarConfirmacaoCompra(id: Int)
+
+    @Query("SELECT COUNT(*) FROM participante WHERE grupo_id = :grupoId AND confirmou_presente = 1")
+    abstract suspend fun contarConfirmados(grupoId: Int): Int
+
     // ── Exclusions ────────────────────────────────────────────────────────────
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -69,7 +78,7 @@ abstract class ParticipanteRoomDao {
         val placeholders = ids.joinToString(",") { "?" }
         val query = SimpleSQLiteQuery(
             "SELECT participante_id, excluido_id FROM exclusao WHERE participante_id IN ($placeholders)",
-            ids.map { it }.toTypedArray()
+            ids.toTypedArray()
         )
         return listarExclusoesRaw(query)
     }
@@ -91,10 +100,12 @@ abstract class ParticipanteRoomDao {
     abstract suspend fun contarPorTodosGrupos(): List<GrupoContagem>
 
     @Query("""
-        SELECT COUNT(DISTINCT p.grupo_id) FROM participante p
-        WHERE p.amigo_sorteado_id IS NULL
-        GROUP BY p.grupo_id
-        HAVING COUNT(*) >= :minParticipantes
+        SELECT COUNT(*) FROM (
+            SELECT p.grupo_id FROM participante p
+            WHERE p.amigo_sorteado_id IS NULL
+            GROUP BY p.grupo_id
+            HAVING COUNT(*) >= :minParticipantes
+        )
     """)
     abstract suspend fun contarGruposPendentes(minParticipantes: Int = 3): Int
 

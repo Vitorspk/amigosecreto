@@ -148,14 +148,17 @@ class SorteioDAO(context: Context) {
         }
         if (sorteios.isEmpty()) return sorteios
 
-        // Busca todos os pares do grupo em uma única query — elimina N+1
-        val ids = sorteios.joinToString(",") { it.id.toString() }
+        // Busca todos os pares do grupo em uma única query — elimina N+1.
+        // Usa placeholders parametrizados (? por ID) em vez de interpolação direta
+        // para seguir a prática padrão de queries parametrizadas.
+        val placeholders = sorteios.joinToString(",") { "?" }
+        val args = sorteios.map { it.id.toString() }.toTypedArray()
         val paresPorSorteio = mutableMapOf<Int, MutableList<SorteioPar>>()
         val paresCursor = database.rawQuery(
             "SELECT * FROM ${MySQLiteOpenHelper.TABLE_SORTEIO_PAR}" +
-                " WHERE ${MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID} IN ($ids)" +
+                " WHERE ${MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_SORTEIO_ID} IN ($placeholders)" +
                 " ORDER BY ${MySQLiteOpenHelper.COLUMN_SORTEIO_PAR_NOME_PARTICIPANTE}",
-            null
+            args
         )
         paresCursor.use {
             if (it.moveToFirst()) {

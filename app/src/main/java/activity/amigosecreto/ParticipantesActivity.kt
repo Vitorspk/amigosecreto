@@ -83,6 +83,23 @@ class ParticipantesActivity : AppCompatActivity() {
     private lateinit var grupoAtual: Grupo
     private lateinit var stateHelper: StateViewHelper
 
+    private val configuracoesGrupoLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            // Atualiza grupoAtual com os dados editados retornados pela ConfiguracoesGrupoActivity
+            @Suppress("DEPRECATION")
+            val grupoAtualizado = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                result.data?.getSerializableExtra(Grupo.EXTRA_GRUPO, Grupo::class.java)
+            } else {
+                result.data?.getSerializableExtra(Grupo.EXTRA_GRUPO) as? Grupo
+            }
+            if (grupoAtualizado != null) {
+                grupoAtual = grupoAtualizado
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -118,7 +135,7 @@ class ParticipantesActivity : AppCompatActivity() {
         }
 
         @Suppress("DEPRECATION")
-        val g = intent.getSerializableExtra("grupo") as? Grupo
+        val g = intent.getSerializableExtra(Grupo.EXTRA_GRUPO) as? Grupo
         if (g == null) {
             finish()
             return
@@ -677,7 +694,21 @@ class ParticipantesActivity : AppCompatActivity() {
             R.id.action_historico -> {
                 startActivity(
                     Intent(this, HistoricoSorteiosActivity::class.java)
-                        .putExtra("grupo", grupoAtual)
+                        .putExtra(Grupo.EXTRA_GRUPO, grupoAtual)
+                )
+                true
+            }
+            R.id.action_dashboard -> {
+                startActivity(
+                    Intent(this, DashboardActivity::class.java)
+                        .putExtra(Grupo.EXTRA_GRUPO, grupoAtual)
+                )
+                true
+            }
+            R.id.action_configuracoes_grupo -> {
+                configuracoesGrupoLauncher.launch(
+                    Intent(this, ConfiguracoesGrupoActivity::class.java)
+                        .putExtra(Grupo.EXTRA_GRUPO, grupoAtual)
                 )
                 true
             }

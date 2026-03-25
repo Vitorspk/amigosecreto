@@ -82,6 +82,14 @@ class GruposActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Onboarding gate — show onboarding on first launch then return
+        if (!OnboardingActivity.isOnboardingConcluido(this)) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+            finish()
+            return
+        }
+
         enableEdgeToEdge()
         setContentView(R.layout.activity_listar_grupos)
 
@@ -169,6 +177,7 @@ class GruposActivity : AppCompatActivity() {
                 R.id.action_limpar_dados -> { confirmarLimparTodosDados(); true }
                 R.id.action_exportar_backup -> { iniciarExportacao(); true }
                 R.id.action_importar_backup -> { iniciarImportacao(); true }
+                R.id.action_estatisticas -> { startActivity(Intent(this, EstatisticasActivity::class.java)); true }
                 else -> false
             }
         }
@@ -426,7 +435,7 @@ class GruposActivity : AppCompatActivity() {
                     if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
                     val g = itens[pos]
                     val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
-                    intent.putExtra("grupo", g)
+                    intent.putExtra(Grupo.EXTRA_GRUPO, g)
                     startActivity(intent)
                 }
                 itemView.setOnLongClickListener { v ->

@@ -24,16 +24,18 @@ class HistoricoSorteiosActivity : AppCompatActivity() {
     private lateinit var adapter: SorteiosAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_historico_sorteios)
 
         @Suppress("DEPRECATION")
-        grupoAtual = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("grupo", Grupo::class.java)!!
+        val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO, Grupo::class.java)
         } else {
-            intent.getSerializableExtra("grupo") as Grupo
+            intent.getSerializableExtra(Grupo.EXTRA_GRUPO) as? Grupo
         }
+        if (g == null) { finish(); return }
+        grupoAtual = g
 
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar_historico)
         setSupportActionBar(toolbar)

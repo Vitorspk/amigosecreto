@@ -52,9 +52,11 @@ class GruposActivityTest {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         db = AppDatabase.getInstance(ctx)
         runBlocking {
-            db.grupoDao().deletarTodosParticipantes()
-            db.grupoDao().deletarTodosGrupos()
+            db.grupoDao().deletarTudo()
         }
+        // Marcar onboarding como concluido para evitar que o gate redirecione
+        // para OnboardingActivity antes da GruposActivity renderizar.
+        OnboardingActivity.marcarOnboardingConcluido(ctx)
         // Activity lancada APOS limpar o banco para evitar race condition
         scenario = ActivityScenario.launch(GruposActivity::class.java)
     }
@@ -66,8 +68,7 @@ class GruposActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.grupoDao().deletarTodosParticipantes()
-                db.grupoDao().deletarTodosGrupos()
+                db.grupoDao().deletarTudo()
             }
         }
     }
