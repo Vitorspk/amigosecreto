@@ -147,6 +147,36 @@ class GrupoDAOTest {
         assertEquals("Grupo 2", lista[0].nome)
     }
 
+    // --- schema v12: defaults ---
+
+    @Test
+    fun schema_v12_novos_campos_tem_defaults_corretos_ao_inserir() = runTest {
+        // Verifica que os defaults do schema v12 estão corretos ao inserir um novo grupo.
+        // O banco in-memory parte sempre do schema completo (v12) — não exercita o caminho
+        // real da migration. Para testar dados existentes pré-v12, seria necessário
+        // MigrationTestHelper (androidTest) conforme documentado no TEST_PLAN.
+        // TODO: adicionar MigrationTestHelper (androidTest) para testar rows pré-v12
+        //       sendo migradas corretamente via MIGRATION_11_12 — garante que
+        //       ALTER TABLE ADD COLUMN preserva dados existentes em devices reais.
+        val g = Grupo(nome = "Legado", data = "01/01/2024")
+        val id = dao.inserir(g)
+
+        val salvo = dao.buscarPorId(id.toInt())!!
+        // Colunas adicionadas pela MIGRATION_11_12 devem ter os defaults do schema.
+        assertEquals(0.0, salvo.valorMinimo, 0.001)
+        assertEquals(0.0, salvo.valorMaximo, 0.001)
+        assertEquals(true, salvo.permitirVerDesejos)      // DEFAULT 1
+        assertEquals(false, salvo.exigirConfirmacaoCompra) // DEFAULT 0
+        assertNull(salvo.descricao)
+        assertNull(salvo.dataEvento)
+        assertNull(salvo.localEvento)
+        assertNull(salvo.dataLimiteSorteio)
+        assertNull(salvo.regras)
+        // Dados originais preservados.
+        assertEquals("Legado", salvo.nome)
+        assertEquals("01/01/2024", salvo.data)
+    }
+
     // --- deletarTudo (limpa participantes e grupos atomicamente) ---
 
     @Test
