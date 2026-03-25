@@ -5,52 +5,63 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import activity.amigosecreto.db.Grupo
 
 @Dao
-interface GrupoRoomDao {
+abstract class GrupoRoomDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun inserir(grupo: Grupo): Long
+    abstract suspend fun inserir(grupo: Grupo): Long
 
     @Update
-    suspend fun atualizar(grupo: Grupo): Int
+    abstract suspend fun atualizar(grupo: Grupo): Int
 
     @Delete
-    suspend fun remover(grupo: Grupo)
+    abstract suspend fun remover(grupo: Grupo)
 
     @Query("SELECT * FROM grupo ORDER BY id DESC")
-    suspend fun listar(): List<Grupo>
+    abstract suspend fun listar(): List<Grupo>
 
     @Query("SELECT * FROM grupo WHERE id = :id LIMIT 1")
-    suspend fun buscarPorId(id: Int): Grupo?
+    abstract suspend fun buscarPorId(id: Int): Grupo?
 
     @Query("DELETE FROM participante")
-    suspend fun deletarTodosParticipantes()
+    abstract suspend fun deletarTodosParticipantes()
 
     @Query("DELETE FROM grupo")
-    suspend fun deletarTodosGrupos()
+    abstract suspend fun deletarTodosGrupos()
+
+    /**
+     * Remove todos os dados de forma atômica respeitando a FK participante.grupo_id → grupo.id
+     * (ON DELETE NO ACTION): participantes antes de grupos.
+     */
+    @Transaction
+    open suspend fun deletarTudo() {
+        deletarTodosParticipantes()
+        deletarTodosGrupos()
+    }
 
     @Query("DELETE FROM desejo")
-    suspend fun deletarTodosDesejos()
+    abstract suspend fun deletarTodosDesejos()
 
     @Query("DELETE FROM sorteio")
-    suspend fun deletarTodosSorteios()
+    abstract suspend fun deletarTodosSorteios()
 
     // ── Statistics queries ─────────────────────────────────────────────────────
 
     @Query("SELECT COUNT(*) FROM grupo")
-    suspend fun contarGrupos(): Int
+    abstract suspend fun contarGrupos(): Int
 
     @Query("SELECT COUNT(*) FROM participante")
-    suspend fun contarParticipantes(): Int
+    abstract suspend fun contarParticipantes(): Int
 
     @Query("SELECT COUNT(*) FROM sorteio")
-    suspend fun contarSorteios(): Int
+    abstract suspend fun contarSorteios(): Int
 
     @Query("SELECT COUNT(*) FROM desejo")
-    suspend fun contarDesejos(): Int
+    abstract suspend fun contarDesejos(): Int
 
     @Query("""
         SELECT AVG(
@@ -61,5 +72,5 @@ interface GrupoRoomDao {
             END
         ) FROM desejo WHERE preco_minimo > 0 OR preco_maximo > 0
     """)
-    suspend fun mediaValorDesejos(): Double?
+    abstract suspend fun mediaValorDesejos(): Double?
 }

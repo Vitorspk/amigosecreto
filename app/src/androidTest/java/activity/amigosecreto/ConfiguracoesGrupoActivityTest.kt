@@ -50,8 +50,7 @@ class ConfiguracoesGrupoActivityTest {
         db = AppDatabase.getInstance(ctx)
 
         runBlocking {
-            db.grupoDao().deletarTodosParticipantes()
-            db.grupoDao().deletarTodosGrupos()
+            db.grupoDao().deletarTudo()
         }
 
         // Marcar onboarding como concluido para evitar redirecionamento.
@@ -75,8 +74,7 @@ class ConfiguracoesGrupoActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.grupoDao().deletarTodosParticipantes()
-                db.grupoDao().deletarTodosGrupos()
+                db.grupoDao().deletarTudo()
             }
         }
     }

@@ -147,25 +147,23 @@ class GrupoDAOTest {
         assertEquals("Grupo 2", lista[0].nome)
     }
 
-    // --- deletarTodosGrupos (limparTudo replacement) ---
+    // --- deletarTudo (limpa participantes e grupos atomicamente) ---
 
     @Test
-    fun deletarTodosGrupos_remove_todos_os_grupos() = runTest {
+    fun deletarTudo_remove_todos_os_grupos() = runTest {
         criarGrupo("G1")
         criarGrupo("G2")
-        dao.deletarTodosParticipantes()
-        dao.deletarTodosGrupos()
+        dao.deletarTudo()
         assertTrue(dao.listar().isEmpty())
     }
 
     @Test
-    fun deletarTodosGrupos_remove_participantes_tambem() = runTest {
+    fun deletarTudo_remove_participantes_tambem() = runTest {
         val g = criarGrupo("Grupo")
         val p = Participante(nome = "Pessoa", grupoId = g.id)
         participanteDao.inserir(p)
 
-        dao.deletarTodosParticipantes()
-        dao.deletarTodosGrupos()
+        dao.deletarTudo()
 
         assertTrue(participanteDao.listarPorGrupoSemExclusoes(g.id).isEmpty())
     }

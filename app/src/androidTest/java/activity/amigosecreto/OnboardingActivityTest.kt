@@ -44,8 +44,7 @@ class OnboardingActivityTest {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         db = AppDatabase.getInstance(ctx)
         runBlocking {
-            db.grupoDao().deletarTodosParticipantes()
-            db.grupoDao().deletarTodosGrupos()
+            db.grupoDao().deletarTudo()
         }
 
         // Limpar o prefs de onboarding para que OnboardingActivity seja exibida normalmente.
@@ -65,8 +64,7 @@ class OnboardingActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.grupoDao().deletarTodosParticipantes()
-                db.grupoDao().deletarTodosGrupos()
+                db.grupoDao().deletarTudo()
             }
         }
     }

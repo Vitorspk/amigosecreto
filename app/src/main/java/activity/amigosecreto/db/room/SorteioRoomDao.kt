@@ -15,6 +15,13 @@ import java.util.Locale
 @Dao
 abstract class SorteioRoomDao {
 
+    companion object {
+        // ThreadLocal para garantir thread-safety — SimpleDateFormat não é thread-safe.
+        private val DATE_FORMAT = ThreadLocal.withInitial {
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+        }
+    }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun inserirSorteio(sorteio: Sorteio): Long
 
@@ -51,7 +58,7 @@ abstract class SorteioRoomDao {
         participantes: List<Participante>,
         sorteados: List<Participante>,
     ): Long {
-        val dataHora = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date())
+        val dataHora = DATE_FORMAT.get()!!.format(Date())
         val sorteio = Sorteio(grupoId = grupoId, dataHora = dataHora)
         val sorteioId = inserirSorteio(sorteio).toInt()
 
@@ -85,7 +92,7 @@ abstract class SorteioRoomDao {
         val placeholders = ids.joinToString(",") { "?" }
         val query = androidx.sqlite.db.SimpleSQLiteQuery(
             "SELECT * FROM sorteio_par WHERE sorteio_id IN ($placeholders)",
-            ids.toTypedArray()
+            ids.map { it as Any? }.toTypedArray()
         )
         val paresPorSorteio = listarParesBatchRaw(query).groupBy { it.sorteioId }
         sorteios.forEach { s -> s.pares = paresPorSorteio[s.id] ?: emptyList() }

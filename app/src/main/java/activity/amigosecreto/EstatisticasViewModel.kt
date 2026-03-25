@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import activity.amigosecreto.db.room.GrupoRoomDao
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -37,27 +38,22 @@ class EstatisticasViewModel @Inject constructor(
     fun carregarEstatisticas() {
         viewModelScope.launch {
             try {
-                val totalGrupos: Int
-                val totalParticipantes: Int
-                val totalSorteios: Int
-                val totalDesejos: Int
-                val mediaValor: Double?
-
-                withContext(ioDispatcher) {
-                    totalGrupos = grupoDao.contarGrupos()
-                    totalParticipantes = grupoDao.contarParticipantes()
-                    totalSorteios = grupoDao.contarSorteios()
-                    totalDesejos = grupoDao.contarDesejos()
-                    mediaValor = grupoDao.mediaValorDesejos()
+                val state = withContext(ioDispatcher) {
+                    val totalGrupos = async { grupoDao.contarGrupos() }
+                    val totalParticipantes = async { grupoDao.contarParticipantes() }
+                    val totalSorteios = async { grupoDao.contarSorteios() }
+                    val totalDesejos = async { grupoDao.contarDesejos() }
+                    val mediaValor = async { grupoDao.mediaValorDesejos() }
+                    EstatisticasUiState(
+                        totalGrupos = totalGrupos.await(),
+                        totalParticipantes = totalParticipantes.await(),
+                        totalSorteios = totalSorteios.await(),
+                        totalDesejos = totalDesejos.await(),
+                        mediaValor = mediaValor.await(),
+                    )
                 }
 
-                _uiState.value = EstatisticasUiState(
-                    totalGrupos = totalGrupos,
-                    totalParticipantes = totalParticipantes,
-                    totalSorteios = totalSorteios,
-                    totalDesejos = totalDesejos,
-                    mediaValor = mediaValor,
-                )
+                _uiState.value = state
             } catch (e: Exception) {
                 Timber.e(e, "Erro ao carregar estatísticas")
                 _uiState.value = EstatisticasUiState(error = e.message ?: "Erro desconhecido")

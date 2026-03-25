@@ -42,8 +42,7 @@ class ParticipantesActivityTest {
 
         // Limpar banco completamente antes de cada teste para garantir isolamento.
         runBlocking {
-            db.grupoDao().deletarTodosParticipantes()
-            db.grupoDao().deletarTodosGrupos()
+            db.grupoDao().deletarTudo()
         }
 
         grupo = Grupo(nome = "Grupo Espresso", data = "01/01/2025")
@@ -65,8 +64,7 @@ class ParticipantesActivityTest {
             scenario.close()
         } finally {
             runBlocking {
-                db.grupoDao().deletarTodosParticipantes()
-                db.grupoDao().deletarTodosGrupos()
+                db.grupoDao().deletarTudo()
             }
         }
     }

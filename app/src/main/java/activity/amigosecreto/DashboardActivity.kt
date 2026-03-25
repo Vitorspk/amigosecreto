@@ -59,6 +59,8 @@ class DashboardActivity : AppCompatActivity() {
             ?: getString(R.string.dashboard_nao_definido)
         tvDashLocalEvento.text = g.localEvento?.takeIf { it.isNotEmpty() }
             ?: getString(R.string.dashboard_nao_definido)
+        tvDashTotalParticipantes.text = "0"
+        tvDashConfirmados.text = "0"
 
         viewModel.uiState.observe(this) { state ->
             if (state.error != null) {
