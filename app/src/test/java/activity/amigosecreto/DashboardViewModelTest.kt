@@ -129,4 +129,20 @@ class DashboardViewModelTest {
         assertNotNull(state)
         assertTrue(state!!.sorteioRealizado)
     }
+
+    @Test
+    fun carregarDados_comParticipanteConfirmado_retornaContagemConfirmados() {
+        runBlocking {
+            val id1 = participanteDao.inserir(Participante(nome = "Ana", grupoId = grupoId)).toInt()
+            participanteDao.inserir(Participante(nome = "Bob", grupoId = grupoId))
+            participanteDao.marcarConfirmacaoCompra(id1)
+        }
+
+        viewModel.carregarDados(grupoId)
+
+        val state = viewModel.uiState.value
+        assertNotNull(state)
+        assertEquals(2, state!!.totalParticipantes)
+        assertEquals(1, state.confirmados)
+    }
 }

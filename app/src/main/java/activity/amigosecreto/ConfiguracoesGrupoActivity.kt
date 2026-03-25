@@ -117,8 +117,14 @@ class ConfiguracoesGrupoActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.configuracoes_erro_valor_negativo, Toast.LENGTH_SHORT).show()
             return
         }
-        if (valorMinimo > 0 && valorMaximo > 0 && valorMinimo > valorMaximo) {
+        val minimoDefinido = valorMinimo > 0
+        val maximoDefinido = valorMaximo > 0
+        if (minimoDefinido && maximoDefinido && valorMinimo > valorMaximo) {
             Toast.makeText(this, R.string.configuracoes_erro_faixa_valor, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (minimoDefinido && !maximoDefinido) {
+            Toast.makeText(this, R.string.configuracoes_erro_maximo_nao_definido, Toast.LENGTH_SHORT).show()
             return
         }
 

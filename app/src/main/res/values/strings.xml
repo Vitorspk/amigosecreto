@@ -323,6 +323,7 @@
     <string name="configuracoes_salvas">Configurações salvas com sucesso</string>
     <string name="configuracoes_erro_faixa_valor">Valor mínimo não pode ser maior que o máximo</string>
     <string name="configuracoes_erro_valor_negativo">Valores mínimo e máximo não podem ser negativos</string>
+    <string name="configuracoes_erro_maximo_nao_definido">Defina também o valor máximo quando o mínimo estiver preenchido</string>
 
     <!-- Dashboard -->
     <string name="dashboard_titulo">Dashboard do Grupo</string>
