@@ -604,7 +604,8 @@ class ParticipantesActivity : AppCompatActivity() {
      * Restaura a lista de participantes do bundle (apenas id, telefone e nome).
      * Retorna null se os arrays não estiverem presentes.
      */
-    private fun restoreParticipantListFromBundle(bundle: Bundle, keyPrefix: String): List<Participante>? {
+    @androidx.annotation.VisibleForTesting
+    internal fun restoreParticipantListFromBundle(bundle: Bundle, keyPrefix: String): List<Participante>? {
         val ids = bundle.getIntArray("${keyPrefix}Ids") ?: return null
         val telefones = bundle.getStringArray("${keyPrefix}Telefones") ?: return null
         val nomes = bundle.getStringArray("${keyPrefix}Nomes") ?: return null
