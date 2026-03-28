@@ -569,11 +569,12 @@ class ParticipantesActivity : AppCompatActivity() {
         outState.putInt("pendingSmsId", smsState.pendingParticipanteId)
         outState.putInt("pendingSmsNextIndex", smsState.pendingNextIndex)
         outState.putInt("pendingSmsResumeIndex", smsState.pendingResumeIndex)
-        // Salva apenas IDs, telefones e nomes — omite as mensagens formatadas para evitar
-        // TransactionTooLargeException (~1 MB Binder limit) em grupos com listas de desejos longas.
-        // As mensagens sao reconstruidas a partir do banco no onResume apos rotacao.
+        // Salva IDs, índices e lista de participantes (id + telefone + nome).
+        // Omite apenas pendingMensagens para evitar TransactionTooLargeException
+        // (~1 MB Binder limit) em grupos com listas de desejos longas; as mensagens
+        // são reconstruídas a partir do banco no onResume após rotação.
         saveParticipantListToBundle(outState, "pendingSms", smsState.pendingList)
-        // Salva estado do WhatsApp sequencial (mesma estratégia — omite mensagens para evitar TransactionTooLargeException).
+        // Estado do WhatsApp sequencial — mesma estratégia: persiste tudo exceto as mensagens formatadas.
         outState.putInt("pendingWhatsAppId", whatsAppState.pendingParticipanteId)
         outState.putInt("pendingWhatsAppNextIndex", whatsAppState.pendingNextIndex)
         outState.putInt("pendingWhatsAppResumeIndex", whatsAppState.pendingResumeIndex)
@@ -650,12 +651,13 @@ class ParticipantesActivity : AppCompatActivity() {
     // Exibe dialog para cada participante antes de abrir o app de SMS, evitando stack de activities.
     private fun enviarSmsSequencial(lista: List<Participante>, mensagensMap: Map<Int, String>, index: Int) {
         if (index >= lista.size) {
-            // Conta apenas participantes com mensagem valida (exclui pulados por mensagem ausente).
-            val enviados = lista.count { p ->
+            // Conta participantes com mensagem preparada — inclui os que o usuário pulou,
+            // pois a API ACTION_SENDTO não oferece callback de confirmação de envio.
+            val comMensagem = lista.count { p ->
                 val m = mensagensMap[p.id]
                 m != null && m.isNotEmpty()
             }
-            Toast.makeText(this, getString(R.string.toast_sms_prepared_format, enviados), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_sms_prepared_format, comMensagem), Toast.LENGTH_LONG).show()
             return
         }
 
@@ -722,11 +724,13 @@ class ParticipantesActivity : AppCompatActivity() {
     // evitando stack de activities. Espelha enviarSmsSequencial com URI wa.me no lugar de smsto:.
     private fun enviarWhatsAppSequencial(lista: List<Participante>, mensagensMap: Map<Int, String>, index: Int) {
         if (index >= lista.size) {
-            val enviados = lista.count { p ->
+            // Conta participantes com mensagem preparada — inclui os que o usuário pulou,
+            // pois a API ACTION_VIEW (wa.me) não oferece callback de confirmação de envio.
+            val comMensagem = lista.count { p ->
                 val m = mensagensMap[p.id]
                 m != null && m.isNotEmpty()
             }
-            Toast.makeText(this, getString(R.string.toast_whatsapp_prepared_format, enviados), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_whatsapp_prepared_format, comMensagem), Toast.LENGTH_LONG).show()
             return
         }
 
