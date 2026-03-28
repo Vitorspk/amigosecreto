@@ -1,7 +1,6 @@
 package activity.amigosecreto
 
 import android.os.Bundle
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
