@@ -229,7 +229,10 @@ CREATE TABLE desejo (
 - SMS via intent nativo
 - Marca como "enviado" após compartilhar
 - URL encoding seguro via `Uri.Builder`
-- **Limitação conhecida:** `marcarComoEnviado` é chamado antes do usuário confirmar o share sheet (a API `ACTION_SEND` não oferece callback de confirmação). Se o usuário abrir o chooser e cancelar, o participante ficará marcado como "enviado" sem que a mensagem tenha sido de fato enviada.
+- **Limitação conhecida:** `marcarComoEnviado` é chamado antes do usuário confirmar o envio. Isso vale para ambos os canais:
+  - **SMS** (`ACTION_SENDTO`): o app de mensagens é aberto; não há callback de confirmação de envio.
+  - **WhatsApp** (`wa.me` via `ACTION_VIEW`): `launched = true` é definido antes de abrir o app; `onResume` chama `marcarComoEnviado` ao retornar, mesmo que o usuário não tenha enviado a mensagem.
+  - Em ambos os casos, se o usuário cancelar após o app externo abrir, o participante ficará marcado como "enviado" sem envio real. A API Android não oferece callback para detectar isso.
 
 ### 7. Lista de Desejos
 - CRUD completo: produto, categoria, faixa de preço, lojas

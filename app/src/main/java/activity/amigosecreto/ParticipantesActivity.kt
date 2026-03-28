@@ -745,13 +745,15 @@ class ParticipantesActivity : AppCompatActivity() {
             .setTitle(getString(R.string.dialog_send_whatsapp_title_format, p.nome, index + 1, lista.size))
             .setMessage(getString(R.string.dialog_send_whatsapp_message_format, p.telefone))
             .setPositiveButton(R.string.button_open_whatsapp) { _, _ ->
-                CompartilharHelper.compartilharWhatsAppComTelefone(this, p.telefone ?: "", mensagem, getString(R.string.button_open_whatsapp))
-                // Registra o id antes de sair; onResume marca como enviado ao retornar.
+                // Registra o estado antes de sair — onResume marca como enviado ao retornar.
+                // Estado atualizado antes de startActivity para que, em caso de crash ou
+                // interrupção dentro do helper, o onResume ainda consiga retomar corretamente.
                 whatsAppState.pendingParticipanteId = p.id
                 whatsAppState.pendingList = lista
                 whatsAppState.pendingMensagens = mensagensMap
                 whatsAppState.pendingNextIndex = index + 1
                 whatsAppState.launched = true
+                CompartilharHelper.compartilharWhatsAppComTelefone(this, p.telefone ?: "", mensagem, getString(R.string.button_open_whatsapp))
             }
             .setNegativeButton(R.string.button_skip) { _, _ ->
                 whatsAppState.pendingParticipanteId = -1
