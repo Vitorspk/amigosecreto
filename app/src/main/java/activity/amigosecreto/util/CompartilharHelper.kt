@@ -39,6 +39,38 @@ object CompartilharHelper {
     }
 
     /**
+     * Compartilha via WhatsApp para um número específico usando deep link wa.me.
+     *
+     * Remove todos os caracteres não dígitos do telefone antes de montar a URI —
+     * wa.me espera apenas dígitos sem '+' (ex: 5511999999999).
+     * Fallback para [compartilharWhatsApp] (sem destinatário) se o telefone for vazio;
+     * fallback para [compartilharGenerico] se o intent não puder ser resolvido.
+     *
+     * @param telefone número do participante (qualquer formato local ou internacional)
+     */
+    fun compartilharWhatsAppComTelefone(context: Context, telefone: String, mensagem: String, titulo: String) {
+        val phone = telefone.replace(Regex("[^\\d]"), "")
+        if (phone.isBlank()) {
+            compartilharWhatsApp(context, mensagem, titulo)
+            return
+        }
+        val uri = Uri.Builder()
+            .scheme("https")
+            .authority("wa.me")
+            .appendPath(phone)
+            .appendQueryParameter("text", mensagem)
+            .build()
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            compartilharGenerico(context, mensagem, titulo)
+        }
+    }
+
+    /**
      * Compartilha via Telegram. Tenta o Telegram FOSS como fallback.
      * Se nenhum estiver instalado, abre o share sheet genérico.
      */

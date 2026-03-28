@@ -61,6 +61,14 @@ class ParticipantesActivity : AppCompatActivity() {
     // Índice de retomada após rotação quando ViewModel reconstrói mensagens em background.
     private var pendingSmsResumeIndex = -1
 
+    // Estado da sequência de WhatsApp — espelha exatamente as variáveis SMS acima.
+    private var pendingWhatsAppParticipanteId = -1
+    private var whatsAppLaunched = false
+    private var pendingWhatsAppList: List<Participante>? = null
+    private var pendingWhatsAppMensagens: Map<Int, String>? = null
+    private var pendingWhatsAppNextIndex = -1
+    private var pendingWhatsAppResumeIndex = -1
+
     // Estado do dialog de edição em andamento; usado pelo observer de atualizarSucesso.
     private var pendingEditDialog: AlertDialog? = null
     private var pendingEditButton: View? = null
@@ -160,6 +168,23 @@ class ParticipantesActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            // Restaura estado da sequência WhatsApp (mesma estratégia que SMS).
+            pendingWhatsAppParticipanteId = savedInstanceState.getInt("pendingWhatsAppId", -1)
+            pendingWhatsAppNextIndex = savedInstanceState.getInt("pendingWhatsAppNextIndex", -1)
+            pendingWhatsAppResumeIndex = savedInstanceState.getInt("pendingWhatsAppResumeIndex", -1)
+            val waIds = savedInstanceState.getIntArray("pendingWhatsAppIds")
+            val waTelefones = savedInstanceState.getStringArray("pendingWhatsAppTelefones")
+            val waNomes = savedInstanceState.getStringArray("pendingWhatsAppNomes")
+            if (waIds != null && waTelefones != null && waNomes != null) {
+                pendingWhatsAppList = waIds.indices.map { i ->
+                    Participante().also { p ->
+                        p.id = waIds[i]
+                        p.telefone = waTelefones[i]
+                        p.nome = waNomes[i]
+                    }
+                }
+            }
         }
 
         supportActionBar?.apply {
@@ -234,9 +259,10 @@ class ParticipantesActivity : AppCompatActivity() {
                 ParticipantesViewModel.SorteioResultado.Status.SUCCESS -> {
                     AlertDialog.Builder(this)
                         .setTitle(getString(R.string.participante_sorteio_titulo))
-                        .setMessage(getString(R.string.participante_sorteio_msg_sms))
-                        .setPositiveButton(getString(R.string.participante_sorteio_btn_sms)) { _, _ -> enviarSmsViaIntent() }
-                        .setNegativeButton("Não", null)
+                        .setMessage(getString(R.string.participante_sorteio_msg_canal))
+                        .setPositiveButton(getString(R.string.participante_sorteio_btn_whatsapp)) { _, _ -> enviarWhatsAppViaIntent() }
+                        .setNegativeButton(getString(R.string.participante_sorteio_btn_sms_curto)) { _, _ -> enviarSmsViaIntent() }
+                        .setNeutralButton(getString(R.string.participante_sorteio_btn_agora_nao), null)
                         .show()
                 }
             }
@@ -260,6 +286,19 @@ class ParticipantesActivity : AppCompatActivity() {
             val startIndex = if (pendingSmsResumeIndex >= 0) pendingSmsResumeIndex else 0
             pendingSmsResumeIndex = -1
             enviarSmsSequencial(resultado.participantesComTelefone, resultado.mensagens, startIndex)
+        }
+
+        // Mensagens WhatsApp prontas — iniciar (ou retomar) sequência de envio via wa.me.
+        viewModel.mensagensWhatsAppResult.observe(this) { resultado ->
+            if (resultado == null) return@observe
+            viewModel.clearMensagensWhatsAppResult()
+            if (resultado.participantesComTelefone.isEmpty()) {
+                Toast.makeText(this, R.string.error_no_phone_participants, Toast.LENGTH_LONG).show()
+                return@observe
+            }
+            val startIndex = if (pendingWhatsAppResumeIndex >= 0) pendingWhatsAppResumeIndex else 0
+            pendingWhatsAppResumeIndex = -1
+            enviarWhatsAppSequencial(resultado.participantesComTelefone, resultado.mensagens, startIndex)
         }
 
         // Resultado de atualizar participante — fechar dialog se sucesso, restaurar estado se falha.
@@ -290,7 +329,11 @@ class ParticipantesActivity : AppCompatActivity() {
             if (resultado == null) return@observe
             viewModel.clearMensagemCompartilhamentoResult()
             atualizarLista()
-            exibirBottomSheetCompartilhar(resultado.mensagem, resultado.participante.nome ?: "")
+            exibirBottomSheetCompartilhar(
+                resultado.mensagem,
+                resultado.participante.nome ?: "",
+                resultado.participante.telefone
+            )
         }
 
         // Nome do amigo obtido — abrir QrCodeActivity.
@@ -309,7 +352,14 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel.carregarParticipantes()
     }
 
-    private fun exibirBottomSheetCompartilhar(mensagem: String, nomeParticipante: String) {
+    /**
+     * Exibe o bottom sheet de compartilhamento para um participante específico.
+     *
+     * @param telefone quando não-nulo/vazio, o botão WhatsApp usa deep link wa.me com o
+     *   número pré-preenchido — o participante certo já aparece selecionado no WhatsApp.
+     *   Sem telefone, abre o WhatsApp sem destinatário (comportamento anterior).
+     */
+    private fun exibirBottomSheetCompartilhar(mensagem: String, nomeParticipante: String, telefone: String?) {
         val sheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_compartilhar, null)
         sheet.setContentView(view)
@@ -326,8 +376,13 @@ class ParticipantesActivity : AppCompatActivity() {
 
         btnWhatsApp.setOnClickListener {
             sheet.dismiss()
-            CompartilharHelper.compartilharWhatsApp(this, mensagem,
-                getString(R.string.share_with_person, nomeParticipante))
+            val titulo = getString(R.string.share_with_person, nomeParticipante)
+            if (!telefone.isNullOrBlank()) {
+                // Usa deep link wa.me para pré-preencher o número do participante
+                CompartilharHelper.compartilharWhatsAppComTelefone(this, telefone, mensagem, titulo)
+            } else {
+                CompartilharHelper.compartilharWhatsApp(this, mensagem, titulo)
+            }
         }
         btnTelegram.setOnClickListener {
             sheet.dismiss()
@@ -485,6 +540,12 @@ class ParticipantesActivity : AppCompatActivity() {
             pendingSmsParticipanteId = -1
             smsLaunched = false
         }
+        // Mesma guarda para WhatsApp — whatsAppLaunched nao e salvo no bundle.
+        if (whatsAppLaunched && pendingWhatsAppParticipanteId != -1) {
+            viewModel.marcarComoEnviado(pendingWhatsAppParticipanteId)
+            pendingWhatsAppParticipanteId = -1
+            whatsAppLaunched = false
+        }
         // Atualizar lista ao voltar para esta activity (ex: depois de adicionar desejos)
         atualizarLista()
         // Retoma sequencia de SMS apos retornar do app de mensagens (evita dialog durante pausa).
@@ -505,6 +566,22 @@ class ParticipantesActivity : AppCompatActivity() {
                 // O observer de mensagensSmsResult retoma a partir de pendingSmsResumeIndex.
                 pendingSmsResumeIndex = nextIndex
                 viewModel.prepararMensagensSms(lista)
+            }
+        }
+        // Retoma sequencia de WhatsApp — mesma estrategia de reconstrucao que SMS.
+        val waLista = pendingWhatsAppList
+        if (waLista != null && pendingWhatsAppNextIndex >= 0) {
+            val nextIndex = pendingWhatsAppNextIndex
+            pendingWhatsAppList = null
+            pendingWhatsAppNextIndex = -1
+
+            val mensagens = pendingWhatsAppMensagens
+            if (mensagens != null) {
+                pendingWhatsAppMensagens = null
+                enviarWhatsAppSequencial(waLista, mensagens, nextIndex)
+            } else {
+                pendingWhatsAppResumeIndex = nextIndex
+                viewModel.prepararMensagensWhatsApp(waLista)
             }
         }
     }
@@ -531,6 +608,24 @@ class ParticipantesActivity : AppCompatActivity() {
             outState.putIntArray("pendingSmsIds", ids)
             outState.putStringArray("pendingSmsTelefones", telefones)
             outState.putStringArray("pendingSmsNomes", nomes)
+        }
+        // Salva estado do WhatsApp sequencial (mesma estratégia — omite mensagens para evitar TransactionTooLargeException).
+        outState.putInt("pendingWhatsAppId", pendingWhatsAppParticipanteId)
+        outState.putInt("pendingWhatsAppNextIndex", pendingWhatsAppNextIndex)
+        outState.putInt("pendingWhatsAppResumeIndex", pendingWhatsAppResumeIndex)
+        val waLista = pendingWhatsAppList
+        if (waLista != null) {
+            val waIds = IntArray(waLista.size)
+            val waTelefones = arrayOfNulls<String>(waLista.size)
+            val waNomes = arrayOfNulls<String>(waLista.size)
+            for (i in waLista.indices) {
+                waIds[i] = waLista[i].id
+                waTelefones[i] = waLista[i].telefone ?: ""
+                waNomes[i] = waLista[i].nome ?: ""
+            }
+            outState.putIntArray("pendingWhatsAppIds", waIds)
+            outState.putStringArray("pendingWhatsAppTelefones", waTelefones)
+            outState.putStringArray("pendingWhatsAppNomes", waNomes)
         }
     }
 
@@ -627,6 +722,75 @@ class ParticipantesActivity : AppCompatActivity() {
                 pendingSmsMensagens = null
                 pendingSmsNextIndex = -1
                 smsLaunched = false
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun enviarWhatsAppViaIntent() {
+        viewModel.prepararMensagensWhatsApp(ArrayList(listaParticipantes))
+    }
+
+    // Exibe dialog para cada participante antes de abrir o WhatsApp via deep link wa.me,
+    // evitando stack de activities. Espelha enviarSmsSequencial com URI wa.me no lugar de smsto:.
+    private fun enviarWhatsAppSequencial(lista: List<Participante>, mensagensMap: Map<Int, String>, index: Int) {
+        if (index >= lista.size) {
+            val enviados = lista.count { p ->
+                val m = mensagensMap[p.id]
+                m != null && m.isNotEmpty()
+            }
+            Toast.makeText(this, getString(R.string.toast_whatsapp_prepared_format, enviados), Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val p = lista[index]
+        val mensagem = mensagensMap[p.id]
+        if (mensagem == null || mensagem.isEmpty()) {
+            mainHandler.post { enviarWhatsAppSequencial(lista, mensagensMap, index + 1) }
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_send_whatsapp_title_format, p.nome, index + 1, lista.size))
+            .setMessage(getString(R.string.dialog_send_whatsapp_message_format, p.telefone))
+            .setPositiveButton(R.string.button_open_whatsapp) { _, _ ->
+                val phone = (p.telefone ?: "").replace(Regex("[^\\d]"), "")
+                val uri = Uri.Builder()
+                    .scheme("https")
+                    .authority("wa.me")
+                    .appendPath(phone)
+                    .appendQueryParameter("text", mensagem)
+                    .build()
+                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                try {
+                    // Registra o id antes de sair; onResume marca como enviado ao retornar.
+                    pendingWhatsAppParticipanteId = p.id
+                    pendingWhatsAppList = lista
+                    pendingWhatsAppMensagens = mensagensMap
+                    pendingWhatsAppNextIndex = index + 1
+                    whatsAppLaunched = true
+                    startActivity(intent)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    pendingWhatsAppParticipanteId = -1
+                    pendingWhatsAppList = null
+                    pendingWhatsAppMensagens = null
+                    pendingWhatsAppNextIndex = -1
+                    Toast.makeText(this, R.string.error_no_whatsapp_app, Toast.LENGTH_SHORT).show()
+                    mainHandler.post { enviarWhatsAppSequencial(lista, mensagensMap, index + 1) }
+                }
+            }
+            .setNegativeButton(R.string.button_skip) { _, _ ->
+                pendingWhatsAppParticipanteId = -1
+                mainHandler.post { enviarWhatsAppSequencial(lista, mensagensMap, index + 1) }
+            }
+            .setNeutralButton(R.string.button_cancel_all) { _, _ ->
+                pendingWhatsAppParticipanteId = -1
+                pendingWhatsAppList = null
+                pendingWhatsAppMensagens = null
+                pendingWhatsAppNextIndex = -1
+                whatsAppLaunched = false
             }
             .setCancelable(false)
             .show()

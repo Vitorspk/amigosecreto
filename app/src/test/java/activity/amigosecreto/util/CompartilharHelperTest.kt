@@ -115,6 +115,88 @@ class CompartilharHelperTest {
         assertFalse("URI não deve conter newline literal", uri.contains("\n"))
     }
 
+    // --- compartilharWhatsAppComTelefone ---
+
+    @Test
+    fun compartilharWhatsAppComTelefone_dispara_intent_action_view() {
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "11999999999", "Olá!", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_uri_contem_wa_me_com_telefone() {
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "11999999999", "Mensagem", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        val uri = intent.data
+        assertNotNull(uri)
+        assertEquals("https", uri!!.scheme)
+        assertEquals("wa.me", uri.host)
+        // path deve conter o telefone normalizado
+        assertTrue("path deve conter o telefone", uri.path?.contains("11999999999") == true)
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_uri_contem_texto_da_mensagem() {
+        val mensagem = "Ola, seu amigo secreto!"
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "11999999999", mensagem, "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        val uri = intent.data
+        assertNotNull(uri)
+        assertEquals(mensagem, uri!!.getQueryParameter("text"))
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_normaliza_telefone_com_hifen_e_espaco() {
+        // Telefone com formatação local "(11) 9 9999-9999" deve ser normalizado para só dígitos
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "(11) 9 9999-9999", "msg", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        val uri = intent.data
+        assertNotNull(uri)
+        val path = uri!!.path ?: ""
+        assertFalse("path não deve conter parênteses", path.contains("("))
+        assertFalse("path não deve conter hífen", path.contains("-"))
+        assertFalse("path não deve conter espaço", path.contains(" "))
+        assertTrue("path deve conter os dígitos do número", path.contains("11999999999"))
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_normaliza_telefone_internacional_com_mais() {
+        // "+55 11 9 9999-9999" → "55119999999999"
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "+55 11 9 9999-9999", "msg", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        val uri = intent.data
+        assertNotNull(uri)
+        val path = uri!!.path ?: ""
+        // O + deve ser removido (wa.me não usa +)
+        assertFalse("path não deve conter +", path.contains("+"))
+        assertTrue("path deve conter os dígitos", path.contains("5511"))
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_telefone_vazio_usa_action_send_fallback() {
+        // Telefone vazio → fallback para compartilharWhatsApp (ACTION_SEND sem número)
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "", "msg", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        // Fallback é compartilharWhatsApp que usa ACTION_SEND
+        assertEquals(Intent.ACTION_SEND, intent.action)
+    }
+
+    @Test
+    fun compartilharWhatsAppComTelefone_telefone_so_caracteres_especiais_usa_fallback() {
+        // Telefone com apenas traços/parênteses → blank após normalização → fallback
+        CompartilharHelper.compartilharWhatsAppComTelefone(context, "--- ()", "msg", "Título")
+        val intent = shadowApp.peekNextStartedActivity()
+        assertNotNull(intent)
+        assertEquals(Intent.ACTION_SEND, intent.action)
+    }
+
     // --- isWhatsAppInstalado / isTelegramInstalado ---
 
     @Test
