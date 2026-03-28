@@ -39,17 +39,24 @@ object CompartilharHelper {
     }
 
     /**
+     * Normaliza um número de telefone para uso em deep links (wa.me, etc.).
+     * Remove todos os caracteres não numéricos — incluindo '+', '()', '-' e espaços.
+     * wa.me espera apenas dígitos (ex: "+55 (11) 9 9999-9999" → "55119999999").
+     */
+    fun normalizePhoneNumber(telefone: String): String =
+        telefone.replace(Regex("[^\\d]"), "")
+
+    /**
      * Compartilha via WhatsApp para um número específico usando deep link wa.me.
      *
-     * Remove todos os caracteres não dígitos do telefone antes de montar a URI —
-     * wa.me espera apenas dígitos sem '+' (ex: 5511999999999).
+     * Usa [normalizePhoneNumber] para limpar o telefone antes de montar a URI.
      * Fallback para [compartilharWhatsApp] (sem destinatário) se o telefone for vazio;
      * fallback para [compartilharGenerico] se o intent não puder ser resolvido.
      *
      * @param telefone número do participante (qualquer formato local ou internacional)
      */
     fun compartilharWhatsAppComTelefone(context: Context, telefone: String, mensagem: String, titulo: String) {
-        val phone = telefone.replace(Regex("[^\\d]"), "")
+        val phone = normalizePhoneNumber(telefone)
         if (phone.isBlank()) {
             compartilharWhatsApp(context, mensagem, titulo)
             return
