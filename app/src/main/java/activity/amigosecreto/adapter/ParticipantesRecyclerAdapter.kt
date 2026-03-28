@@ -70,6 +70,8 @@ class ParticipantesRecyclerAdapter(
             tvNumero.text = (bindingAdapterPosition + 1).toString()
 
             // Avatar with first letter
+            // TODO: extrair para fun String?.toAvatarText() — mesma expressão duplicada em
+            //       ExclusionViewHolder e no ViewHolder inline do bottom sheet em ParticipantesActivity.
             tvAvatar.text = participante.nome?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
 
             // Status
