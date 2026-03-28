@@ -85,6 +85,7 @@ class ParticipantesViewModel @Inject constructor(
     private val _sorteioResult = MutableLiveData<SorteioResultado?>(null)
     private val _errorMessage = MutableLiveData<String?>(null)
     private val _mensagensSmsResult = MutableLiveData<MensagensSmsResultado?>(null)
+    private val _mensagensWhatsAppResult = MutableLiveData<MensagensSmsResultado?>(null)
     private val _mensagemCompartilhamentoResult = MutableLiveData<MensagemCompartilhamentoResultado?>(null)
     private val _atualizarSucesso = MutableLiveData<Boolean?>(null)
     private val _qrCodeResult = MutableLiveData<QrCodeResultado?>(null)
@@ -95,6 +96,7 @@ class ParticipantesViewModel @Inject constructor(
     val sorteioResult: LiveData<SorteioResultado?> get() = _sorteioResult
     val errorMessage: LiveData<String?> get() = _errorMessage
     val mensagensSmsResult: LiveData<MensagensSmsResultado?> get() = _mensagensSmsResult
+    val mensagensWhatsAppResult: LiveData<MensagensSmsResultado?> get() = _mensagensWhatsAppResult
     val mensagemCompartilhamentoResult: LiveData<MensagemCompartilhamentoResultado?> get() = _mensagemCompartilhamentoResult
     val atualizarSucesso: LiveData<Boolean?> get() = _atualizarSucesso
     val qrCodeResult: LiveData<QrCodeResultado?> get() = _qrCodeResult
@@ -122,6 +124,7 @@ class ParticipantesViewModel @Inject constructor(
     fun clearSorteioResult() { _sorteioResult.value = null }
     fun clearErrorMessage() { _errorMessage.value = null }
     fun clearMensagensSmsResult() { _mensagensSmsResult.value = null }
+    fun clearMensagensWhatsAppResult() { _mensagensWhatsAppResult.value = null }
     fun clearMensagemCompartilhamentoResult() { _mensagemCompartilhamentoResult.value = null }
 
     /** Marca participante como enviado em background (evita ANR). */
@@ -286,6 +289,33 @@ class ParticipantesViewModel @Inject constructor(
     }
 
     /**
+     * Prepara mensagens personalizadas para todos os participantes com telefone.
+     * Busca nomes e listas de desejos do banco; cada participante recebe sua
+     * própria mensagem revelando quem é seu amigo secreto.
+     * Usado por [prepararMensagensSms] e [prepararMensagensWhatsApp].
+     */
+    private suspend fun prepararMensagensParaEnvio(snapshot: List<Participante>): MensagensSmsResultado {
+        val (participantesAtuais, desejosMap) = withContext(ioDispatcher) {
+            val p = participanteRepository.listarPorGrupo(grupoId)
+            val d = desejoRepository.listarDesejosPorGrupo(grupoId)
+            p to d
+        }
+        val nomeMap = participantesAtuais.associate { it.id to it.nome }
+        val comTelefone = mutableListOf<Participante>()
+        val mensagens = mutableMapOf<Int, String>()
+        for (p in snapshot) {
+            if (!p.telefone.isNullOrBlank()) {
+                comTelefone.add(p)
+                val validAmigoId = p.amigoSorteadoId?.takeIf { it > 0 }
+                val nomeAmigo = validAmigoId?.let { nomeMap[it] }
+                val desejos: List<Desejo> = validAmigoId?.let { desejosMap[it] } ?: emptyList()
+                mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos)
+            }
+        }
+        return MensagensSmsResultado(comTelefone, mensagens)
+    }
+
+    /**
      * Prepara as mensagens SMS para todos os participantes com telefone.
      * Acessa o banco em background; posta o resultado em mensagensSmsResult.
      * Aceita uma lista de participantes para suportar tanto o fluxo normal (snapshot da lista)
@@ -294,28 +324,24 @@ class ParticipantesViewModel @Inject constructor(
     fun prepararMensagensSms(snapshot: List<Participante>) {
         launchTracked {
             try {
-                val (participantesAtuais, desejosMap) = withContext(ioDispatcher) {
-                    val p = participanteRepository.listarPorGrupo(grupoId)
-                    val d = desejoRepository.listarDesejosPorGrupo(grupoId)
-                    p to d
-                }
-                val nomeMap = participantesAtuais.associate { it.id to it.nome }
-
-                val comTelefone = mutableListOf<Participante>()
-                val mensagens = mutableMapOf<Int, String>()
-                for (p in snapshot) {
-                    val tel = p.telefone
-                    if (!tel.isNullOrBlank()) {
-                        comTelefone.add(p)
-                        val validAmigoId = p.amigoSorteadoId?.takeIf { it > 0 }
-                        val nomeAmigo = validAmigoId?.let { nomeMap[it] }
-                        val desejos: List<Desejo> = validAmigoId?.let { desejosMap[it] } ?: emptyList()
-                        mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos)
-                    }
-                }
-                _mensagensSmsResult.value = MensagensSmsResultado(comTelefone, mensagens)
+                _mensagensSmsResult.value = prepararMensagensParaEnvio(snapshot)
             } catch (e: Exception) {
                 handleDbError(e, "prepararMensagensSms: failed for grupoId=$grupoId", R.string.error_prepare_messages_failed)
+            }
+        }
+    }
+
+    /**
+     * Prepara as mensagens WhatsApp para todos os participantes com telefone.
+     * Mesma lógica que [prepararMensagensSms]; posta em canal separado para que a
+     * Activity possa iniciar o fluxo sequencial correto (WhatsApp vs SMS).
+     */
+    fun prepararMensagensWhatsApp(snapshot: List<Participante>) {
+        launchTracked {
+            try {
+                _mensagensWhatsAppResult.value = prepararMensagensParaEnvio(snapshot)
+            } catch (e: Exception) {
+                handleDbError(e, "prepararMensagensWhatsApp: failed for grupoId=$grupoId", R.string.error_prepare_messages_failed)
             }
         }
     }

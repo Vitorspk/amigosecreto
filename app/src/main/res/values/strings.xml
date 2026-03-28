@@ -21,6 +21,7 @@
     <string name="button_skip">Pular</string>
     <string name="button_cancel_all">Cancelar tudo</string>
     <string name="button_open_sms">Abrir SMS</string>
+    <string name="button_open_whatsapp">Abrir WhatsApp</string>
 
     <!-- Grupos -->
     <string name="grupo_menu_editar_nome">Editar nome</string>
@@ -48,6 +49,10 @@
     <string name="participante_sorteio_titulo">Sorteio Concluído!</string>
     <string name="participante_sorteio_msg_sms">Deseja enviar os resultados agora por SMS?</string>
     <string name="participante_sorteio_btn_sms">Sim, enviar SMS</string>
+    <string name="participante_sorteio_msg_canal">Sorteio concluído! Como deseja notificar os participantes?</string>
+    <string name="participante_sorteio_btn_whatsapp">WhatsApp</string>
+    <string name="participante_sorteio_btn_sms_curto">SMS</string>
+    <string name="participante_sorteio_btn_agora_nao">Agora não</string>
     <string name="participante_sorteio_minimo">Adicione pelo menos 3 participantes</string>
     <string name="participante_sorteio_impossivel">Impossível realizar sorteio com as regras atuais.</string>
     <string name="participante_limpar_titulo">Limpar Tudo</string>
@@ -60,6 +65,7 @@
     <string name="error_prepare_messages_failed">Erro ao preparar mensagens. Tente novamente.</string>
     <string name="error_no_phone_participants">Nenhum participante com telefone cadastrado.</string>
     <string name="error_no_sms_app">Nenhum app de SMS encontrado.</string>
+    <string name="warning_phone_no_country_code">\n\n⚠️ Número pode estar sem código de país (ex: +55). O link wa.me pode falhar.</string>
     <string name="status_result_sent">✓ Resultado enviado</string>
     <string name="status_item_sent">✓ Enviado</string>
     <string name="status_item_pending">Pendente</string>
@@ -68,6 +74,9 @@
     <string name="dialog_send_sms_title_format">Enviar para %1$s (%2$d/%3$d)</string>
     <string name="dialog_send_sms_message_format">Abrir app de SMS para %1$s?</string>
     <string name="toast_sms_prepared_format">SMS preparados para %1$d participante(s).</string>
+    <string name="dialog_send_whatsapp_title_format">WhatsApp para %1$s (%2$d/%3$d)</string>
+    <string name="dialog_send_whatsapp_message_format">Abrir WhatsApp para %1$s?</string>
+    <string name="toast_whatsapp_prepared_format">WhatsApp preparados para %1$d participante(s).</string>
     <string name="toast_contact_added_format">%1$s adicionado!</string>
 
     <!-- Restrições (tela de sorteio) -->

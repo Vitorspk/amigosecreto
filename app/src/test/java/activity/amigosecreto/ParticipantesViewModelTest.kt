@@ -627,6 +627,101 @@ class ParticipantesViewModelTest {
     }
 
     // =========================================================
+    // prepararMensagensWhatsApp
+    // =========================================================
+
+    @Test
+    fun prepararMensagensWhatsApp_participanteComTelefone_emiteResultadoComMensagem() = runTest(testDispatcher) {
+        inserirParticipante("Alice")
+        inserirParticipante("Bob")
+        inserirParticipante("Carol")
+        viewModel.init(grupoId)
+        viewModel.realizarSorteio()
+
+        val lista = viewModel.participants.value
+        assertNotNull(lista)
+
+        viewModel.prepararMensagensWhatsApp(lista!!)
+
+        val resultado = viewModel.mensagensWhatsAppResult.value
+        assertNotNull(resultado)
+        // Todos têm telefone cadastrado — devem aparecer no resultado
+        assertEquals(lista.size, resultado!!.participantesComTelefone.size)
+        for (p in resultado.participantesComTelefone) {
+            val msg = resultado.mensagens[p.id]
+            assertNotNull("Mensagem não deve ser nula para ${p.nome}", msg)
+            assertFalse("Mensagem não deve ser vazia para ${p.nome}", msg!!.isEmpty())
+        }
+    }
+
+    @Test
+    fun prepararMensagensWhatsApp_nenhumComTelefone_emiteListaVazia() = runTest(testDispatcher) {
+        val semFone = Participante(nome = "SemFone", grupoId = grupoId)
+        participanteRoomDao.inserir(semFone)
+        viewModel.init(grupoId)
+
+        val lista = viewModel.participants.value
+        assertNotNull(lista)
+
+        viewModel.prepararMensagensWhatsApp(lista!!)
+
+        val resultado = viewModel.mensagensWhatsAppResult.value
+        assertNotNull(resultado)
+        assertTrue(resultado!!.participantesComTelefone.isEmpty())
+    }
+
+    @Test
+    fun prepararMensagensWhatsApp_mensagemContemNomeDoAmigoSorteado() = runTest(testDispatcher) {
+        // Garante que cada mensagem WhatsApp revela o amigo correto
+        inserirParticipante("Ana")
+        inserirParticipante("Bia")
+        inserirParticipante("Carla")
+        viewModel.init(grupoId)
+        viewModel.realizarSorteio()
+
+        val lista = viewModel.participants.value!!
+        viewModel.prepararMensagensWhatsApp(lista)
+
+        val resultado = viewModel.mensagensWhatsAppResult.value!!
+        val nomes = lista.map { it.nome ?: "" }.toSet()
+
+        for (p in resultado.participantesComTelefone) {
+            val msg = resultado.mensagens[p.id]!!
+            // A mensagem deve citar o nome do participante
+            assertTrue("Mensagem deve conter o nome do participante ${p.nome}", msg.contains(p.nome ?: ""))
+            // E deve citar um nome válido do grupo como amigo secreto
+            val contemAlgumNome = nomes.any { nome -> msg.contains(nome) }
+            assertTrue("Mensagem deve conter o nome de algum participante como amigo", contemAlgumNome)
+        }
+    }
+
+    @Test
+    fun prepararMensagensWhatsApp_postaEmCanalSeparadoDoSms() = runTest(testDispatcher) {
+        // Os dois canais (SMS e WhatsApp) devem ter LiveData independentes
+        inserirParticipante("X")
+        inserirParticipante("Y")
+        inserirParticipante("Z")
+        viewModel.init(grupoId)
+        viewModel.realizarSorteio()
+
+        val lista = viewModel.participants.value!!
+
+        viewModel.prepararMensagensSms(lista)
+        val smsResult = viewModel.mensagensSmsResult.value
+        assertNotNull(smsResult)
+
+        // Limpa SMS; WhatsApp ainda deve ser nulo
+        viewModel.clearMensagensSmsResult()
+        assertNull(viewModel.mensagensSmsResult.value)
+        assertNull(viewModel.mensagensWhatsAppResult.value)
+
+        // Prepara WhatsApp; SMS deve continuar nulo
+        viewModel.prepararMensagensWhatsApp(lista)
+        assertNull(viewModel.mensagensSmsResult.value)
+        assertNotNull(viewModel.mensagensWhatsAppResult.value)
+    }
+
+    // =========================================================
     // prepararMensagensSms — caminho de erro
     // =========================================================
 
@@ -640,6 +735,18 @@ class ParticipantesViewModelTest {
         }
         assertaErro(repoQueLanca) {
             viewModel.prepararMensagensSms(emptyList())
+        }
+    }
+
+    @Test
+    fun prepararMensagensWhatsApp_erroNoRepository_postaErrorMessage() = runTest(testDispatcher) {
+        val repoQueLanca = object : ParticipanteRepository(participanteRoomDao) {
+            override suspend fun listarPorGrupo(grupoId: Int): List<Participante> {
+                throw SQLiteException("falha simulada")
+            }
+        }
+        assertaErro(repoQueLanca) {
+            viewModel.prepararMensagensWhatsApp(emptyList())
         }
     }
 
