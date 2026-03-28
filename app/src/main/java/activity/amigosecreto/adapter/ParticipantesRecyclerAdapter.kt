@@ -70,7 +70,7 @@ class ParticipantesRecyclerAdapter(
             tvNumero.text = (bindingAdapterPosition + 1).toString()
 
             // Avatar with first letter
-            tvAvatar.text = participante.nome?.substring(0, 1)?.uppercase() ?: "?"
+            tvAvatar.text = participante.nome?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
 
             // Status
             tvEmail.text = if (participante.isEnviado) context.getString(R.string.status_item_sent) else context.getString(R.string.status_item_pending)

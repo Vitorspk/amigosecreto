@@ -608,6 +608,10 @@ class ParticipantesActivity : AppCompatActivity() {
         val ids = bundle.getIntArray("${keyPrefix}Ids") ?: return null
         val telefones = bundle.getStringArray("${keyPrefix}Telefones") ?: return null
         val nomes = bundle.getStringArray("${keyPrefix}Nomes") ?: return null
+        if (telefones.size != ids.size || nomes.size != ids.size) {
+            Timber.e("restoreParticipantListFromBundle: array size mismatch (ids=${ids.size}, telefones=${telefones.size}, nomes=${nomes.size})")
+            return null
+        }
         return ids.indices.map { i ->
             Participante().also { p ->
                 p.id = ids[i]
@@ -633,7 +637,7 @@ class ParticipantesActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.participante_limpar_btn_sim)) { _, _ ->
                 viewModel.deletarTodosDoGrupo(grupoAtual.id)
             }
-            .setNegativeButton("Não", null)
+            .setNegativeButton(getString(R.string.button_no), null)
             .show()
     }
 
@@ -799,7 +803,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val tvNome = itemView.findViewById<TextView>(R.id.tv_nome_regra)
             val checkbox = itemView.findViewById<MaterialCheckBox>(R.id.checkbox_regra)
 
-            tvAvatar.text = outro.nome?.substring(0, 1)?.uppercase() ?: "?"
+            tvAvatar.text = outro.nome?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
             tvNome.text = outro.nome
             checkbox.isChecked = selecionados[i]
 
@@ -899,7 +903,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val btnRemover = view.findViewById<ImageButton>(R.id.btn_remover)
 
             tvNumero.text = (position + 1).toString()
-            tvAvatar.text = p.nome?.substring(0, 1)?.uppercase() ?: "?"
+            tvAvatar.text = p.nome?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
             tvNome.text = p.nome
 
             // Obter count de desejos do map pré-carregado

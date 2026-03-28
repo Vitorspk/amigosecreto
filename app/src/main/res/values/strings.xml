@@ -58,6 +58,7 @@
     <string name="participante_limpar_titulo">Limpar Tudo</string>
     <string name="participante_limpar_msg">Deseja remover todos os participantes deste grupo?</string>
     <string name="participante_limpar_btn_sim">Sim, limpar</string>
+    <string name="button_no">Não</string>
     <string name="label_no_participants">Nenhum participante ainda</string>
     <string name="dialog_new_participant_title">Novo Participante</string>
     <string name="dialog_edit_sent_warning">⚠️ O resultado deste participante já foi compartilhado. Editar os dados não atualizará a mensagem já enviada.</string>
