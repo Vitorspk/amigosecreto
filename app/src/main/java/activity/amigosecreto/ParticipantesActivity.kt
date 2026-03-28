@@ -57,14 +57,14 @@ class ParticipantesActivity : AppCompatActivity() {
      * [pendingMensagens] NÃO é salvo no bundle para evitar TransactionTooLargeException
      * (~1 MB Binder limit) em grupos com listas de desejos longas; reconstruído via banco.
      */
-    private data class SequentialSendState(
-        var pendingParticipanteId: Int = -1,
-        var launched: Boolean = false,
-        var pendingList: List<Participante>? = null,
-        var pendingMensagens: Map<Int, String>? = null,
-        var pendingNextIndex: Int = -1,
+    private class SequentialSendState {
+        var pendingParticipanteId: Int = -1
+        var launched: Boolean = false
+        var pendingList: List<Participante>? = null
+        var pendingMensagens: Map<Int, String>? = null
+        var pendingNextIndex: Int = -1
         var pendingResumeIndex: Int = -1
-    )
+    }
 
     private var smsState = SequentialSendState()
     private var whatsAppState = SequentialSendState()
@@ -741,9 +741,18 @@ class ParticipantesActivity : AppCompatActivity() {
             return
         }
 
+        // Verifica se o número normalizado pode estar sem código de país (< 12 dígitos).
+        // wa.me exige código de país — números locais sem +55 vão falhar ou abrir contato errado.
+        val telefoneDisplay = p.telefone ?: ""
+        val normalizado = CompartilharHelper.normalizePhoneNumber(telefoneDisplay)
+        val aviso = if (normalizado.isNotEmpty() && normalizado.length < 12) {
+            getString(R.string.warning_phone_no_country_code)
+        } else ""
+        val msgDialog = getString(R.string.dialog_send_whatsapp_message_format, telefoneDisplay) + aviso
+
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.dialog_send_whatsapp_title_format, p.nome, index + 1, lista.size))
-            .setMessage(getString(R.string.dialog_send_whatsapp_message_format, p.telefone))
+            .setMessage(msgDialog)
             .setPositiveButton(R.string.button_open_whatsapp) { _, _ ->
                 // Registra o estado antes de sair — onResume marca como enviado ao retornar.
                 // Estado atualizado antes de startActivity para que, em caso de crash ou
@@ -753,7 +762,7 @@ class ParticipantesActivity : AppCompatActivity() {
                 whatsAppState.pendingMensagens = mensagensMap
                 whatsAppState.pendingNextIndex = index + 1
                 whatsAppState.launched = true
-                CompartilharHelper.compartilharWhatsAppComTelefone(this, p.telefone ?: "", mensagem, getString(R.string.button_open_whatsapp))
+                CompartilharHelper.compartilharWhatsAppComTelefone(this, telefoneDisplay, mensagem, getString(R.string.button_open_whatsapp))
             }
             .setNegativeButton(R.string.button_skip) { _, _ ->
                 whatsAppState.pendingParticipanteId = -1
@@ -764,7 +773,6 @@ class ParticipantesActivity : AppCompatActivity() {
                 whatsAppState.pendingList = null
                 whatsAppState.pendingMensagens = null
                 whatsAppState.pendingNextIndex = -1
-                whatsAppState.launched = false
             }
             .setCancelable(false)
             .show()

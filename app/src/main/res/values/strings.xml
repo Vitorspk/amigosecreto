@@ -65,7 +65,7 @@
     <string name="error_prepare_messages_failed">Erro ao preparar mensagens. Tente novamente.</string>
     <string name="error_no_phone_participants">Nenhum participante com telefone cadastrado.</string>
     <string name="error_no_sms_app">Nenhum app de SMS encontrado.</string>
-    <string name="error_no_whatsapp_app">WhatsApp não está instalado.</string>
+    <string name="warning_phone_no_country_code">\n\n⚠️ Número pode estar sem código de país (ex: +55). O link wa.me pode falhar.</string>
     <string name="status_result_sent">✓ Resultado enviado</string>
     <string name="status_item_sent">✓ Enviado</string>
     <string name="status_item_pending">Pendente</string>
