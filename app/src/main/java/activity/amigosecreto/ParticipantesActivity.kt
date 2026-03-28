@@ -803,7 +803,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val tvNome = itemView.findViewById<TextView>(R.id.tv_nome_regra)
             val checkbox = itemView.findViewById<MaterialCheckBox>(R.id.checkbox_regra)
 
-            tvAvatar.text = outro.nome?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+            tvAvatar.text = outro.nome?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
             tvNome.text = outro.nome
             checkbox.isChecked = selecionados[i]
 
@@ -903,7 +903,7 @@ class ParticipantesActivity : AppCompatActivity() {
             val btnRemover = view.findViewById<ImageButton>(R.id.btn_remover)
 
             tvNumero.text = (position + 1).toString()
-            tvAvatar.text = p.nome?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+            tvAvatar.text = p.nome?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
             tvNome.text = p.nome
 
             // Obter count de desejos do map pré-carregado
