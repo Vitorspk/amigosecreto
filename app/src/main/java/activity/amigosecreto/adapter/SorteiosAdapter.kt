@@ -20,8 +20,12 @@ class SorteiosAdapter(
     private val itens: List<Sorteio>
 ) : RecyclerView.Adapter<SorteiosAdapter.ViewHolder>() {
 
-    @VisibleForTesting
-    internal val expandidos = mutableSetOf<Int>()
+    // MutableSet privado — exposto como snapshot read-only via expandidosSnapshot para testes.
+    private val expandidos = mutableSetOf<Int>()
+
+    /** Snapshot imutável de [expandidos] para uso exclusivo em testes. */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val expandidosSnapshot: Set<Int> get() = expandidos.toSet()
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDataHora: TextView = view.findViewById(R.id.tv_data_hora)
@@ -68,7 +72,7 @@ class SorteiosAdapter(
         }
     }
 
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun formatarDataHora(dataHora: String): String {
         if (dataHora == ctx.getString(R.string.historico_sorteio_anterior)) return dataHora
         return try {

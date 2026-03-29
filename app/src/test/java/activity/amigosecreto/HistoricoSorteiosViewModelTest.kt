@@ -114,6 +114,9 @@ class HistoricoSorteiosViewModelTest {
 
     @Test
     fun carregarHistorico_isLoading_termina_false() = runTest(testDispatcher) {
+        // Nota: com UnconfinedTestDispatcher a coroutine roda sincronamente —
+        // o estado intermediário isLoading=true não é observável neste teste.
+        // Apenas o estado final (false) é verificado.
         viewModel.carregarHistorico(grupoId)
         advanceUntilIdle()
         assertFalse(viewModel.isLoading.value ?: true)

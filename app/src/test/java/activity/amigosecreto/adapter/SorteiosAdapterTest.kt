@@ -95,7 +95,7 @@ class SorteiosAdapterTest {
     fun expandidos_inicialmente_vazio_nenhum_item_expandido() {
         val lista = listOf(criarSorteio(id = 1), criarSorteio(id = 2))
         adapter = SorteiosAdapter(ApplicationProvider.getApplicationContext(), lista)
-        assertTrue(adapter.expandidos.isEmpty())
+        assertTrue(adapter.expandidosSnapshot.isEmpty())
     }
 
     // =========================================================

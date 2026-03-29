@@ -24,7 +24,7 @@ class HistoricoSorteiosViewModel @Inject constructor(
     // substituir Dispatchers.IO por UnconfinedTestDispatcher e usar advanceUntilIdle().
     internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     constructor(
         sorteioRepository: SorteioRepository,
         ioDispatcher: CoroutineDispatcher
