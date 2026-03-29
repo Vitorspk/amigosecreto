@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -30,9 +31,8 @@ import org.robolectric.annotation.Config
 /**
  * Testes unitários de HistoricoSorteiosViewModel via Robolectric + Room in-memory.
  *
- * Usa UnconfinedTestDispatcher como main dispatcher. Como o ViewModel usa
- * withContext(Dispatchers.IO), usamos runBlocking para aguardar a coroutine
- * do viewModelScope antes de fazer as asserções.
+ * Usa UnconfinedTestDispatcher tanto como main quanto como ioDispatcher injetado,
+ * permitindo que advanceUntilIdle() controle todas as coroutines sem Thread.sleep.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -69,7 +69,8 @@ class HistoricoSorteiosViewModelTest {
         grupoId = grupoDao.inserir(grupo).toInt()
 
         repository = SorteioRepository(sorteioDao)
-        viewModel = HistoricoSorteiosViewModel(repository)
+        // Injeta testDispatcher como ioDispatcher — elimina Thread.sleep
+        viewModel = HistoricoSorteiosViewModel(repository, testDispatcher)
     }
 
     @After
@@ -92,13 +93,14 @@ class HistoricoSorteiosViewModelTest {
         repository.salvarSorteioCompleto(grupoId, listOf(p1, p2, p3), listOf(p2, p3, p1))
     }
 
-    /** Chama carregarHistorico e aguarda a coroutine via runBlocking + Thread.sleep mínimo. */
-    private fun carregarEAguardar(gId: Int = grupoId) {
-        viewModel.carregarHistorico(gId)
-        // viewModelScope.launch + withContext(Dispatchers.IO): o UnconfinedTestDispatcher como
-        // Main faz o launch rodar imediatamente, mas o IO ainda é real.
-        // allowMainThreadQueries + in-memory DB respondem em < 50ms.
-        Thread.sleep(200)
+    /** Cria um ViewModel com repositório que sempre lança exceção. */
+    private fun criarVMComErro(): HistoricoSorteiosViewModel {
+        val fakeRepo = object : SorteioRepository(sorteioDao) {
+            override suspend fun listarPorGrupo(grupoId: Int): List<Sorteio> {
+                throw RuntimeException("DB error simulado")
+            }
+        }
+        return HistoricoSorteiosViewModel(fakeRepo, testDispatcher)
     }
 
     // =========================================================
@@ -111,8 +113,9 @@ class HistoricoSorteiosViewModelTest {
     }
 
     @Test
-    fun carregarHistorico_isLoading_termina_false() {
-        carregarEAguardar()
+    fun carregarHistorico_isLoading_termina_false() = runTest(testDispatcher) {
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
         assertFalse(viewModel.isLoading.value ?: true)
     }
 
@@ -121,8 +124,9 @@ class HistoricoSorteiosViewModelTest {
     // =========================================================
 
     @Test
-    fun carregarHistorico_grupo_sem_sorteios_retorna_lista_vazia() {
-        carregarEAguardar()
+    fun carregarHistorico_grupo_sem_sorteios_retorna_lista_vazia() = runTest(testDispatcher) {
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
 
         val sorteios = viewModel.sorteios.value
         assertNotNull(sorteios)
@@ -130,9 +134,10 @@ class HistoricoSorteiosViewModelTest {
     }
 
     @Test
-    fun carregarHistorico_grupo_com_sorteio_retorna_lista_com_um_item() = runBlocking {
+    fun carregarHistorico_grupo_com_sorteio_retorna_lista_com_um_item() = runTest(testDispatcher) {
         salvarSorteio()
-        carregarEAguardar()
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
 
         val sorteios = viewModel.sorteios.value
         assertNotNull(sorteios)
@@ -140,30 +145,33 @@ class HistoricoSorteiosViewModelTest {
     }
 
     @Test
-    fun carregarHistorico_retorna_sorteios_com_pares_populados() = runBlocking {
+    fun carregarHistorico_retorna_sorteios_com_pares_populados() = runTest(testDispatcher) {
         salvarSorteio()
-        carregarEAguardar()
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
 
         val sorteios = viewModel.sorteios.value!!
         assertEquals(3, sorteios[0].pares.size)
     }
 
     @Test
-    fun carregarHistorico_multiplos_sorteios_retorna_todos() = runBlocking {
+    fun carregarHistorico_multiplos_sorteios_retorna_todos() = runTest(testDispatcher) {
         salvarSorteio()
         salvarSorteio()
-        carregarEAguardar()
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
 
         val sorteios = viewModel.sorteios.value!!
         assertEquals(2, sorteios.size)
     }
 
     @Test
-    fun carregarHistorico_nao_retorna_sorteios_de_outro_grupo() = runBlocking {
+    fun carregarHistorico_nao_retorna_sorteios_de_outro_grupo() = runTest(testDispatcher) {
         salvarSorteio()
         val outroGrupoId = grupoDao.inserir(Grupo(nome = "Outro")).toInt()
 
-        carregarEAguardar(outroGrupoId)
+        viewModel.carregarHistorico(outroGrupoId)
+        advanceUntilIdle()
 
         val sorteios = viewModel.sorteios.value!!
         assertTrue(sorteios.isEmpty())
@@ -179,38 +187,25 @@ class HistoricoSorteiosViewModelTest {
     }
 
     @Test
-    fun carregarHistorico_sem_erro_nao_posta_hasError() {
-        carregarEAguardar()
+    fun carregarHistorico_sem_erro_nao_posta_hasError() = runTest(testDispatcher) {
+        viewModel.carregarHistorico(grupoId)
+        advanceUntilIdle()
         assertNull(viewModel.hasError.value)
     }
 
     @Test
-    fun carregarHistorico_com_repositorio_que_lanca_excecao_posta_hasError() {
-        val fakeRepository = object : SorteioRepository(sorteioDao) {
-            override suspend fun listarPorGrupo(grupoId: Int): List<Sorteio> {
-                throw RuntimeException("DB error simulado")
-            }
-        }
-        val vmComErro = HistoricoSorteiosViewModel(fakeRepository)
-
+    fun carregarHistorico_com_repositorio_que_lanca_excecao_posta_hasError() = runTest(testDispatcher) {
+        val vmComErro = criarVMComErro()
         vmComErro.carregarHistorico(grupoId)
-        Thread.sleep(200)
-
+        advanceUntilIdle()
         assertTrue(vmComErro.hasError.value ?: false)
     }
 
     @Test
-    fun carregarHistorico_com_erro_isLoading_fica_false() {
-        val fakeRepository = object : SorteioRepository(sorteioDao) {
-            override suspend fun listarPorGrupo(grupoId: Int): List<Sorteio> {
-                throw RuntimeException("DB error simulado")
-            }
-        }
-        val vmComErro = HistoricoSorteiosViewModel(fakeRepository)
-
+    fun carregarHistorico_com_erro_isLoading_fica_false() = runTest(testDispatcher) {
+        val vmComErro = criarVMComErro()
         vmComErro.carregarHistorico(grupoId)
-        Thread.sleep(200)
-
+        advanceUntilIdle()
         assertFalse(vmComErro.isLoading.value ?: true)
     }
 }

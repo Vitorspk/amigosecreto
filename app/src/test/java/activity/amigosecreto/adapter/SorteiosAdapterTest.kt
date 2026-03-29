@@ -13,8 +13,8 @@ import org.robolectric.annotation.Config
 /**
  * Testes unitários de SorteiosAdapter via Robolectric.
  *
- * Como formatarDataHora() é private, sua lógica é coberta indiretamente
- * via reflexão para garantir a conversão ISO 8601 → dd/MM/yyyy 'às' HH:mm.
+ * formatarDataHora() é internal @VisibleForTesting — acessada diretamente
+ * sem reflection, com benefício de rename safety automático pelo IDE.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -104,70 +104,56 @@ class SorteiosAdapterTest {
     }
 
     // =========================================================
-    // formatarDataHora (via reflexão — private)
+    // formatarDataHora (internal @VisibleForTesting — acesso direto)
     // =========================================================
-
-    private fun formatarDataHora(dataHora: String): String {
-        val method = SorteiosAdapter::class.java.getDeclaredMethod("formatarDataHora", String::class.java)
-        method.isAccessible = true
-        return method.invoke(adapter, dataHora) as String
-    }
 
     @Test
     fun formatarDataHora_converte_iso8601_para_formato_pt_br() {
-        val resultado = formatarDataHora("2025-12-25T10:30:00")
-        assertEquals("25/12/2025 às 10:30", resultado)
+        assertEquals("25/12/2025 às 10:30", adapter.formatarDataHora("2025-12-25T10:30:00"))
     }
 
     @Test
     fun formatarDataHora_converte_data_inicio_do_ano() {
-        val resultado = formatarDataHora("2025-01-01T00:00:00")
-        assertEquals("01/01/2025 às 00:00", resultado)
+        assertEquals("01/01/2025 às 00:00", adapter.formatarDataHora("2025-01-01T00:00:00"))
     }
 
     @Test
     fun formatarDataHora_converte_data_fim_do_ano() {
-        val resultado = formatarDataHora("2025-12-31T23:59:00")
-        assertEquals("31/12/2025 às 23:59", resultado)
+        assertEquals("31/12/2025 às 23:59", adapter.formatarDataHora("2025-12-31T23:59:00"))
     }
 
     @Test
     fun formatarDataHora_converte_horario_com_horas_simples() {
-        val resultado = formatarDataHora("2024-06-15T09:05:00")
-        assertEquals("15/06/2024 às 09:05", resultado)
+        assertEquals("15/06/2024 às 09:05", adapter.formatarDataHora("2024-06-15T09:05:00"))
     }
 
     @Test
     fun formatarDataHora_retorna_original_quando_formato_invalido() {
         val invalido = "data-invalida"
-        val resultado = formatarDataHora(invalido)
-        assertEquals(invalido, resultado)
+        assertEquals(invalido, adapter.formatarDataHora(invalido))
     }
 
     @Test
     fun formatarDataHora_retorna_original_quando_string_vazia() {
-        val resultado = formatarDataHora("")
-        assertEquals("", resultado)
+        assertEquals("", adapter.formatarDataHora(""))
     }
 
     @Test
-    fun formatarDataHora_retorna_original_para_formato_americano_sem_T() {
+    fun formatarDataHora_retorna_original_para_formato_sem_T() {
         val original = "2025/12/25 10:30"
-        val resultado = formatarDataHora(original)
-        assertEquals(original, resultado)
+        assertEquals(original, adapter.formatarDataHora(original))
     }
 
     @Test
     fun formatarDataHora_contém_palavra_as_no_resultado() {
-        val resultado = formatarDataHora("2025-07-20T14:00:00")
+        val resultado = adapter.formatarDataHora("2025-07-20T14:00:00")
         assertTrue("Esperava 'às' em '$resultado'", resultado.contains("às"))
     }
 
     @Test
-    fun formatarDataHora_formato_saida_tem_dd_MM_yyyy() {
-        val resultado = formatarDataHora("2025-03-08T08:00:00")
-        // Formato esperado: dd/MM/yyyy 'às' HH:mm → "08/03/2025 às 08:00"
-        assertTrue("Esperava formato dd/MM/yyyy em '$resultado'",
+    fun formatarDataHora_formato_saida_corresponde_ao_padrao_dd_MM_yyyy() {
+        val resultado = adapter.formatarDataHora("2025-03-08T08:00:00")
+        assertTrue("Esperava formato dd/MM/yyyy 'às' HH:mm em '$resultado'",
             resultado.matches(Regex("\\d{2}/\\d{2}/\\d{4} às \\d{2}:\\d{2}")))
     }
 
@@ -179,7 +165,6 @@ class SorteiosAdapterTest {
     fun adapter_com_sorteio_com_pares_mantem_tamanho_correto() {
         val s = criarSorteio(id = 1, numPares = 3)
         assertEquals(3, s.pares.size)
-
         adapter = SorteiosAdapter(ApplicationProvider.getApplicationContext(), listOf(s))
         assertEquals(1, adapter.itemCount)
     }

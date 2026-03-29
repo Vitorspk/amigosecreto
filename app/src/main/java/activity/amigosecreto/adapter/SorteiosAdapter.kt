@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Sorteio
@@ -66,7 +67,8 @@ class SorteiosAdapter(
         }
     }
 
-    private fun formatarDataHora(dataHora: String): String {
+    @VisibleForTesting
+    internal fun formatarDataHora(dataHora: String): String {
         if (dataHora == ctx.getString(R.string.historico_sorteio_anterior)) return dataHora
         return try {
             val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)

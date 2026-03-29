@@ -83,8 +83,8 @@ class ParticipantesRecyclerAdapterTest {
     // =========================================================
 
     @Test
-    fun setOnItemClickListener_nao_lanca_excecao_com_listener_nulo() {
-        // Verifica que atribuir listener não lança exceção
+    fun setOnItemClickListener_aceita_listener_sem_lancar_excecao() {
+        // Verifica que atribuir um listener válido não lança exceção
         adapter.setOnItemClickListener(object : ParticipantesRecyclerAdapter.OnItemClickListener {
             override fun onItemClick(participante: Participante) {}
             override fun onRemoveClick(participante: Participante) {}

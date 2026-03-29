@@ -147,8 +147,8 @@ class WindowInsetsUtilsTest {
     fun currency_e_number_diferem_pela_presenca_do_simbolo_moeda() {
         val currency = WindowInsetsUtils.currencyFormatPtBr().format(100.0)
         val number = WindowInsetsUtils.numberFormatPtBr().format(100.0)
-        // currency deve ter símbolo; number não deve ter
         assertNotEquals(currency, number)
         assertEquals("100,00", number)
+        assertTrue("Currency deve conter símbolo 'R$' em '$currency'", currency.contains("R$"))
     }
 }

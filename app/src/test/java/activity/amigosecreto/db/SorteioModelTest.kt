@@ -56,10 +56,9 @@ class SorteioModelTest {
     }
 
     @Test
-    fun sorteio_serializable_pares_sao_transient_nao_serializados() {
-        // @Ignore em pares significa que não é persistido por Room,
-        // mas Serializable serializa tudo que não é @Transient.
-        // Verificamos que pares fica como emptyList após deserialização.
+    fun sorteio_serializable_pares_sem_transient_sao_serializados() {
+        // @Ignore é anotação do Room (não persiste no banco), mas NÃO é @Transient do Java.
+        // Portanto pares é serializado normalmente pelo Serializable.
         val original = Sorteio(id = 1, grupoId = 1)
         val par = SorteioPar(sorteioId = 1, participanteId = 2, sorteadoId = 3,
             nomeParticipante = "Ana", nomeSorteado = "Bia")
@@ -71,7 +70,6 @@ class SorteioModelTest {
             it.readObject() as Sorteio
         }
 
-        // pares não tem anotação @Transient, então é serializado normalmente
         assertEquals(1, deserializado.pares.size)
     }
 
