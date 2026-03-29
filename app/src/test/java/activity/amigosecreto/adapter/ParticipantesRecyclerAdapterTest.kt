@@ -95,6 +95,10 @@ class ParticipantesRecyclerAdapterTest {
 
     // =========================================================
     // Interface OnItemClickListener
+    // Nota: os testes abaixo verificam o contrato da interface (que os métodos
+    // existem e são invocáveis). O comportamento de clique real do adapter
+    // (que onBindViewHolder chama o listener correto) é coberto pelos testes
+    // instrumentados em ParticipantesActivityTest (Espresso).
     // =========================================================
 
     @Test

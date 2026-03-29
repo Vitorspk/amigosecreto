@@ -94,9 +94,10 @@ class WindowInsetsUtilsTest {
     @Test
     fun numberFormatPtBr_arredonda_para_duas_casas_decimais() {
         val fmt = WindowInsetsUtils.numberFormatPtBr()
-        val resultado = fmt.format(1.005)
-        // 1.005 arredondado para 2 casas → "1,01" ou "1,00" dependendo do modo de arredondamento
-        assertTrue(resultado == "1,01" || resultado == "1,00")
+        // 1.006 → "1,01" (inequivocamente arredondado para cima)
+        assertEquals("1,01", fmt.format(1.006))
+        // 1.004 → "1,00" (inequivocamente arredondado para baixo)
+        assertEquals("1,00", fmt.format(1.004))
     }
 
     @Test

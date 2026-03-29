@@ -20,7 +20,8 @@ class SorteiosAdapter(
     private val itens: List<Sorteio>
 ) : RecyclerView.Adapter<SorteiosAdapter.ViewHolder>() {
 
-    private val expandidos = mutableSetOf<Int>()
+    @VisibleForTesting
+    internal val expandidos = mutableSetOf<Int>()
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDataHora: TextView = view.findViewById(R.id.tv_data_hora)

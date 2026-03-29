@@ -95,12 +95,7 @@ class SorteiosAdapterTest {
     fun expandidos_inicialmente_vazio_nenhum_item_expandido() {
         val lista = listOf(criarSorteio(id = 1), criarSorteio(id = 2))
         adapter = SorteiosAdapter(ApplicationProvider.getApplicationContext(), lista)
-
-        val expandidosField = SorteiosAdapter::class.java.getDeclaredField("expandidos")
-        expandidosField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val expandidos = expandidosField.get(adapter) as MutableSet<*>
-        assertTrue(expandidos.isEmpty())
+        assertTrue(adapter.expandidos.isEmpty())
     }
 
     // =========================================================
