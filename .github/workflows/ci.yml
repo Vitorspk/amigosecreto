@@ -62,6 +62,10 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          # Disables JIT C2 compiler to prevent SIGSEGV crash in libjvm.so
+          # when running Robolectric tests with Java 21 on ubuntu-latest runners.
+          # Scoped to CI only to avoid degrading local developer build performance.
+          GRADLE_OPTS: "-XX:TieredStopAtLevel=1"
 
       - name: Run lint checks
         run: ./gradlew :app:lintRelease
