@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Sorteio
@@ -19,7 +20,12 @@ class SorteiosAdapter(
     private val itens: List<Sorteio>
 ) : RecyclerView.Adapter<SorteiosAdapter.ViewHolder>() {
 
+    // MutableSet privado — exposto como snapshot read-only via expandidosSnapshot para testes.
     private val expandidos = mutableSetOf<Int>()
+
+    /** Snapshot imutável de [expandidos] para uso exclusivo em testes. */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val expandidosSnapshot: Set<Int> get() = expandidos.toSet()
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDataHora: TextView = view.findViewById(R.id.tv_data_hora)
@@ -66,7 +72,8 @@ class SorteiosAdapter(
         }
     }
 
-    private fun formatarDataHora(dataHora: String): String {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun formatarDataHora(dataHora: String): String {
         if (dataHora == ctx.getString(R.string.historico_sorteio_anterior)) return dataHora
         return try {
             val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
