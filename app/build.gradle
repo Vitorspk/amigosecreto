@@ -105,6 +105,12 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
+            all {
+                // Desabilita o compilador JIT C2 para evitar SIGSEGV (libjvm.so Node::uncast)
+                // ao executar testes Robolectric com Java 21 em runners CI ubuntu-latest.
+                // GRADLE_OPTS não é suficiente pois o processo de teste é bifurcado (forked).
+                jvmArgs '-XX:TieredStopAtLevel=1'
+            }
         }
     }
 
