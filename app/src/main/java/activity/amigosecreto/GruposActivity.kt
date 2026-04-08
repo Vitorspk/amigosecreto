@@ -496,14 +496,22 @@ class GruposActivity : AppCompatActivity() {
                     Toast.makeText(this@GruposActivity, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                // Salva estado original para restaurar se a operação falhar.
+                // Cria cópia com o novo nome — não muta o objeto no adapter
+                // para que DiffUtil possa detectar a mudança ao comparar com o resultado do DB.
+                val grupoAtualizado = Grupo(
+                    id = g.id, nome = novoNome, data = g.data, descricao = g.descricao,
+                    dataEvento = g.dataEvento, localEvento = g.localEvento,
+                    dataLimiteSorteio = g.dataLimiteSorteio, valorMinimo = g.valorMinimo,
+                    valorMaximo = g.valorMaximo, regras = g.regras,
+                    permitirVerDesejos = g.permitirVerDesejos,
+                    exigirConfirmacaoCompra = g.exigirConfirmacaoCompra,
+                )
                 pendingEditNomeOriginal = g.nome
-                pendingEditGrupo = g
+                pendingEditGrupo = grupoAtualizado
                 pendingEditDialog = dialog
                 pendingEditButton = v
-                g.nome = novoNome
                 v.isEnabled = false
-                viewModel.atualizarNomeGrupo(g)
+                viewModel.atualizarNomeGrupo(grupoAtualizado)
             }
 
             btnCancelar.setOnClickListener { dialog.dismiss() }
