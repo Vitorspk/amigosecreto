@@ -32,7 +32,6 @@ class Grupo(
     var regras: String? = null,
     @ColumnInfo(name = "permitir_ver_desejos", defaultValue = "1")
     var permitirVerDesejos: Boolean = true,
-    // TODO: aplicar exigirConfirmacaoCompra para bloquear compartilhamento até confirmação
     @ColumnInfo(name = "exigir_confirmacao_compra", defaultValue = "0")
     var exigirConfirmacaoCompra: Boolean = false,
 ) : Serializable {

@@ -158,6 +158,13 @@ class ParticipanteDAO(ctx: Context) {
         database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(id.toString()))
     }
 
+    fun confirmarPresente(id: Int) {
+        val values = ContentValues().apply {
+            put(MySQLiteOpenHelper.COLUMN_CONFIRMOU_PRESENTE, 1)
+        }
+        database.update(MySQLiteOpenHelper.TABLE_PARTICIPANTE, values, "${MySQLiteOpenHelper.COLUMN_ID} = ?", arrayOf(id.toString()))
+    }
+
     fun listarPorGrupo(grupoId: Int): List<Participante> {
         // Pass 1 — fetch participants
         val mapaParticipantes = linkedMapOf<Int, Participante>()
@@ -174,6 +181,7 @@ class ParticipanteDAO(ctx: Context) {
                 val telefoneIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_TELEFONE)
                 val amigoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID)
                 val enviadoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ENVIADO)
+                val confirmouIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_CONFIRMOU_PRESENTE)
                 do {
                     val p = Participante()
                     p.id = it.getInt(idIdx)
@@ -182,6 +190,7 @@ class ParticipanteDAO(ctx: Context) {
                     p.telefone = it.getString(telefoneIdx)
                     if (!it.isNull(amigoIdx)) p.amigoSorteadoId = it.getInt(amigoIdx)
                     p.isEnviado = it.getInt(enviadoIdx) == 1
+                    p.confirmouPresente = it.getInt(confirmouIdx) == 1
                     mapaParticipantes[p.id] = p
                 } while (it.moveToNext())
             }

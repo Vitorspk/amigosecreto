@@ -330,6 +330,10 @@
     <string name="configuracoes_hint_valor_maximo">R$ Máximo</string>
     <string name="configuracoes_label_permitir_ver_desejos">Permitir ver desejos</string>
     <string name="configuracoes_label_exigir_confirmacao">Exigir confirmação de compra</string>
+    <string name="confirmacao_compra_titulo">Confirmar compra</string>
+    <string name="confirmacao_compra_mensagem">Confirmar que o presente de %1$s foi comprado?</string>
+    <string name="confirmacao_compra_sim">Confirmar</string>
+    <string name="confirmacao_compra_bloqueado">Confirme a compra antes de compartilhar</string>
     <string name="configuracoes_salvas">Configurações salvas com sucesso</string>
     <string name="configuracoes_erro_faixa_valor">Valor mínimo não pode ser maior que o máximo</string>
     <string name="configuracoes_erro_valor_negativo">Valores mínimo e máximo não podem ser negativos</string>

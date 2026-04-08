@@ -870,6 +870,19 @@ class ParticipantesActivity : AppCompatActivity() {
         }
     }
 
+    private fun exibirDialogConfirmarCompra(p: Participante) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.confirmacao_compra_titulo)
+            .setMessage(getString(R.string.confirmacao_compra_mensagem, p.nome))
+            .setPositiveButton(R.string.confirmacao_compra_sim) { _, _ ->
+                viewModel.confirmarCompra(p.id)
+                // A lista será recarregada via observer após confirmarCompra() persistir —
+                // o próximo tap no botão seguirá o fluxo normal de compartilhamento.
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
@@ -952,11 +965,16 @@ class ParticipantesActivity : AppCompatActivity() {
             btnRegras.setOnClickListener { exibirDialogRegras(p) }
 
             btnShare.setOnClickListener { v ->
-                // Desabilitar imediatamente para evitar multiplos taps que disparariam
-                // requisicoes duplicadas. Reabilitado quando notifyDataSetChanged() recria
-                // as views apos atualizarLista() no observer de mensagemCompartilhamento.
-                v.isEnabled = false
-                compartilharResultado(p)
+                if (grupoAtual.exigirConfirmacaoCompra && !p.confirmouPresente) {
+                    // Bloquear compartilhamento até confirmar a compra.
+                    exibirDialogConfirmarCompra(p)
+                } else {
+                    // Desabilitar imediatamente para evitar multiplos taps que disparariam
+                    // requisicoes duplicadas. Reabilitado quando notifyDataSetChanged() recria
+                    // as views apos atualizarLista() no observer de mensagemCompartilhamento.
+                    v.isEnabled = false
+                    compartilharResultado(p)
+                }
             }
 
             btnQrCode.setOnClickListener {
