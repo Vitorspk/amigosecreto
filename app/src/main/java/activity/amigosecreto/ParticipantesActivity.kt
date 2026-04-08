@@ -39,6 +39,7 @@ import activity.amigosecreto.db.Participante
 import activity.amigosecreto.util.CompartilharHelper
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
+import activity.amigosecreto.util.WindowInsetsUtils
 
 @AndroidEntryPoint
 class ParticipantesActivity : AppCompatActivity() {
@@ -83,6 +84,8 @@ class ParticipantesActivity : AppCompatActivity() {
 
     private lateinit var lvParticipantes: android.widget.ListView
     private lateinit var tvCount: TextView
+    private lateinit var tvDataEvento: TextView
+    private lateinit var tvFaixaValor: TextView
     private lateinit var fabAdd: MaterialButton
     private lateinit var btnSortear: View
     private lateinit var btnLimpar: View
@@ -104,6 +107,7 @@ class ParticipantesActivity : AppCompatActivity() {
             }
             if (grupoAtualizado != null) {
                 grupoAtual = grupoAtualizado
+                atualizarInfoGrupo(grupoAtual)
                 // Recarrega lista para refletir mudanças de configuração (ex: permitirVerDesejos).
                 @Suppress("NotifyDataSetChanged")
                 adapter.notifyDataSetChanged()
@@ -175,9 +179,13 @@ class ParticipantesActivity : AppCompatActivity() {
 
         lvParticipantes = findViewById(R.id.lv_participantes)
         tvCount = findViewById(R.id.tv_count)
+        tvDataEvento = findViewById(R.id.tv_data_evento)
+        tvFaixaValor = findViewById(R.id.tv_faixa_valor)
         fabAdd = findViewById(R.id.fab_add_participante)
         btnSortear = findViewById(R.id.btn_sortear)
         btnLimpar = findViewById(R.id.btn_limpar)
+
+        atualizarInfoGrupo(grupoAtual)
 
         stateHelper = StateViewHelper(
             stubLoading = findViewById(R.id.stub_loading),
@@ -868,6 +876,35 @@ class ParticipantesActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    /**
+     * Exibe data do evento e faixa de valor no header da tela.
+     * Campos são ocultados quando não preenchidos nas configurações do grupo.
+     */
+    private fun atualizarInfoGrupo(grupo: Grupo) {
+        val dataEvento = grupo.dataEvento
+        if (!dataEvento.isNullOrBlank()) {
+            tvDataEvento.text = getString(R.string.label_data_evento, dataEvento)
+            tvDataEvento.visibility = View.VISIBLE
+        } else {
+            tvDataEvento.visibility = View.GONE
+        }
+
+        val fmt = WindowInsetsUtils.currencyFormatPtBr()
+        val temMin = grupo.valorMinimo > 0
+        val temMax = grupo.valorMaximo > 0
+        tvFaixaValor.text = when {
+            temMin && temMax -> getString(
+                R.string.label_faixa_valor_completa,
+                fmt.format(grupo.valorMinimo),
+                fmt.format(grupo.valorMaximo)
+            )
+            temMin -> getString(R.string.label_faixa_valor_minimo, fmt.format(grupo.valorMinimo))
+            temMax -> getString(R.string.label_faixa_valor_maximo, fmt.format(grupo.valorMaximo))
+            else -> null
+        }
+        tvFaixaValor.visibility = if (temMin || temMax) View.VISIBLE else View.GONE
     }
 
     private fun exibirDialogConfirmarCompra(p: Participante) {
