@@ -25,4 +25,7 @@ open class SorteioRepository @VisibleForTesting internal constructor(
 
     open suspend fun buscarUltimoPorGrupo(grupoId: Int): Sorteio? =
         dao.buscarUltimoPorGrupo(grupoId)
+
+    open suspend fun deletarSorteiosPorGrupo(grupoId: Int) =
+        dao.deletarTodosPorGrupo(grupoId)
 }

@@ -89,6 +89,7 @@ class ParticipantesViewModel @Inject constructor(
     private val _mensagemCompartilhamentoResult = MutableLiveData<MensagemCompartilhamentoResultado?>(null)
     private val _atualizarSucesso = MutableLiveData<Boolean?>(null)
     private val _qrCodeResult = MutableLiveData<QrCodeResultado?>(null)
+    private val _desfazerSorteioSucesso = MutableLiveData<Boolean?>(null)
 
     val participants: LiveData<List<Participante>> get() = _participants
     val wishCounts: LiveData<Map<Int, Int>> get() = _wishCounts
@@ -100,6 +101,7 @@ class ParticipantesViewModel @Inject constructor(
     val mensagemCompartilhamentoResult: LiveData<MensagemCompartilhamentoResultado?> get() = _mensagemCompartilhamentoResult
     val atualizarSucesso: LiveData<Boolean?> get() = _atualizarSucesso
     val qrCodeResult: LiveData<QrCodeResultado?> get() = _qrCodeResult
+    val desfazerSorteioSucesso: LiveData<Boolean?> get() = _desfazerSorteioSucesso
 
     // Overridable in tests via setIoDispatcher() to use UnconfinedTestDispatcher.
     @VisibleForTesting
@@ -126,6 +128,7 @@ class ParticipantesViewModel @Inject constructor(
     fun clearMensagensSmsResult() { _mensagensSmsResult.value = null }
     fun clearMensagensWhatsAppResult() { _mensagensWhatsAppResult.value = null }
     fun clearMensagemCompartilhamentoResult() { _mensagemCompartilhamentoResult.value = null }
+    fun clearDesfazerSorteioSucesso() { _desfazerSorteioSucesso.value = null }
 
     /** Marca participante como enviado em background (evita ANR). */
     fun marcarComoEnviado(participanteId: Int) {
@@ -402,6 +405,29 @@ class ParticipantesViewModel @Inject constructor(
                 _qrCodeResult.value = QrCodeResultado(participante.nome ?: "", nomeAmigo)
             } catch (e: Exception) {
                 handleDbError(e, "obterNomeAmigoParaQr: failed for participanteId=${participante.id}", R.string.qr_erro_gerar)
+            }
+        }
+    }
+
+    /**
+     * Desfaz o sorteio do grupo atual:
+     * - Zera [Participante.amigoSorteadoId] e enviado de todos os participantes
+     * - Remove todos os registros de sorteio/sorteio_par do grupo
+     * Recarrega participantes após sucesso para refletir o estado zerado.
+     */
+    fun desfazerSorteio() {
+        _isLoading.value = true
+        launchTracked {
+            try {
+                withContext(ioDispatcher) {
+                    participanteRepository.limparSorteioDoGrupo(grupoId)
+                    sorteioRepository.deletarSorteiosPorGrupo(grupoId)
+                }
+                carregarParticipantes()
+                _desfazerSorteioSucesso.value = true
+            } catch (e: Exception) {
+                _isLoading.value = false
+                handleDbError(e, "desfazerSorteio: failed for grupoId=$grupoId", R.string.error_desfazer_sorteio)
             }
         }
     }

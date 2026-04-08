@@ -47,6 +47,9 @@ abstract class SorteioRoomDao {
     @Query("SELECT COUNT(*) FROM sorteio WHERE grupo_id = :grupoId")
     abstract suspend fun contarPorGrupo(grupoId: Int): Int
 
+    @Query("DELETE FROM sorteio WHERE grupo_id = :grupoId")
+    abstract suspend fun deletarTodosPorGrupo(grupoId: Int)
+
     /**
      * Salva sorteio completo atomicamente:
      * 1. Insere evento de sorteio com timestamp
