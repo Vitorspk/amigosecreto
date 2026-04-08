@@ -231,6 +231,7 @@ class ParticipantesActivity : AppCompatActivity() {
             listaParticipantes.clear()
             listaParticipantes.addAll(participantes)
             aplicarFiltro()
+            invalidateOptionsMenu()
             if (listaParticipantes.isEmpty()) {
                 stateHelper.showEmpty()
                 tvCount.setText(R.string.label_no_participants)
@@ -336,6 +337,14 @@ class ParticipantesActivity : AppCompatActivity() {
                 resultado.participante.nome ?: "",
                 resultado.participante.telefone
             )
+        }
+
+        // Sorteio desfeito — atualizar menu e exibir feedback.
+        viewModel.desfazerSorteioSucesso.observe(this) { sucesso ->
+            if (sucesso == null) return@observe
+            viewModel.clearDesfazerSorteioSucesso()
+            invalidateOptionsMenu()
+            Toast.makeText(this, R.string.toast_sorteio_desfeito, Toast.LENGTH_SHORT).show()
         }
 
         // Nome do amigo obtido — abrir QrCodeActivity.
@@ -666,6 +675,17 @@ class ParticipantesActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun confirmarDesfazerSorteio() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_desfazer_sorteio_titulo)
+            .setMessage(R.string.dialog_desfazer_sorteio_mensagem)
+            .setPositiveButton(R.string.dialog_desfazer_sorteio_sim) { _, _ ->
+                viewModel.desfazerSorteio()
+            }
+            .setNegativeButton(R.string.button_cancel, null)
+            .show()
+    }
+
     private fun realizarSorteio() {
         viewModel.realizarSorteio()
     }
@@ -864,6 +884,12 @@ class ParticipantesActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        val temSorteio = listaParticipantes.any { (it.amigoSorteadoId ?: 0) > 0 }
+        menu.findItem(R.id.action_desfazer_sorteio)?.isVisible = temSorteio
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_historico -> {
@@ -885,6 +911,10 @@ class ParticipantesActivity : AppCompatActivity() {
                     Intent(this, ConfiguracoesGrupoActivity::class.java)
                         .putExtra(Grupo.EXTRA_GRUPO, grupoAtual)
                 )
+                true
+            }
+            R.id.action_desfazer_sorteio -> {
+                confirmarDesfazerSorteio()
                 true
             }
             else -> super.onOptionsItemSelected(item)

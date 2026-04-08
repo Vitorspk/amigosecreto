@@ -18,4 +18,9 @@
         android:title="@string/menu_configuracoes_grupo"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_desfazer_sorteio"
+        android:title="@string/menu_desfazer_sorteio"
+        app:showAsAction="never" />
+
 </menu>

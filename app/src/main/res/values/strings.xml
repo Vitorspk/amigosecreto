@@ -386,6 +386,14 @@
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_configuracoes_grupo">Configurações do Grupo</string>
 
+    <!-- Desfazer sorteio -->
+    <string name="menu_desfazer_sorteio">Desfazer Sorteio</string>
+    <string name="dialog_desfazer_sorteio_titulo">Desfazer Sorteio</string>
+    <string name="dialog_desfazer_sorteio_mensagem">Isso irá zerar o sorteio de todos os participantes e remover o histórico.\n\nEsta ação não pode ser desfeita. Deseja continuar?</string>
+    <string name="dialog_desfazer_sorteio_sim">Sim, desfazer</string>
+    <string name="toast_sorteio_desfeito">Sorteio desfeito com sucesso</string>
+    <string name="error_desfazer_sorteio">Erro ao desfazer sorteio. Tente novamente.</string>
+
     <!-- Ordenação de grupos -->
     <string name="menu_ordenar_grupos">Ordenar grupos</string>
     <string name="dialog_ordenar_titulo">Ordenar por</string>
