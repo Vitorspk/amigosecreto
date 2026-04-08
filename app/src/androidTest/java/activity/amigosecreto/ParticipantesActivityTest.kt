@@ -3,17 +3,18 @@ package activity.amigosecreto
 import android.content.Intent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import org.hamcrest.Matchers.anything
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.Grupo
@@ -124,9 +125,9 @@ class ParticipantesActivityTest {
         adicionarParticipante("Bruno")
         adicionarParticipante("Carlos")
 
-        onView(withText("Ana")).perform(scrollTo()).check(matches(isDisplayed()))
-        onView(withText("Bruno")).perform(scrollTo()).check(matches(isDisplayed()))
-        onView(withText("Carlos")).perform(scrollTo()).check(matches(isDisplayed()))
+        onData(anything()).inAdapterView(withId(R.id.lv_participantes)).atPosition(0).check(matches(isDisplayed()))
+        onData(anything()).inAdapterView(withId(R.id.lv_participantes)).atPosition(1).check(matches(isDisplayed()))
+        onData(anything()).inAdapterView(withId(R.id.lv_participantes)).atPosition(2).check(matches(isDisplayed()))
     }
 
     @Test
