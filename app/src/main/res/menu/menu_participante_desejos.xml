@@ -9,4 +9,9 @@
         app:showAsAction="always"
         app:iconTint="@color/white" />
 
+    <item
+        android:id="@+id/action_sugerir_presentes"
+        android:title="@string/action_sugerir_presentes"
+        app:showAsAction="never" />
+
 </menu>

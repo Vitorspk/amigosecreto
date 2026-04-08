@@ -17,11 +17,16 @@ import androidx.appcompat.app.AppCompatActivity
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.DesejoDAO
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.util.GeminiClient
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ParticipanteDesejosActivity : AppCompatActivity() {
 
@@ -177,11 +182,11 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
     }
 
     private fun onMenuItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_compartilhar_desejos) {
-            compartilharListaDesejos()
-            return true
+        return when (item.itemId) {
+            R.id.action_compartilhar_desejos -> { compartilharListaDesejos(); true }
+            R.id.action_sugerir_presentes -> { sugerirPresentesIA(); true }
+            else -> false
         }
-        return false
     }
 
     private fun compartilharListaDesejos() {
@@ -219,6 +224,48 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             putExtra(Intent.EXTRA_TEXT, texto)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.action_compartilhar_desejos)))
+    }
+
+    private fun sugerirPresentesIA() {
+        if (!GeminiClient.isDisponivel) {
+            Toast.makeText(this, R.string.error_gemini_nao_configurado, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val progressDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_sugestoes_titulo)
+            .setMessage(R.string.dialog_sugestoes_carregando)
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
+        val snapshot = listaDesejos.toList()
+        val nomeParticipante = participante.nome ?: ""
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val sugestoes = withContext(Dispatchers.IO) {
+                GeminiClient.sugerirPresentes(nomeParticipante, snapshot)
+            }
+            progressDialog.dismiss()
+
+            if (sugestoes == null) {
+                Toast.makeText(this@ParticipanteDesejosActivity, R.string.error_gemini_falhou, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+
+            AlertDialog.Builder(this@ParticipanteDesejosActivity)
+                .setTitle(R.string.dialog_sugestoes_titulo)
+                .setMessage(sugestoes)
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(R.string.menu_compartilhar) { _, _ ->
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, sugestoes)
+                    }
+                    startActivity(Intent.createChooser(intent, getString(R.string.action_compartilhar_desejos)))
+                }
+                .show()
+        }
     }
 
     override fun onDestroy() {
