@@ -46,6 +46,28 @@
                 android:text="@string/label_no_participants"
                 android:textColor="@color/text_on_color_surface"
                 android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tv_data_evento"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/text_on_color_surface"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="📅 Evento: 25/12/2026"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_faixa_valor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/text_on_color_surface"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="💰 Valor: R$ 50,00 – R$ 100,00"
+                tools:visibility="visible" />
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
