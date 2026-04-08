@@ -26,8 +26,8 @@ android {
 
     defaultConfig {
         applicationId "com.amigosecreto.sorteio"
-        minSdkVersion 21
-        targetSdkVersion 35
+        minSdkVersion 23
+        targetSdkVersion 36
         // CI passes version info via -P flags; fallback to defaults for local dev
         versionCode project.hasProperty('ciVersionCode')
             ? project.property('ciVersionCode').toInteger()
@@ -158,10 +158,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     // Explicit activity dep — EdgeToEdge is in activity:1.8.0 but was only a transitive
     // dep via appcompat in the Java build. Kotlin requires an explicit declaration.
-    // 1.11.0: última versão com minSdk 21. 1.12.0+ exige minSdk 23.
-    // Atualização para 1.13.0 fica condicionada a elevar minSdk para 23.
-    implementation 'androidx.activity:activity-ktx:1.11.0'
-    implementation 'com.google.android.material:material:1.12.0'
+    // 1.13.0: requer minSdk 23. Atualizado junto com a elevação do minSdk (Fase 4C1).
+    implementation 'androidx.activity:activity-ktx:1.13.0'
+    implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // RecyclerView
