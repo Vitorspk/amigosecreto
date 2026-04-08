@@ -398,21 +398,26 @@ class GruposActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<GruposRecyclerAdapter.ViewHolder>() {
 
         private val contagemParticipantes = mutableMapOf<Int, Int>()
+        private val contagemEnviados = mutableMapOf<Int, Int>()
 
         fun recarregarContagensAsync() {
             AsyncDatabaseHelper.execute(
-                object : AsyncDatabaseHelper.BackgroundTask<Map<Int, Int>> {
-                    override fun doInBackground(): Map<Int, Int> {
+                object : AsyncDatabaseHelper.BackgroundTask<Pair<Map<Int, Int>, Map<Int, Int>>> {
+                    override fun doInBackground(): Pair<Map<Int, Int>, Map<Int, Int>> {
                         participanteDao.open()
-                        val mapa = participanteDao.contarPorGrupo()
+                        val total = participanteDao.contarPorGrupo()
+                        val enviados = participanteDao.contarEnviadosPorGrupo()
                         participanteDao.close()
-                        return mapa
+                        return total to enviados
                     }
                 },
-                object : AsyncDatabaseHelper.ResultCallback<Map<Int, Int>> {
-                    override fun onSuccess(mapa: Map<Int, Int>) {
+                object : AsyncDatabaseHelper.ResultCallback<Pair<Map<Int, Int>, Map<Int, Int>>> {
+                    override fun onSuccess(resultado: Pair<Map<Int, Int>, Map<Int, Int>>) {
                         contagemParticipantes.clear()
-                        contagemParticipantes.putAll(mapa)
+                        contagemParticipantes.putAll(resultado.first)
+                        contagemEnviados.clear()
+                        contagemEnviados.putAll(resultado.second)
+                        @Suppress("NotifyDataSetChanged")
                         notifyDataSetChanged()
                     }
 
@@ -468,9 +473,12 @@ class GruposActivity : AppCompatActivity() {
             holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
 
             val numParticipantes = contagemParticipantes[g.id] ?: 0
-            holder.tvParticipantes.text = ctx.resources.getQuantityString(
-                R.plurals.label_participants, numParticipantes, numParticipantes
-            )
+            val numEnviados = contagemEnviados[g.id] ?: 0
+            holder.tvParticipantes.text = if (numEnviados > 0) {
+                ctx.getString(R.string.label_progresso_sorteio, numEnviados, numParticipantes)
+            } else {
+                ctx.resources.getQuantityString(R.plurals.label_participants, numParticipantes, numParticipantes)
+            }
         }
 
         private fun exibirMenuContextoGrupo(anchorView: View, g: Grupo) {
