@@ -53,6 +53,8 @@ open class ParticipanteRepository @VisibleForTesting internal constructor(
 
     open suspend fun marcarComoEnviado(id: Int) = dao.marcarComoEnviado(id)
 
+    open suspend fun confirmarCompra(id: Int) = dao.marcarConfirmacaoCompra(id)
+
     open suspend fun getNomeAmigoSorteado(amigoId: Int): String =
         dao.getNome(amigoId) ?: NOME_AMIGO_DESCONHECIDO
 

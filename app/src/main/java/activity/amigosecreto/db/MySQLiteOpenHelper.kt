@@ -46,6 +46,7 @@ class MySQLiteOpenHelper private constructor(context: Context) : SQLiteOpenHelpe
         const val COLUMN_AMIGO_SORTEADO_ID = "amigo_sorteado_id"
         const val COLUMN_ENVIADO = "enviado"
         const val COLUMN_FK_GRUPO_ID = "grupo_id"
+        const val COLUMN_CONFIRMOU_PRESENTE = "confirmou_presente"
 
         const val TABLE_EXCLUSAO = "exclusao"
         const val COLUMN_PARTICIPANTE_ID = "participante_id"

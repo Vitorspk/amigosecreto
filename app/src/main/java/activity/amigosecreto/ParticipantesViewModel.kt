@@ -171,6 +171,18 @@ class ParticipantesViewModel @Inject constructor(
         }
     }
 
+    /** Confirma que o participante realizou a compra. Recarrega a lista após persistir. */
+    fun confirmarCompra(participanteId: Int) {
+        launchTracked {
+            try {
+                withContext(ioDispatcher) { participanteRepository.confirmarCompra(participanteId) }
+                carregarParticipantes()
+            } catch (e: Exception) {
+                handleDbError(e, "Erro ao confirmar compra participanteId=$participanteId", R.string.error_save_failed)
+            }
+        }
+    }
+
     /** Insere participante em background (evita ANR). */
     fun inserirParticipante(participante: Participante, grupoId: Int) {
         launchTracked {
