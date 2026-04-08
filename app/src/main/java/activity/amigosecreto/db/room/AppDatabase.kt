@@ -205,6 +205,14 @@ abstract class AppDatabase : RoomDatabase() {
                     .allowMainThreadQueries()
                     .fallbackToDestructiveMigration()
                     .build()
+                    .also {
+                        // Força a materialização do banco (cria arquivo + aplica schema completo)
+                        // antes que qualquer DAO legado abra via MySQLiteOpenHelper.
+                        // Sem isso, MySQLiteOpenHelper abre primeiro com DATABASE_VERSION=10
+                        // e cria o banco sem as colunas adicionadas nas migrações v11→v12
+                        // (ex: confirmou_presente), causando IllegalArgumentException nos testes.
+                        it.openHelper.writableDatabase
+                    }
             }
         }
 
