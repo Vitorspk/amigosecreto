@@ -89,7 +89,9 @@ class ParticipantesActivity : AppCompatActivity() {
     private lateinit var fabAdd: MaterialButton
     private lateinit var btnSortear: View
     private lateinit var btnLimpar: View
-    private val listaParticipantes = mutableListOf<Participante>()
+    private val listaParticipantes = mutableListOf<Participante>()  // fonte completa do ViewModel
+    private val listaFiltrada = mutableListOf<Participante>()       // exibida pelo adapter
+    private var termoBusca = ""
     private lateinit var adapter: ParticipantesAdapter
     private lateinit var grupoAtual: Grupo
     private lateinit var stateHelper: StateViewHelper
@@ -193,8 +195,19 @@ class ParticipantesActivity : AppCompatActivity() {
             contentView = lvParticipantes
         )
 
-        adapter = ParticipantesAdapter(this, listaParticipantes)
+        adapter = ParticipantesAdapter(this, listaFiltrada)
         lvParticipantes.adapter = adapter
+
+        // Busca/filtro inline — TextWatcher filtra listaParticipantes → listaFiltrada
+        val etBusca = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_busca)
+        etBusca.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                termoBusca = s?.toString()?.trim() ?: ""
+                aplicarFiltro()
+            }
+        })
 
         fabAdd.setOnClickListener { exibirDialogAdd() }
         btnSortear.setOnClickListener { realizarSorteio() }
@@ -217,7 +230,7 @@ class ParticipantesActivity : AppCompatActivity() {
         viewModel.participants.observe(this) { participantes ->
             listaParticipantes.clear()
             listaParticipantes.addAll(participantes)
-            adapter.notifyDataSetChanged()
+            aplicarFiltro()
             if (listaParticipantes.isEmpty()) {
                 stateHelper.showEmpty()
                 tvCount.setText(R.string.label_no_participants)
@@ -876,6 +889,24 @@ class ParticipantesActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    /**
+     * Filtra listaParticipantes pelo termoBusca e atualiza listaFiltrada + adapter.
+     * Chamado ao receber novos dados do ViewModel e a cada mudança no campo de busca.
+     */
+    private fun aplicarFiltro() {
+        listaFiltrada.clear()
+        if (termoBusca.isEmpty()) {
+            listaFiltrada.addAll(listaParticipantes)
+        } else {
+            val termo = termoBusca.lowercase()
+            listaParticipantes.filterTo(listaFiltrada) {
+                it.nome?.lowercase()?.contains(termo) == true
+            }
+        }
+        @Suppress("NotifyDataSetChanged")
+        adapter.notifyDataSetChanged()
     }
 
     /**

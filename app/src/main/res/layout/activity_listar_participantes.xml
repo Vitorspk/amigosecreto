@@ -88,6 +88,28 @@
             android:paddingTop="8dp"
             android:paddingBottom="8dp">
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layout_busca"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="@string/hint_buscar_participante"
+                app:startIconDrawable="@drawable/ic_search"
+                app:startIconTint="@color/text_secondary"
+                app:boxStrokeColor="@color/md_theme_primary"
+                app:hintTextColor="@color/text_secondary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_busca"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionSearch"
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
             <ViewStub
                 android:id="@+id/stub_loading"
                 android:layout_width="match_parent"
