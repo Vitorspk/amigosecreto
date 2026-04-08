@@ -386,6 +386,17 @@
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_configuracoes_grupo">Configurações do Grupo</string>
 
+    <!-- Compartilhar lista de desejos (B2) -->
+    <string name="action_compartilhar_desejos">Compartilhar lista</string>
+    <string name="share_desejos_titulo">Lista de desejos de %1$s</string>
+    <string name="share_desejos_empty">%1$s ainda não adicionou desejos à lista.</string>
+    <string name="share_desejos_item">🎁 %1$s</string>
+    <string name="share_desejos_categoria">   Categoria: %1$s</string>
+    <string name="share_desejos_preco_completo">   Preço: R$ %1$s – R$ %2$s</string>
+    <string name="share_desejos_preco_minimo">   Preço mínimo: R$ %1$s</string>
+    <string name="share_desejos_preco_maximo">   Preço máximo: R$ %1$s</string>
+    <string name="share_desejos_lojas">   Onde achar: %1$s</string>
+
     <!-- Desfazer sorteio -->
     <string name="menu_desfazer_sorteio">Desfazer Sorteio</string>
     <string name="dialog_desfazer_sorteio_titulo">Desfazer Sorteio</string>
