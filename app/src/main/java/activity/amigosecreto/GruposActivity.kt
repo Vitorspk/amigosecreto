@@ -36,6 +36,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,7 +48,14 @@ class GruposActivity : AppCompatActivity() {
         const val MENU_EDITAR = 1
         const val MENU_EXCLUIR = 2
         const val BACKUP_MIME_TYPE = "application/json"
+        const val PREFS_NAME = "grupos_prefs"
+        const val PREF_SORT_ORDER = "sort_order"
+        const val SORT_CRIACAO = 0
+        const val SORT_NOME = 1
+        const val SORT_EVENTO = 2
     }
+
+    private var sortOrder: Int = SORT_CRIACAO
 
     private lateinit var rvGrupos: RecyclerView
     private lateinit var btnCriarGrupo: MaterialButton
@@ -97,6 +105,9 @@ class GruposActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar_grupos)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
+
+        sortOrder = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getInt(PREF_SORT_ORDER, SORT_CRIACAO)
 
         dao = GrupoDAO(this)
         participanteDao = ParticipanteDAO(this)
@@ -178,6 +189,7 @@ class GruposActivity : AppCompatActivity() {
                 R.id.action_exportar_backup -> { iniciarExportacao(); true }
                 R.id.action_importar_backup -> { iniciarImportacao(); true }
                 R.id.action_estatisticas -> { startActivity(Intent(this, EstatisticasActivity::class.java)); true }
+                R.id.action_ordenar_grupos -> { exibirDialogOrdenacao(); true }
                 else -> false
             }
         }
@@ -323,7 +335,7 @@ class GruposActivity : AppCompatActivity() {
                 @Suppress("NotifyDataSetChanged")
                 override fun onSuccess(result: List<Grupo>) {
                     listaGrupos.clear()
-                    listaGrupos.addAll(result)
+                    listaGrupos.addAll(aplicarOrdenacao(result, sortOrder))
                     if (listaGrupos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
                     // Primeiro notify: exibe nomes imediatamente com contagens em "0".
                     // recarregarContagensAsync fará um segundo notify com as contagens reais.
@@ -338,6 +350,40 @@ class GruposActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun aplicarOrdenacao(grupos: List<Grupo>, ordem: Int): List<Grupo> {
+        return when (ordem) {
+            SORT_NOME -> grupos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nome ?: "" })
+            SORT_EVENTO -> {
+                val fmt = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+                grupos.sortedWith(compareBy { g ->
+                    g.dataEvento?.let { raw ->
+                        try { fmt.parse(raw) } catch (e: ParseException) { null }
+                    }
+                })
+            }
+            else -> grupos // SORT_CRIACAO: DAO já retorna por id DESC
+        }
+    }
+
+    private fun exibirDialogOrdenacao() {
+        val opcoes = arrayOf(
+            getString(R.string.ordenar_criacao),
+            getString(R.string.ordenar_nome),
+            getString(R.string.ordenar_evento)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_ordenar_titulo)
+            .setSingleChoiceItems(opcoes, sortOrder) { dialog, which ->
+                sortOrder = which
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                    .putInt(PREF_SORT_ORDER, sortOrder).apply()
+                dialog.dismiss()
+                atualizarLista()
+            }
+            .setNegativeButton(R.string.button_cancel, null)
+            .show()
     }
 
     private fun exibirDialogAdd() {
