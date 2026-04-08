@@ -386,4 +386,11 @@
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_configuracoes_grupo">Configurações do Grupo</string>
 
+    <!-- Ordenação de grupos -->
+    <string name="menu_ordenar_grupos">Ordenar grupos</string>
+    <string name="dialog_ordenar_titulo">Ordenar por</string>
+    <string name="ordenar_nome">Nome (A–Z)</string>
+    <string name="ordenar_criacao">Data de criação</string>
+    <string name="ordenar_evento">Data do evento</string>
+
 </resources>

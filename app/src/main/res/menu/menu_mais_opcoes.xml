@@ -36,4 +36,9 @@
         android:icon="@android:drawable/ic_menu_info_details"
         android:title="@string/menu_estatisticas" />
 
+    <item
+        android:id="@+id/action_ordenar_grupos"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="@string/menu_ordenar_grupos" />
+
 </menu>
