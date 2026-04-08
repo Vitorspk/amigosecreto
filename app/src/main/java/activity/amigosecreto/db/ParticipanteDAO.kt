@@ -237,6 +237,26 @@ class ParticipanteDAO(ctx: Context) {
         }
     }
 
+    /** Retorna mapa grupoId → número de participantes com enviado=1 (resultado compartilhado). */
+    fun contarEnviadosPorGrupo(): Map<Int, Int> {
+        val mapa = mutableMapOf<Int, Int>()
+        val cursor = database.rawQuery(
+            "SELECT ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}, COUNT(*) AS cnt" +
+            " FROM ${MySQLiteOpenHelper.TABLE_PARTICIPANTE}" +
+            " WHERE ${MySQLiteOpenHelper.COLUMN_ENVIADO} = 1" +
+            " GROUP BY ${MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID}",
+            null
+        )
+        cursor.use {
+            if (it.moveToFirst()) {
+                val grupoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID)
+                val cntIdx = it.getColumnIndexOrThrow("cnt")
+                do { mapa[it.getInt(grupoIdx)] = it.getInt(cntIdx) } while (it.moveToNext())
+            }
+        }
+        return mapa
+    }
+
     fun contarPorGrupo(): Map<Int, Int> {
         val mapa = mutableMapOf<Int, Int>()
         val cursor = database.rawQuery(
