@@ -386,6 +386,13 @@
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_configuracoes_grupo">Configurações do Grupo</string>
 
+    <!-- Sugestão de presentes via IA (B3) -->
+    <string name="action_sugerir_presentes">✨ Sugerir Presentes (IA)</string>
+    <string name="dialog_sugestoes_titulo">Sugestões de Presentes</string>
+    <string name="dialog_sugestoes_carregando">Consultando IA…</string>
+    <string name="error_gemini_nao_configurado">Recurso de IA não configurado neste dispositivo.</string>
+    <string name="error_gemini_falhou">Não foi possível obter sugestões. Verifique sua conexão e tente novamente.</string>
+
     <!-- Compartilhar lista de desejos (B2) -->
     <string name="action_compartilhar_desejos">Compartilhar lista</string>
     <string name="share_desejos_titulo">Lista de desejos de %1$s</string>
