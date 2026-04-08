@@ -93,11 +93,19 @@ abstract class ParticipanteRoomDao {
     abstract suspend fun contarPorGrupo(grupoId: Int): Int
 
     @Query("""
-        SELECT grupo_id, COUNT(*) as count 
-        FROM participante 
+        SELECT grupo_id, COUNT(*) as count
+        FROM participante
         GROUP BY grupo_id
     """)
     abstract suspend fun contarPorTodosGrupos(): List<GrupoContagem>
+
+    @Query("""
+        SELECT grupo_id, COUNT(*) as count
+        FROM participante
+        WHERE enviado = 1
+        GROUP BY grupo_id
+    """)
+    abstract suspend fun contarEnviadosPorTodosGrupos(): List<GrupoContagem>
 
     @Query("""
         SELECT COUNT(*) FROM (

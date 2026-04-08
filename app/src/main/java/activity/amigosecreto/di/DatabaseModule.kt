@@ -12,7 +12,9 @@ import activity.amigosecreto.db.room.DesejoRoomDao
 import activity.amigosecreto.db.room.GrupoRoomDao
 import activity.amigosecreto.db.room.ParticipanteRoomDao
 import activity.amigosecreto.db.room.SorteioRoomDao
+import activity.amigosecreto.repository.BackupRepository
 import activity.amigosecreto.repository.DesejoRepository
+import activity.amigosecreto.repository.GruposRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.repository.SorteioRepository
 
@@ -61,4 +63,14 @@ object DatabaseModule {
     @Singleton
     fun provideSorteioRepository(dao: SorteioRoomDao): SorteioRepository =
         SorteioRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideGruposRepository(dao: GrupoRoomDao): GruposRepository =
+        GruposRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideBackupRepository(@ApplicationContext context: Context): BackupRepository =
+        BackupRepository(context)
 }
