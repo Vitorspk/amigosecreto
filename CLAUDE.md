@@ -761,16 +761,16 @@ Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro d
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| A1 | **Exibir data do evento e faixa de valor** — mostrar `data_evento`, `valor_minimo`/`valor_maximo` do grupo na tela de participantes (dados já existem no banco, só falta exibir) | 🔲 Pendente |
-| A2 | **Contador de progresso do sorteio** — "X de Y enviados" na tela do grupo (ex: chip/badge no card) | 🔲 Pendente |
-| A3 | **Busca/filtro de participantes** — SearchView ou campo inline na tela de participantes | 🔲 Pendente |
-| A4 | **Ordenação de grupos** — por nome, data de criação ou data do evento | 🔲 Pendente |
+| A1 | **Exibir data do evento e faixa de valor** — mostrar `data_evento`, `valor_minimo`/`valor_maximo` do grupo na tela de participantes (dados já existem no banco, só falta exibir) | ✅ Concluído |
+| A2 | **Contador de progresso do sorteio** — "X de Y enviados" na tela do grupo (ex: chip/badge no card) | ✅ Concluído |
+| A3 | **Busca/filtro de participantes** — SearchView ou campo inline na tela de participantes | ✅ Concluído |
+| A4 | **Ordenação de grupos** — por nome, data de criação ou data do evento | ✅ Concluído |
 
 ### Fase 4B — Funcionalidades novas
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| B1 | **Desfazer sorteio** — botão para reverter o último sorteio (zera `amigo_sorteado_id` de todos, remove `sorteio`/`sorteio_par`) sem apagar participantes | 🔲 Pendente |
+| B1 | **Desfazer sorteio** — botão para reverter o último sorteio (zera `amigo_sorteado_id` de todos, remove `sorteio`/`sorteio_par`) sem apagar participantes | ✅ Concluído |
 | B2 | **Compartilhar lista de desejos** — participante gera link/QR com seus próprios desejos para enviar ao amigo sorteado | 🔲 Pendente |
 | B3 | **Sugestão de presentes via IA** — baseado na lista de desejos, sugerir presentes complementares via API | 🔲 Pendente |
 

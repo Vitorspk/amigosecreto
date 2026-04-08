@@ -21,7 +21,8 @@
             app:title="Família 🎁"
             app:titleCentered="true"
             app:titleTextColor="@color/white"
-            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+            app:menu="@menu/menu_participante_desejos" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

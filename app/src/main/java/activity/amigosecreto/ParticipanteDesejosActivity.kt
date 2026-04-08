@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
@@ -56,6 +57,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.title = "${participante.nome} 🎁"
         toolbar.setNavigationOnClickListener { finish() }
+        toolbar.setOnMenuItemClickListener { item -> onMenuItemSelected(item) }
 
         lvDesejos = findViewById(R.id.lv_desejos)
         tvPresentesCount = findViewById(R.id.tv_presentes_count)
@@ -172,6 +174,51 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
 
         btnCancelar.setOnClickListener { dialog.dismiss() }
         dialog.show()
+    }
+
+    private fun onMenuItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_compartilhar_desejos) {
+            compartilharListaDesejos()
+            return true
+        }
+        return false
+    }
+
+    private fun compartilharListaDesejos() {
+        val nomeParticipante = participante.nome ?: ""
+        val texto = if (listaDesejos.isEmpty()) {
+            getString(R.string.share_desejos_empty, nomeParticipante)
+        } else {
+            val nf = WindowInsetsUtils.currencyFormatPtBr()
+            val sb = StringBuilder()
+            sb.appendLine(getString(R.string.share_desejos_titulo, nomeParticipante))
+            sb.appendLine()
+            for (d in listaDesejos) {
+                sb.appendLine(getString(R.string.share_desejos_item, d.produto))
+                if (!d.categoria.isNullOrBlank()) {
+                    sb.appendLine(getString(R.string.share_desejos_categoria, d.categoria))
+                }
+                val temMin = d.precoMinimo > 0
+                val temMax = d.precoMaximo > 0
+                when {
+                    temMin && temMax -> sb.appendLine(getString(R.string.share_desejos_preco_completo, nf.format(d.precoMinimo), nf.format(d.precoMaximo)))
+                    temMin -> sb.appendLine(getString(R.string.share_desejos_preco_minimo, nf.format(d.precoMinimo)))
+                    temMax -> sb.appendLine(getString(R.string.share_desejos_preco_maximo, nf.format(d.precoMaximo)))
+                }
+                if (!d.lojas.isNullOrBlank()) {
+                    sb.appendLine(getString(R.string.share_desejos_lojas, d.lojas))
+                }
+                sb.appendLine()
+            }
+            sb.toString().trimEnd()
+        }
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_desejos_titulo, nomeParticipante))
+            putExtra(Intent.EXTRA_TEXT, texto)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.action_compartilhar_desejos)))
     }
 
     override fun onDestroy() {
