@@ -30,7 +30,6 @@ class Grupo(
     var valorMaximo: Double = 0.0,
     @ColumnInfo(name = "regras")
     var regras: String? = null,
-    // TODO: aplicar permitirVerDesejos para ocultar "Ver Desejos" na UI quando false
     @ColumnInfo(name = "permitir_ver_desejos", defaultValue = "1")
     var permitirVerDesejos: Boolean = true,
     // TODO: aplicar exigirConfirmacaoCompra para bloquear compartilhamento até confirmação

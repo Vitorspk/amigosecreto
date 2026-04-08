@@ -104,6 +104,9 @@ class ParticipantesActivity : AppCompatActivity() {
             }
             if (grupoAtualizado != null) {
                 grupoAtual = grupoAtualizado
+                // Recarrega lista para refletir mudanças de configuração (ex: permitirVerDesejos).
+                @Suppress("NotifyDataSetChanged")
+                adapter.notifyDataSetChanged()
             }
         }
     }
@@ -910,11 +913,18 @@ class ParticipantesActivity : AppCompatActivity() {
             // Obter count de desejos do map pré-carregado
             val countDesejos = desejosCountMap[p.id] ?: 0
 
-            if (countDesejos > 0) {
-                tvDesejosCount.text = ctx.resources.getQuantityString(R.plurals.label_wishes_count, countDesejos, countDesejos)
-                tvDesejosCount.visibility = View.VISIBLE
+            // Respeitar configuração do grupo: ocultar botão e contador quando desabilitado.
+            if (grupoAtual.permitirVerDesejos) {
+                if (countDesejos > 0) {
+                    tvDesejosCount.text = ctx.resources.getQuantityString(R.plurals.label_wishes_count, countDesejos, countDesejos)
+                    tvDesejosCount.visibility = View.VISIBLE
+                } else {
+                    tvDesejosCount.visibility = View.GONE
+                }
+                btnDesejos.visibility = View.VISIBLE
             } else {
                 tvDesejosCount.visibility = View.GONE
+                btnDesejos.visibility = View.GONE
             }
 
             val amigoId = p.amigoSorteadoId
