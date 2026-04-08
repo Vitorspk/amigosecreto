@@ -10,7 +10,7 @@
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
 | Min SDK | 21 (Android 5.0) |
-| Target / Compile SDK | 35 (Android 15) |
+| Target / Compile SDK | 36 (Android 15) |
 | Linguagem | Kotlin (migração completa — Fase 10f, PR #43) |
 | Branch principal | `master` |
 
@@ -746,47 +746,64 @@ Ver `documents/TECHNICAL_ANALYSIS.md` para análise completa e roadmap priorizad
 | 18 | **Configurações de grupo + migração v12** — colunas de config do grupo, `sorteio_par`, campos de participante | ✅ Concluído | #67 |
 | 16 | **Suporte a tablets** — margens responsivas e detecção `is_tablet` | ✅ Concluído | #64 |
 | 17 | **Fix race condition SQLite + scroll** — singleton MySQLiteOpenHelper, close() no-op, Room eager init, paddingBottom dinâmico | ✅ Concluído | #65 |
-| 19 | **Aplicar `permitirVerDesejos`** — ocultar "Ver Desejos" na UI quando false | 🔲 Pendente | — |
-| 20 | **Aplicar `exigirConfirmacaoCompra`** — bloquear compartilhamento até `confirmou_presente = true` | 🔲 Pendente | — |
+| 19 | **Aplicar `permitirVerDesejos`** — ocultar botão/contador de desejos na UI quando false | ✅ Concluído | #74 |
+| 20 | **Aplicar `exigirConfirmacaoCompra`** — bloquear compartilhamento até `confirmou_presente = true` | ✅ Concluído | #75 |
+| 21 | **compileSdk 36 + deps Android 15** — appcompat 1.7.1, activity-ktx 1.11.0 | ✅ Concluído | #73 |
+| 22 | **RecyclerView em GruposActivity** — migrar ListView + BaseAdapter para RecyclerView + ViewHolder | ✅ Concluído | #66 |
 
-### Arquitetura (Concluído)
-- [x] Extrair lógica de `ParticipantesActivity` para ViewModel/classes separadas (PR #18)
-- [x] Migrar para MVVM com ViewModel e LiveData (PR #18)
-- [x] Implementar Repository pattern (PR #19)
-- [x] Testes de ViewModel com Robolectric + cobertura de caminhos de erro (PR #20)
-- [x] Adicionar Dependency Injection (Hilt) — PR #29
-- [x] Migrar models para Kotlin — Fase 10a (PR #33)
-- [x] Migrar todos os utilitários (`util/`) para Kotlin — Fase 10b completa (PR #36 + PR #37)
-- [x] Migrar DAOs e Repositories para Kotlin — Fase 10c (PR #38)
-- [x] Migrar ViewModel para Kotlin — Fase 10d (PR #39)
-- [x] Migrar Activities — Fase 10e (PR #41)
-- [x] Migrar testes Java para Kotlin e remover shims de interop — Fase 10f (PR #43)
-- [x] Estados de UI loading/empty/content via `StateViewHelper` + `ViewStub` (PR #49)
-- [x] Testes Espresso para `ParticipantesActivity` (PR #51)
-- [x] Testes Espresso para `GruposActivity` + `CountingIdlingResource` em `AsyncDatabaseHelper` (PR #55)
+---
 
-### Qualidade
-- [x] Mover ~150 strings hardcoded para `strings.xml` (PR #15 + PR #21)
-- [x] Strings XML layouts/menus extraídas + acessibilidade corrigida (PR #21)
-- [x] Remover ~47 recursos não utilizados (Lint `UnusedResources`) — PR #22
-- [x] **Cleanup pós-migração** — remover `proximoId()` + refatorar `InserirDesejoActivity` — PR #46
-- [x] **Schema v9** — `ON DELETE CASCADE` nas FKs de `exclusao` e `desejo` — PR #47
-- [x] **Coroutines** — `viewModelScope` + `Dispatchers.IO` no ViewModel — PR #48
-- [x] `kotlin.random.Random` em `SorteioEngine` — PR #53
-- [x] Testes Espresso adicionais — `GruposActivity` + `CountingIdlingResource` — PR #55
-- [ ] Logs estruturados (Timber)
+## Fase 4 — Roadmap (próximas implementações)
 
-### UI/UX
-- [ ] Modo escuro completo (suporte parcial em `values-night/`)
-- [ ] Suporte a tablets
-- [ ] Transições entre Activities com shared elements
+Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro de cada categoria.
 
-### Funcionalidades ← **#8 em andamento**
-- [ ] **Histórico de sorteios** — persistir resultados por sorteio com data/hora
-- [ ] Backup/restore de dados (Google Drive ou arquivo local)
-- [ ] Notificações de lembrete
-- [ ] Compartilhar via Telegram/Email
-- [ ] QR Code para compartilhamento
+### Fase 4A — UX (alta visibilidade, baixo risco)
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| A1 | **Exibir data do evento e faixa de valor** — mostrar `data_evento`, `valor_minimo`/`valor_maximo` do grupo na tela de participantes (dados já existem no banco, só falta exibir) | 🔲 Pendente |
+| A2 | **Contador de progresso do sorteio** — "X de Y enviados" na tela do grupo (ex: chip/badge no card) | 🔲 Pendente |
+| A3 | **Busca/filtro de participantes** — SearchView ou campo inline na tela de participantes | 🔲 Pendente |
+| A4 | **Ordenação de grupos** — por nome, data de criação ou data do evento | 🔲 Pendente |
+
+### Fase 4B — Funcionalidades novas
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| B1 | **Desfazer sorteio** — botão para reverter o último sorteio (zera `amigo_sorteado_id` de todos, remove `sorteio`/`sorteio_par`) sem apagar participantes | 🔲 Pendente |
+| B2 | **Compartilhar lista de desejos** — participante gera link/QR com seus próprios desejos para enviar ao amigo sorteado | 🔲 Pendente |
+| B3 | **Sugestão de presentes via IA** — baseado na lista de desejos, sugerir presentes complementares via API | 🔲 Pendente |
+
+### Fase 4C — Qualidade técnica
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15 | 🔲 Pendente |
+| C2 | **MVVM completo em `GruposActivity`** — extrair lógica para `GruposViewModel` + `GruposRepository`; hoje toda a lógica está na Activity | 🔲 Pendente |
+| C3 | **DiffUtil nos adapters** — substituir `notifyDataSetChanged()` por `DiffUtil.calculateDiff()` em `ParticipantesAdapter` e `GruposRecyclerAdapter` para evitar re-render completo | 🔲 Pendente |
+| C4 | **Extrair `GruposRecyclerAdapter`** — mover inner class para `adapter/GruposRecyclerAdapter.kt` (atualmente acoplada à Activity, ~560 linhas) | 🔲 Pendente |
+
+### Histórico completo (Fases 1–3, todos concluídos)
+
+**Arquitetura**
+- [x] MVVM + ViewModel + LiveData (PR #18), Repository pattern (PR #19), Hilt DI (PR #29)
+- [x] Migração completa para Kotlin — Fases 10a–10f (PRs #33–#43)
+- [x] Coroutines — `viewModelScope` + `Dispatchers.IO` (PR #48)
+- [x] Room v11 com DAOs legados via singleton (PR #63), migração v12 (PR #67)
+
+**Qualidade**
+- [x] Strings hardcoded → `strings.xml`, recursos não utilizados removidos (PRs #15, #21, #22)
+- [x] Schema v9 `ON DELETE CASCADE` (PR #47), `kotlin.random.Random` (PR #53)
+- [x] StateViewHelper + ViewStub (PR #49), Testes Espresso (PRs #51, #55)
+- [x] Timber logging (PR #61), compileSdk 36 + deps Android 15 (PR #73)
+- [x] GruposActivity ListView → RecyclerView (PR #66)
+
+**Funcionalidades**
+- [x] Histórico de sorteios (PR #56), Backup/restore JSON + SAF (PR #57)
+- [x] Notificações de lembrete (PR #58), Telegram/Email (PR #59), QR Code (PR #60)
+- [x] Modo escuro WCAG AA (PR #62), Suporte a tablets (PR #64)
+- [x] Fix race condition SQLite + scroll (PR #65)
+- [x] Configurações de grupo (PR #67), `permitirVerDesejos` (PR #74), `exigirConfirmacaoCompra` (PR #75)
 
 ---
 
