@@ -12,6 +12,7 @@ import activity.amigosecreto.repository.BackupRepository
 import activity.amigosecreto.repository.GruposRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.util.BackupManager
+import androidx.test.espresso.idling.CountingIdlingResource
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +35,9 @@ class GruposViewModel @Inject constructor(
         const val SORT_CRIACAO = 0
         const val SORT_NOME = 1
         const val SORT_EVENTO = 2
+
+        /** IdlingResource for Espresso tests — tracks in-flight ViewModel coroutines. */
+        val idlingResource = CountingIdlingResource("GruposViewModel")
     }
 
     /**
@@ -75,10 +79,17 @@ class GruposViewModel @Inject constructor(
 
     private var sortOrder: Int = SORT_CRIACAO
 
+    private fun launchTracked(block: suspend () -> Unit) {
+        idlingResource.increment()
+        viewModelScope.launch {
+            try { block() } finally { idlingResource.decrement() }
+        }
+    }
+
     fun carregarGrupos(sortOrder: Int = this.sortOrder) {
         this.sortOrder = sortOrder
         _isLoading.value = true
-        viewModelScope.launch {
+        launchTracked {
             try {
                 val result = withContext(ioDispatcher) {
                     val grupos = gruposRepository.listar()
@@ -104,7 +115,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun inserirGrupo(nome: String, data: String) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) {
                     val grupo = Grupo(nome = nome, data = data)
@@ -121,7 +132,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun atualizarNomeGrupo(grupo: Grupo) {
-        viewModelScope.launch {
+        launchTracked {
             val salvo = try {
                 withContext(ioDispatcher) { gruposRepository.atualizar(grupo) }
             } catch (e: Exception) {
@@ -138,7 +149,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun removerGrupo(grupo: Grupo) {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { gruposRepository.remover(grupo) }
                 carregarGrupos()
@@ -150,7 +161,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun limparTudo() {
-        viewModelScope.launch {
+        launchTracked {
             try {
                 withContext(ioDispatcher) { gruposRepository.limparTudo() }
                 carregarGrupos()
@@ -162,7 +173,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun exportarBackup() {
-        viewModelScope.launch {
+        launchTracked {
             val json = try {
                 withContext(ioDispatcher) { backupRepository.exportar() }
             } catch (e: Exception) {
@@ -174,7 +185,7 @@ class GruposViewModel @Inject constructor(
     }
 
     fun importarBackup(json: String) {
-        viewModelScope.launch {
+        launchTracked {
             val resultado = try {
                 withContext(ioDispatcher) { backupRepository.importar(json) }
             } catch (e: Exception) {

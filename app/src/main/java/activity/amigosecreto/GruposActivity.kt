@@ -32,6 +32,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -389,9 +390,21 @@ class GruposActivity : AppCompatActivity() {
         private val itens = mutableListOf<GruposViewModel.GrupoComContagem>()
 
         fun setItens(novaLista: List<GruposViewModel.GrupoComContagem>) {
+            val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize() = itens.size
+                override fun getNewListSize() = novaLista.size
+                override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                    itens[oldPos].grupo.id == novaLista[newPos].grupo.id
+                override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean {
+                    val o = itens[oldPos]; val n = novaLista[newPos]
+                    return o.grupo.nome == n.grupo.nome &&
+                        o.totalParticipantes == n.totalParticipantes &&
+                        o.totalEnviados == n.totalEnviados
+                }
+            })
             itens.clear()
             itens.addAll(novaLista)
-            notifyDataSetChanged()
+            diff.dispatchUpdatesTo(this)
         }
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -483,14 +496,22 @@ class GruposActivity : AppCompatActivity() {
                     Toast.makeText(this@GruposActivity, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                // Salva estado original para restaurar se a operação falhar.
+                // Cria cópia com o novo nome — não muta o objeto no adapter
+                // para que DiffUtil possa detectar a mudança ao comparar com o resultado do DB.
+                val grupoAtualizado = Grupo(
+                    id = g.id, nome = novoNome, data = g.data, descricao = g.descricao,
+                    dataEvento = g.dataEvento, localEvento = g.localEvento,
+                    dataLimiteSorteio = g.dataLimiteSorteio, valorMinimo = g.valorMinimo,
+                    valorMaximo = g.valorMaximo, regras = g.regras,
+                    permitirVerDesejos = g.permitirVerDesejos,
+                    exigirConfirmacaoCompra = g.exigirConfirmacaoCompra,
+                )
                 pendingEditNomeOriginal = g.nome
-                pendingEditGrupo = g
+                pendingEditGrupo = grupoAtualizado
                 pendingEditDialog = dialog
                 pendingEditButton = v
-                g.nome = novoNome
                 v.isEnabled = false
-                viewModel.atualizarNomeGrupo(g)
+                viewModel.atualizarNomeGrupo(grupoAtualizado)
             }
 
             btnCancelar.setOnClickListener { dialog.dismiss() }

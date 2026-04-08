@@ -45,9 +45,11 @@ class GruposActivityTest {
 
     @Before
     fun setUp() {
-        // Registrar IdlingResource para sincronizar com operacoes assincronas do AsyncDatabaseHelper.
-        // Sem isso, assertions apos acoes de delete/reload podem rodar antes do adapter ser atualizado.
+        // Registrar IdlingResources para sincronizar com operacoes assincronas:
+        // - AsyncDatabaseHelper: operacoes legadas ainda usadas em outras Activities
+        // - GruposViewModel: coroutines do ViewModel (C2 — GruposActivity migrada para MVVM)
         IdlingRegistry.getInstance().register(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().register(GruposViewModel.idlingResource)
 
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         db = AppDatabase.getInstance(ctx)
@@ -64,6 +66,7 @@ class GruposActivityTest {
     @After
     fun tearDown() {
         IdlingRegistry.getInstance().unregister(AsyncDatabaseHelper.idlingResource)
+        IdlingRegistry.getInstance().unregister(GruposViewModel.idlingResource)
         try {
             scenario.close()
         } finally {

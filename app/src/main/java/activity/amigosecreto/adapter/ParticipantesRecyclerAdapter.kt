@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Participante
@@ -51,10 +52,20 @@ class ParticipantesRecyclerAdapter(
 
     override fun getItemCount() = participantes.size
 
-    @Suppress("NotifyDataSetChanged")
     fun updateList(newList: List<Participante>) {
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = participantes.size
+            override fun getNewListSize() = newList.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                participantes[oldPos].id == newList[newPos].id
+            override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean {
+                val o = participantes[oldPos]; val n = newList[newPos]
+                return o.nome == n.nome && o.isEnviado == n.isEnviado &&
+                    o.email == n.email && o.telefone == n.telefone
+            }
+        })
         participantes = newList
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
