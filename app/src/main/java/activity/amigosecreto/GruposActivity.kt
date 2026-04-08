@@ -13,6 +13,7 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -23,11 +24,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
-import activity.amigosecreto.db.ParticipanteDAO
-import activity.amigosecreto.repository.BackupRepository
-import activity.amigosecreto.util.AsyncDatabaseHelper
-import activity.amigosecreto.util.BackupManager
 import activity.amigosecreto.util.HapticFeedbackUtils
 import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
@@ -36,35 +32,36 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.text.ParseException
+import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
+@AndroidEntryPoint
 class GruposActivity : AppCompatActivity() {
 
     private companion object {
-        const val TAG = "GruposActivity"
         const val MENU_EDITAR = 1
         const val MENU_EXCLUIR = 2
         const val BACKUP_MIME_TYPE = "application/json"
         const val PREFS_NAME = "grupos_prefs"
         const val PREF_SORT_ORDER = "sort_order"
-        const val SORT_CRIACAO = 0
-        const val SORT_NOME = 1
-        const val SORT_EVENTO = 2
     }
 
-    private var sortOrder: Int = SORT_CRIACAO
+    private val viewModel: GruposViewModel by viewModels()
 
     private lateinit var rvGrupos: RecyclerView
     private lateinit var btnCriarGrupo: MaterialButton
-    private lateinit var dao: GrupoDAO
-    private lateinit var participanteDao: ParticipanteDAO
-    private lateinit var backupRepository: BackupRepository
-    private val listaGrupos = mutableListOf<Grupo>()
     private lateinit var adapter: GruposRecyclerAdapter
     private lateinit var stateHelper: StateViewHelper
+
+    // Estado corrente da ordenação (lido de SharedPreferences na inicialização).
+    private var sortOrder: Int = GruposViewModel.SORT_CRIACAO
+
+    // Referência ao dialog de edição em andamento — usada pelo observer de operacaoSucesso.
+    private var pendingEditDialog: AlertDialog? = null
+    private var pendingEditGrupo: Grupo? = null
+    private var pendingEditNomeOriginal: String? = null
+    private var pendingEditButton: View? = null
 
     // Arrays de emojis e gradientes para variar os cards
     private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
@@ -82,11 +79,14 @@ class GruposActivity : AppCompatActivity() {
 
     private val exportarLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE)
-    ) { uri -> uri?.let { escreverBackupNoUri(it) } }
+    ) { uri -> uri?.let { viewModel.exportarBackup(); pendingExportUri = it } }
 
     private val importarLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { confirmarEImportarBackup(it) } }
+
+    // URI aguardando o resultado de exportarBackup — preenchido pelo ActivityResultCallback.
+    private var pendingExportUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,17 +101,13 @@ class GruposActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_listar_grupos)
 
-        // Configurar toolbar
+        sortOrder = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getInt(PREF_SORT_ORDER, GruposViewModel.SORT_CRIACAO)
+
         val toolbar = findViewById<Toolbar>(R.id.toolbar_grupos)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        sortOrder = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .getInt(PREF_SORT_ORDER, SORT_CRIACAO)
-
-        dao = GrupoDAO(this)
-        participanteDao = ParticipanteDAO(this)
-        backupRepository = BackupRepository(this)
         rvGrupos = findViewById(R.id.rv_grupos)
         btnCriarGrupo = findViewById(R.id.btn_criar_grupo)
 
@@ -121,30 +117,86 @@ class GruposActivity : AppCompatActivity() {
             contentView = rvGrupos
         )
 
-        adapter = GruposRecyclerAdapter(this, listaGrupos, emojis, gradientes)
+        adapter = GruposRecyclerAdapter(this, emojis, gradientes)
         rvGrupos.layoutManager = LinearLayoutManager(this)
         rvGrupos.adapter = adapter
 
         btnCriarGrupo.setOnClickListener { exibirDialogAdd() }
 
-        atualizarLista()
-        // Solicitação de permissão e agendamento apenas em onCreate — evita dialog repetido em onResume
+        observeViewModel()
+
+        viewModel.carregarGrupos(sortOrder)
         agendarLembreteSePermitido()
     }
 
     override fun onResume() {
         super.onResume()
-        // Atualizar a lista sempre que voltar para esta tela
-        atualizarLista()
-        // Re-agendamento idempotente (KEEP policy) — retoma lembrete se Worker se auto-cancelou
-        // quando não havia grupos pendentes e novos grupos foram criados.
-        // Verifica permissão antes de agendar para não gerar trabalho desnecessário em Android 13+
-        // quando o usuário negou POST_NOTIFICATIONS.
+        viewModel.carregarGrupos(sortOrder)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED
         ) {
             LembreteScheduler.agendar(this)
+        }
+    }
+
+    private fun observeViewModel() {
+        viewModel.isLoading.observe(this) { loading ->
+            if (loading) stateHelper.showLoading()
+        }
+
+        viewModel.grupos.observe(this) { lista ->
+            adapter.setItens(lista)
+            if (lista.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+        }
+
+        viewModel.errorMessage.observe(this) { msg ->
+            if (msg == null) return@observe
+            viewModel.clearErrorMessage()
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+
+        viewModel.operacaoSucesso.observe(this) { sucesso ->
+            if (sucesso == null) return@observe
+            viewModel.clearOperacaoSucesso()
+            pendingEditButton?.isEnabled = true
+            if (sucesso == true) {
+                pendingEditDialog?.dismiss()
+            } else {
+                // Restaura nome original no modelo se a atualização falhou
+                pendingEditGrupo?.nome = pendingEditNomeOriginal ?: pendingEditGrupo?.nome
+            }
+            pendingEditDialog = null
+            pendingEditGrupo = null
+            pendingEditNomeOriginal = null
+            pendingEditButton = null
+        }
+
+        viewModel.exportarResultado.observe(this) { json ->
+            if (json == null) return@observe
+            viewModel.clearExportarResultado()
+            val uri = pendingExportUri ?: return@observe
+            pendingExportUri = null
+            try {
+                contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                Toast.makeText(this, R.string.backup_exportado_sucesso, Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Timber.e(e, "escreverBackupNoUri: falha ao escrever")
+                Toast.makeText(this, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
+            }
+        }
+
+        viewModel.importarResultado.observe(this) { resultado ->
+            if (resultado == null) return@observe
+            viewModel.clearImportarResultado()
+            when (resultado) {
+                is GruposViewModel.ImportarResultado.Sucesso ->
+                    Toast.makeText(this,
+                        getString(R.string.backup_importado_sucesso, resultado.gruposImportados),
+                        Toast.LENGTH_LONG).show()
+                is GruposViewModel.ImportarResultado.Falha ->
+                    Toast.makeText(this, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -231,49 +283,17 @@ class GruposActivity : AppCompatActivity() {
             .setTitle(R.string.dialog_clear_all_title)
             .setMessage(R.string.dialog_clear_all_message)
             .setPositiveButton(R.string.button_clear_all_yes) { _, _ ->
-                AsyncDatabaseHelper.executeSimple(
-                    {
-                        dao.open()
-                        dao.limparTudo()
-                        dao.close()
-                    },
-                    {
-                        atualizarLista()
-                        Toast.makeText(this, R.string.toast_all_data_cleared, Toast.LENGTH_LONG).show()
-                    }
-                )
+                viewModel.limparTudo()
+                Toast.makeText(this, R.string.toast_all_data_cleared, Toast.LENGTH_LONG).show()
             }
             .setNegativeButton(R.string.button_cancel, null)
             .show()
     }
 
     private fun iniciarExportacao() {
-        val dataHora = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        exportarLauncher.launch("amigosecreto_backup_$dataHora.json")
-    }
-
-    private fun escreverBackupNoUri(uri: Uri) {
+        val dataHora = SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(Date())
         Toast.makeText(this, R.string.backup_exportando, Toast.LENGTH_SHORT).show()
-        AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<String> {
-                override fun doInBackground(): String = backupRepository.exportar()
-            },
-            object : AsyncDatabaseHelper.ResultCallback<String> {
-                override fun onSuccess(result: String) {
-                    try {
-                        contentResolver.openOutputStream(uri)?.use { it.write(result.toByteArray()) }
-                        Toast.makeText(this@GruposActivity, R.string.backup_exportado_sucesso, Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        Timber.e(e, "escreverBackupNoUri: falha ao escrever")
-                        Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
-                    }
-                }
-                override fun onError(e: Exception) {
-                    Timber.e(e, "escreverBackupNoUri: erro no background")
-                    Toast.makeText(this@GruposActivity, R.string.backup_erro_exportar, Toast.LENGTH_LONG).show()
-                }
-            }
-        )
+        exportarLauncher.launch("amigosecreto_backup_$dataHora.json")
     }
 
     private fun iniciarImportacao() {
@@ -291,80 +311,17 @@ class GruposActivity : AppCompatActivity() {
 
     private fun lerEImportarBackup(uri: Uri) {
         Toast.makeText(this, R.string.backup_importando, Toast.LENGTH_SHORT).show()
-        AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<BackupManager.ImportResult> {
-                override fun doInBackground(): BackupManager.ImportResult {
-                    val json = contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
-                        ?: return BackupManager.ImportResult.Failure("Não foi possível ler o arquivo")
-                    return backupRepository.importar(json)
-                }
-            },
-            object : AsyncDatabaseHelper.ResultCallback<BackupManager.ImportResult> {
-                override fun onSuccess(result: BackupManager.ImportResult) {
-                    when (result) {
-                        is BackupManager.ImportResult.Success -> {
-                            atualizarLista()
-                            Toast.makeText(this@GruposActivity,
-                                getString(R.string.backup_importado_sucesso, result.gruposImportados),
-                                Toast.LENGTH_LONG).show()
-                        }
-                        is BackupManager.ImportResult.Failure -> {
-                            Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
-                            Timber.e("lerEImportarBackup: ${result.reason}")
-                        }
-                    }
-                }
-                override fun onError(e: Exception) {
-                    Timber.e(e, "lerEImportarBackup: erro no background")
-                    Toast.makeText(this@GruposActivity, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
-                }
-            }
-        )
-    }
-
-    private fun atualizarLista() {
-        stateHelper.showLoading()
-        AsyncDatabaseHelper.execute(
-            object : AsyncDatabaseHelper.BackgroundTask<List<Grupo>> {
-                override fun doInBackground(): List<Grupo> {
-                    dao.open()
-                    return try { dao.listar() } finally { dao.close() }
-                }
-            },
-            object : AsyncDatabaseHelper.ResultCallback<List<Grupo>> {
-                @Suppress("NotifyDataSetChanged")
-                override fun onSuccess(result: List<Grupo>) {
-                    listaGrupos.clear()
-                    listaGrupos.addAll(aplicarOrdenacao(result, sortOrder))
-                    if (listaGrupos.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
-                    // Primeiro notify: exibe nomes imediatamente com contagens em "0".
-                    // recarregarContagensAsync fará um segundo notify com as contagens reais.
-                    // TODO: unificar em uma única query para evitar o double-bind.
-                    adapter.notifyDataSetChanged()
-                    adapter.recarregarContagensAsync()
-                }
-                override fun onError(e: Exception) {
-                    Timber.e(e, "atualizarLista: failed")
-                    Toast.makeText(this@GruposActivity, R.string.error_load_groups, Toast.LENGTH_LONG).show()
-                    stateHelper.showEmpty()
-                }
-            }
-        )
-    }
-
-    private fun aplicarOrdenacao(grupos: List<Grupo>, ordem: Int): List<Grupo> {
-        return when (ordem) {
-            SORT_NOME -> grupos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nome ?: "" })
-            SORT_EVENTO -> {
-                val fmt = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-                grupos.sortedWith(compareBy { g ->
-                    g.dataEvento?.let { raw ->
-                        try { fmt.parse(raw) } catch (e: ParseException) { null }
-                    }
-                })
-            }
-            else -> grupos // SORT_CRIACAO: DAO já retorna por id DESC
+        val json = try {
+            contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+        } catch (e: Exception) {
+            Timber.e(e, "lerEImportarBackup: failed to read URI")
+            null
         }
+        if (json == null) {
+            Toast.makeText(this, R.string.backup_erro_importar, Toast.LENGTH_LONG).show()
+            return
+        }
+        viewModel.importarBackup(json)
     }
 
     private fun exibirDialogOrdenacao() {
@@ -380,7 +337,7 @@ class GruposActivity : AppCompatActivity() {
                 getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
                     .putInt(PREF_SORT_ORDER, sortOrder).apply()
                 dialog.dismiss()
-                atualizarLista()
+                viewModel.carregarGrupos(sortOrder)
             }
             .setNegativeButton(R.string.button_cancel, null)
             .show()
@@ -393,85 +350,48 @@ class GruposActivity : AppCompatActivity() {
         val btnCriar = dialogView.findViewById<MaterialButton>(R.id.btn_criar)
         val btnCancelar = dialogView.findViewById<MaterialButton>(R.id.btn_cancelar)
 
-        // Chips de sugestões
         val chipFamilia = dialogView.findViewById<Chip>(R.id.chip_familia)
         val chipTrabalho = dialogView.findViewById<Chip>(R.id.chip_trabalho)
         val chipAmigos = dialogView.findViewById<Chip>(R.id.chip_amigos)
 
-        // Criar dialog
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
-
-        // Tornar o fundo transparente para mostrar os cantos arredondados
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        // Listeners dos chips
         chipFamilia.setOnClickListener { etNome.setText(getString(R.string.chip_sugestao_familia)) }
         chipTrabalho.setOnClickListener { etNome.setText(getString(R.string.chip_sugestao_trabalho)) }
         chipAmigos.setOnClickListener { etNome.setText(getString(R.string.chip_sugestao_amigos)) }
 
-        // Botão criar
         btnCriar.setOnClickListener {
             val nome = etNome.text?.toString()?.trim() ?: ""
             if (nome.isNotEmpty()) {
-                val g = Grupo()
-                g.nome = nome
-                g.data = SimpleDateFormat("dd/MM/yyyy", WindowInsetsUtils.LOCALE_PT_BR).format(Date())
-                dao.open()
-                dao.inserir(g)
-                dao.close()
-                atualizarLista()
+                val data = SimpleDateFormat("dd/MM/yyyy", WindowInsetsUtils.LOCALE_PT_BR).format(Date())
+                viewModel.inserirGrupo(nome, data)
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Botão cancelar
         btnCancelar.setOnClickListener { dialog.dismiss() }
-
         dialog.show()
     }
 
-    // TODO: extract to adapter/ package when DAO/dialog coupling is reduced
+    // TODO: extract to adapter/ package when coupling is reduced (Fase 4C4)
     @Suppress("NotifyDataSetChanged")
     private inner class GruposRecyclerAdapter(
         private val ctx: Context,
-        private val itens: MutableList<Grupo>,
         private val emojis: Array<String>,
-        private val gradientes: IntArray
+        private val gradientes: IntArray,
     ) : RecyclerView.Adapter<GruposRecyclerAdapter.ViewHolder>() {
 
-        private val contagemParticipantes = mutableMapOf<Int, Int>()
-        private val contagemEnviados = mutableMapOf<Int, Int>()
+        private val itens = mutableListOf<GruposViewModel.GrupoComContagem>()
 
-        fun recarregarContagensAsync() {
-            AsyncDatabaseHelper.execute(
-                object : AsyncDatabaseHelper.BackgroundTask<Pair<Map<Int, Int>, Map<Int, Int>>> {
-                    override fun doInBackground(): Pair<Map<Int, Int>, Map<Int, Int>> {
-                        participanteDao.open()
-                        val total = participanteDao.contarPorGrupo()
-                        val enviados = participanteDao.contarEnviadosPorGrupo()
-                        participanteDao.close()
-                        return total to enviados
-                    }
-                },
-                object : AsyncDatabaseHelper.ResultCallback<Pair<Map<Int, Int>, Map<Int, Int>>> {
-                    override fun onSuccess(resultado: Pair<Map<Int, Int>, Map<Int, Int>>) {
-                        contagemParticipantes.clear()
-                        contagemParticipantes.putAll(resultado.first)
-                        contagemEnviados.clear()
-                        contagemEnviados.putAll(resultado.second)
-                        @Suppress("NotifyDataSetChanged")
-                        notifyDataSetChanged()
-                    }
-
-                    override fun onError(e: Exception) {
-                        Timber.e(e, "Erro ao carregar contagem de participantes")
-                    }
-                }
-            )
+        fun setItens(novaLista: List<GruposViewModel.GrupoComContagem>) {
+            itens.clear()
+            itens.addAll(novaLista)
+            notifyDataSetChanged()
         }
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -484,15 +404,16 @@ class GruposActivity : AppCompatActivity() {
                 itemView.setOnClickListener {
                     val pos = bindingAdapterPosition
                     if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
-                    val g = itens[pos]
-                    val intent = Intent(this@GruposActivity, ParticipantesActivity::class.java)
-                    intent.putExtra(Grupo.EXTRA_GRUPO, g)
-                    startActivity(intent)
+                    val g = itens[pos].grupo
+                    startActivity(
+                        Intent(this@GruposActivity, ParticipantesActivity::class.java)
+                            .putExtra(Grupo.EXTRA_GRUPO, g)
+                    )
                 }
                 itemView.setOnLongClickListener { v ->
                     val pos = bindingAdapterPosition
                     if (pos == RecyclerView.NO_POSITION) return@setOnLongClickListener false
-                    val g = itens[pos]
+                    val g = itens[pos].grupo
                     HapticFeedbackUtils.performMediumFeedback(v)
                     exibirMenuContextoGrupo(v, g)
                     true
@@ -508,22 +429,18 @@ class GruposActivity : AppCompatActivity() {
         override fun getItemCount() = itens.size
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            // Use bindingAdapterPosition for consistency with ViewHolder.init click handlers —
-            // position parameter can be stale if partial-update notifications are introduced later.
             val pos = holder.bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION } ?: position
-            val g = itens[pos]
+            val item = itens[pos]
+            val g = item.grupo
 
             holder.tvNome.text = g.nome
-            // Use g.id (stable) instead of position so emoji/gradient don't shift on delete/reorder.
             holder.tvEmoji.text = emojis[g.id % emojis.size]
             holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
 
-            val numParticipantes = contagemParticipantes[g.id] ?: 0
-            val numEnviados = contagemEnviados[g.id] ?: 0
-            holder.tvParticipantes.text = if (numEnviados > 0) {
-                ctx.getString(R.string.label_progresso_sorteio, numEnviados, numParticipantes)
+            holder.tvParticipantes.text = if (item.totalEnviados > 0) {
+                ctx.getString(R.string.label_progresso_sorteio, item.totalEnviados, item.totalParticipantes)
             } else {
-                ctx.resources.getQuantityString(R.plurals.label_participants, numParticipantes, numParticipantes)
+                ctx.resources.getQuantityString(R.plurals.label_participants, item.totalParticipantes, item.totalParticipantes)
             }
         }
 
@@ -539,7 +456,6 @@ class GruposActivity : AppCompatActivity() {
                     else -> false
                 }
             }
-
             popup.show()
         }
 
@@ -550,7 +466,6 @@ class GruposActivity : AppCompatActivity() {
             val btnCriar = dialogView.findViewById<MaterialButton>(R.id.btn_criar)
             val btnCancelar = dialogView.findViewById<MaterialButton>(R.id.btn_cancelar)
 
-            // Ocultar chips de sugestões no modo edição
             dialogView.findViewById<View>(R.id.chip_group_sugestoes)?.visibility = View.GONE
 
             etNome.setText(g.nome)
@@ -562,49 +477,23 @@ class GruposActivity : AppCompatActivity() {
                 .create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-            btnCriar.setOnClickListener {
+            btnCriar.setOnClickListener { v ->
                 val novoNome = etNome.text?.toString()?.trim() ?: ""
                 if (novoNome.isEmpty()) {
                     Toast.makeText(this@GruposActivity, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                val nomeOriginal = g.nome
+                // Salva estado original para restaurar se a operação falhar.
+                pendingEditNomeOriginal = g.nome
+                pendingEditGrupo = g
+                pendingEditDialog = dialog
+                pendingEditButton = v
                 g.nome = novoNome
-                btnCriar.isEnabled = false
-                AsyncDatabaseHelper.execute(
-                    object : AsyncDatabaseHelper.BackgroundTask<Int> {
-                        override fun doInBackground(): Int {
-                            dao.open()
-                            val rows = dao.atualizarNome(g)
-                            dao.close()
-                            return rows
-                        }
-                    },
-                    object : AsyncDatabaseHelper.ResultCallback<Int> {
-                        override fun onSuccess(rows: Int) {
-                            if (rows > 0) {
-                                atualizarLista()
-                                dialog.dismiss()
-                            } else {
-                                g.nome = nomeOriginal
-                                btnCriar.isEnabled = true
-                                Toast.makeText(this@GruposActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
-                            }
-                        }
-
-                        override fun onError(e: Exception) {
-                            g.nome = nomeOriginal
-                            notifyDataSetChanged()
-                            btnCriar.isEnabled = true
-                            Timber.e(e, "Erro ao atualizar nome do grupo")
-                            Toast.makeText(this@GruposActivity, R.string.grupo_erro_salvar, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
+                v.isEnabled = false
+                viewModel.atualizarNomeGrupo(g)
             }
 
             btnCancelar.setOnClickListener { dialog.dismiss() }
-
             dialog.show()
         }
 
@@ -612,16 +501,7 @@ class GruposActivity : AppCompatActivity() {
             AlertDialog.Builder(ctx)
                 .setTitle(R.string.grupo_dialog_excluir_titulo)
                 .setMessage(ctx.getString(R.string.grupo_dialog_excluir_mensagem, g.nome))
-                .setPositiveButton(R.string.button_remove_yes) { _, _ ->
-                    AsyncDatabaseHelper.executeSimple(
-                        {
-                            dao.open()
-                            dao.remover(g.id)
-                            dao.close()
-                        },
-                        { atualizarLista() }
-                    )
-                }
+                .setPositiveButton(R.string.button_remove_yes) { _, _ -> viewModel.removerGrupo(g) }
                 .setNegativeButton(R.string.button_cancel, null)
                 .show()
         }

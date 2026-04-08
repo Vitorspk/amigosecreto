@@ -61,6 +61,9 @@ open class ParticipanteRepository @VisibleForTesting internal constructor(
     open suspend fun contarPorGrupo(): Map<Int, Int> =
         dao.contarPorTodosGrupos().associate { it.grupoId to it.count }
 
+    open suspend fun contarEnviadosPorGrupo(): Map<Int, Int> =
+        dao.contarEnviadosPorTodosGrupos().associate { it.grupoId to it.count }
+
     open suspend fun buscarPorId(id: Int): Participante? = dao.buscarPorId(id)
 
     companion object {
