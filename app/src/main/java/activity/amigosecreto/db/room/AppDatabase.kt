@@ -150,26 +150,46 @@ abstract class AppDatabase : RoomDatabase() {
          *
          * All new columns have default values so existing rows are preserved intact.
          *
+         * Uses addColumnIfMissing() to guard each ALTER TABLE — some devices had these
+         * columns already present (added by a previous Room instance before the migration
+         * ran), causing "duplicate column name" errors and crash on startup.
+         *
          * Note: sorteio and sorteio_par already exist — they were created in MIGRATION_10_11.
          * This migration only alters grupo and participante via ALTER TABLE ADD COLUMN.
          */
         val MIGRATION_11_12 = object : Migration(11, 12) {
+            private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
+                db.query("PRAGMA table_info(`$table`)").use { cursor ->
+                    val nameIdx = cursor.getColumnIndex("name")
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(nameIdx) == column) return true
+                    }
+                }
+                return false
+            }
+
+            private fun addColumnIfMissing(db: SupportSQLiteDatabase, table: String, column: String, definition: String) {
+                if (!columnExists(db, table, column)) {
+                    db.execSQL("ALTER TABLE `$table` ADD COLUMN `$column` $definition")
+                }
+            }
+
             override fun migrate(db: SupportSQLiteDatabase) {
                 // --- grupo: new configuration columns ---
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `descricao` TEXT")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `data_evento` TEXT")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `local_evento` TEXT")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `data_limite_sorteio` TEXT")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `valor_minimo` REAL NOT NULL DEFAULT 0.0")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `valor_maximo` REAL NOT NULL DEFAULT 0.0")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `regras` TEXT")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `permitir_ver_desejos` INTEGER NOT NULL DEFAULT 1")
-                db.execSQL("ALTER TABLE grupo ADD COLUMN `exigir_confirmacao_compra` INTEGER NOT NULL DEFAULT 0")
+                addColumnIfMissing(db, "grupo", "descricao", "TEXT")
+                addColumnIfMissing(db, "grupo", "data_evento", "TEXT")
+                addColumnIfMissing(db, "grupo", "local_evento", "TEXT")
+                addColumnIfMissing(db, "grupo", "data_limite_sorteio", "TEXT")
+                addColumnIfMissing(db, "grupo", "valor_minimo", "REAL NOT NULL DEFAULT 0.0")
+                addColumnIfMissing(db, "grupo", "valor_maximo", "REAL NOT NULL DEFAULT 0.0")
+                addColumnIfMissing(db, "grupo", "regras", "TEXT")
+                addColumnIfMissing(db, "grupo", "permitir_ver_desejos", "INTEGER NOT NULL DEFAULT 1")
+                addColumnIfMissing(db, "grupo", "exigir_confirmacao_compra", "INTEGER NOT NULL DEFAULT 0")
 
                 // --- participante: new tracking columns ---
-                db.execSQL("ALTER TABLE participante ADD COLUMN `confirmou_presente` INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE participante ADD COLUMN `foi_notificado` INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE participante ADD COLUMN `observacoes` TEXT")
+                addColumnIfMissing(db, "participante", "confirmou_presente", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfMissing(db, "participante", "foi_notificado", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfMissing(db, "participante", "observacoes", "TEXT")
             }
         }
 
