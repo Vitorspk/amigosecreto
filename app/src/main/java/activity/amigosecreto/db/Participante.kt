@@ -31,9 +31,9 @@ class Participante(
     var telefone: String? = null,
     @ColumnInfo(name = "amigo_sorteado_id")
     var amigoSorteadoId: Int? = null,
-    @ColumnInfo(name = "enviado")
+    @ColumnInfo(name = "enviado", defaultValue = "0")
     var isEnviado: Boolean = false,
-    @ColumnInfo(name = "grupo_id")
+    @ColumnInfo(name = "grupo_id", defaultValue = "0")
     var grupoId: Int = 0,
     @ColumnInfo(name = "confirmou_presente", defaultValue = "0")
     var confirmouPresente: Boolean = false,

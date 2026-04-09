@@ -30,11 +30,11 @@ class Desejo(
     var categoria: String? = null,
     @ColumnInfo(name = "lojas")
     var lojas: String? = null,
-    @ColumnInfo(name = "preco_minimo")
+    @ColumnInfo(name = "preco_minimo", defaultValue = "0")
     var precoMinimo: Double = 0.0,
-    @ColumnInfo(name = "preco_maximo")
+    @ColumnInfo(name = "preco_maximo", defaultValue = "0")
     var precoMaximo: Double = 0.0,
-    @ColumnInfo(name = "participante_id")
+    @ColumnInfo(name = "participante_id", defaultValue = "0")
     var participanteId: Int = 0,
 ) : Parcelable, Comparable<Desejo> {
 

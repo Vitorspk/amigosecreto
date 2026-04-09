@@ -21,6 +21,10 @@ import activity.amigosecreto.db.SorteioPar
  * - 10:    MySQLiteOpenHelper — últimas migrações via helper legado
  * - 11:    Room assume o gerenciamento; schema idêntico ao v10.
  *          A migration 10→11 é uma no-op: valida o schema existente sem alterar dados.
+ * - 12:    Adiciona colunas de configuração de grupo e rastreamento de participante.
+ * - 13:    Corrige mismatch de schema: adiciona defaultValue nas anotações @ColumnInfo
+ *          de participante (enviado, grupo_id) e desejo (preco_minimo, preco_maximo,
+ *          participante_id). Sem alteração de dados — migration no-op.
  *
  * O banco físico continua sendo "amigosecreto_v10.db" para preservar dados dos usuários.
  */
@@ -33,7 +37,7 @@ import activity.amigosecreto.db.SorteioPar
         Sorteio::class,
         SorteioPar::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -169,6 +173,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migration 12 → 13: no-op schema correction.
+         *
+         * Adds defaultValue to @ColumnInfo annotations on participante (enviado, grupo_id)
+         * and desejo (preco_minimo, preco_maximo, participante_id) to match what
+         * MIGRATION_10_11 already created via DDL. No data is changed — the actual columns
+         * already exist with the correct DEFAULT constraint. This migration only bumps the
+         * version so Room re-validates the schema against the corrected entity definitions,
+         * resolving the IllegalStateException crash on app startup.
+         */
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // No DDL changes needed — columns already have correct DEFAULT constraints
+                // from MIGRATION_10_11. This migration only forces Room schema re-validation.
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -176,7 +197,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                     .build()
                     .also { INSTANCE = it }
             }
