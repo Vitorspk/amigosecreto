@@ -10,17 +10,14 @@ import java.util.Locale
 /**
  * Utilitários para manipulação de Window Insets em modo Edge-to-Edge.
  *
- * Centraliza o locale pt-BR e o handler de IME para evitar duplicação
- * e garantir consistência entre as Activities de desejo.
+ * Formatação pt-BR foi movida para [FormatUtils]. Os campos/métodos abaixo
+ * são delegates mantidos para retrocompatibilidade com call sites existentes.
  */
 object WindowInsetsUtils {
 
-    /**
-     * Locale pt-BR compartilhado para formatação monetária.
-     * Uso de Locale.forLanguageTag em vez do construtor deprecated new Locale(String, String).
-     */
-    @JvmField
-    val LOCALE_PT_BR: Locale = Locale.forLanguageTag("pt-BR")
+    /** @see FormatUtils.LOCALE_PT_BR */
+    @JvmStatic
+    val LOCALE_PT_BR: Locale get() = FormatUtils.LOCALE_PT_BR
 
     /**
      * Aplica padding dinâmico no bottom de uma View quando o teclado (IME) abre.
@@ -44,21 +41,11 @@ object WindowInsetsUtils {
         }
     }
 
-    /**
-     * Retorna um NumberFormat de moeda pt-BR (ex: "R$ 1.000,00").
-     * Cria uma nova instância a cada chamada — NumberFormat não é thread-safe.
-     */
+    /** @see FormatUtils.currencyFormatPtBr */
     @JvmStatic
-    fun currencyFormatPtBr(): NumberFormat = NumberFormat.getCurrencyInstance(LOCALE_PT_BR)
+    fun currencyFormatPtBr(): NumberFormat = FormatUtils.currencyFormatPtBr()
 
-    /**
-     * Retorna um NumberFormat numérico pt-BR com 2 casas decimais fixas (ex: "1.000,00").
-     * Usado em contextos onde o símbolo "R$" já está presente como prefixo no layout.
-     * Cria uma nova instância a cada chamada — NumberFormat não é thread-safe.
-     */
+    /** @see FormatUtils.numberFormatPtBr */
     @JvmStatic
-    fun numberFormatPtBr(): NumberFormat = NumberFormat.getNumberInstance(LOCALE_PT_BR).apply {
-        minimumFractionDigits = 2
-        maximumFractionDigits = 2
-    }
+    fun numberFormatPtBr(): NumberFormat = FormatUtils.numberFormatPtBr()
 }

@@ -103,7 +103,7 @@ class ParticipantesViewModelTest {
      * Com UnconfinedTestDispatcher, a coroutine roda de forma síncrona — sem executor real.
      */
     private fun assertaErro(repoQueLanca: ParticipanteRepository, acao: () -> Unit) {
-        viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel = ParticipantesViewModel(app, repoQueLanca, desejoRepository, sorteioRepository)
         viewModel.ioDispatcher = testDispatcher
         viewModel.init(grupoId)
         viewModel.clearErrorMessage()
@@ -569,7 +569,7 @@ class ParticipantesViewModelTest {
             override suspend fun listarPorGrupo(grupoId: Int): List<Participante> = emptyList()
         }
 
-        viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel = ParticipantesViewModel(app, repoQueLanca, desejoRepository, sorteioRepository)
         viewModel.ioDispatcher = testDispatcher
         viewModel.init(grupoId)
 
@@ -831,7 +831,7 @@ class ParticipantesViewModelTest {
                 throw SQLiteException("falha simulada")
             }
         }
-        viewModel.setRepositories(repoQueLanca, desejoRepository)
+        viewModel = ParticipantesViewModel(app, repoQueLanca, desejoRepository, sorteioRepository)
         viewModel.ioDispatcher = testDispatcher
         viewModel.init(grupoId)
         viewModel.clearErrorMessage()

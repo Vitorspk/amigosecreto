@@ -25,11 +25,9 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class ParticipantesViewModel @Inject constructor(
     application: Application,
-    // var (not val) — required by @VisibleForTesting setRepositories() for fake injection in tests.
-    // TODO: convert to val + remove setRepositories() when tests migrate to constructor injection or @TestInstallIn.
-    private var participanteRepository: ParticipanteRepository,
-    private var desejoRepository: DesejoRepository,
-    private var sorteioRepository: SorteioRepository
+    private val participanteRepository: ParticipanteRepository,
+    private val desejoRepository: DesejoRepository,
+    private val sorteioRepository: SorteioRepository
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -108,7 +106,6 @@ class ParticipantesViewModel @Inject constructor(
     var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     // @Volatile: written on main thread (init()), read inside withContext(ioDispatcher) on IO thread.
-    // TODO: convert to val via constructor injection when setRepositories() is removed.
     @Volatile private var grupoId = -1
 
     /**
@@ -442,14 +439,4 @@ class ParticipantesViewModel @Inject constructor(
         _errorMessage.value = getApplication<Application>().getString(errorStringRes)
     }
 
-    @VisibleForTesting
-    fun setRepositories(
-        participanteRepository: ParticipanteRepository,
-        desejoRepository: DesejoRepository,
-        sorteioRepository: SorteioRepository = this.sorteioRepository
-    ) {
-        this.participanteRepository = participanteRepository
-        this.desejoRepository = desejoRepository
-        this.sorteioRepository = sorteioRepository
-    }
 }
