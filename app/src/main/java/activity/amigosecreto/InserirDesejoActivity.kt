@@ -21,6 +21,12 @@ import com.google.android.material.textfield.TextInputEditText
 @AndroidEntryPoint
 class InserirDesejoActivity : AppCompatActivity() {
 
+    companion object {
+        /** Optional Intent extra: ID of the participant this wish belongs to.
+         *  When absent (e.g. launched from ListarDesejos), participanteId stays 0 (no FK). */
+        const val EXTRA_PARTICIPANTE_ID = "extra_participante_id"
+    }
+
     private lateinit var etProduto: TextInputEditText
     private lateinit var etCategoria: TextInputEditText
     private lateinit var etPrecoMinimo: TextInputEditText
@@ -91,9 +97,9 @@ class InserirDesejoActivity : AppCompatActivity() {
                 val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
                 precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
                 lojas = etLojas.text.toString().trim()
-                // participanteId intentionally not set: this screen is reached from ListarDesejos
-                // (global wish list) without a participant context. FK allows NULL per schema v8.
-                // TODO: pass participanteId via Intent extra when launching from ParticipanteDesejosActivity.
+                // participanteId is optional: 0 when launched from ListarDesejos (global wish list);
+                // set when launched from ParticipanteDesejosActivity via EXTRA_PARTICIPANTE_ID.
+                participanteId = intent.getIntExtra(EXTRA_PARTICIPANTE_ID, 0)
             }
         } catch (e: NumberFormatException) {
             btnSalvar.isEnabled = true
