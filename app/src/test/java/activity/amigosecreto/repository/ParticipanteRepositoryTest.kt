@@ -230,13 +230,13 @@ class ParticipanteRepositoryTest {
     }
 
     @Test
-    fun contarGruposPendentes_grupoComPoucosParticipantes_naoConata() = runTest {
+    fun contarGruposPendentes_grupoComPoucosParticipantes_naoConta() = runTest {
         inserir("A"); inserir("B")
         assertEquals(0, repository.contarGruposPendentes(3))
     }
 
     @Test
-    fun contarGruposPendentes_grupoComSorteioRealizado_naoConata() = runTest {
+    fun contarGruposPendentes_grupoComSorteioRealizado_naoConta() = runTest {
         inserir("A"); inserir("B"); inserir("C")
         val lista = repository.listarPorGrupo(grupoId)
         repository.salvarSorteio(lista, listOf(lista[1], lista[2], lista[0]))
