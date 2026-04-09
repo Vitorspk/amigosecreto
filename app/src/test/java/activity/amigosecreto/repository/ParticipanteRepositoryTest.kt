@@ -220,6 +220,46 @@ class ParticipanteRepositoryTest {
     }
 
     // =========================================================
+    // contarGruposPendentes
+    // =========================================================
+
+    @Test
+    fun contarGruposPendentes_grupoComMinimoParticipantesSemSorteio_conta() = runTest {
+        inserir("A"); inserir("B"); inserir("C")
+        assertEquals(1, repository.contarGruposPendentes(3))
+    }
+
+    @Test
+    fun contarGruposPendentes_grupoComPoucosParticipantes_naoConta() = runTest {
+        inserir("A"); inserir("B")
+        assertEquals(0, repository.contarGruposPendentes(3))
+    }
+
+    @Test
+    fun contarGruposPendentes_grupoComSorteioRealizado_naoConta() = runTest {
+        inserir("A"); inserir("B"); inserir("C")
+        val lista = repository.listarPorGrupo(grupoId)
+        repository.salvarSorteio(lista, listOf(lista[1], lista[2], lista[0]))
+        assertEquals(0, repository.contarGruposPendentes(3))
+    }
+
+    @Test
+    fun contarGruposPendentes_multiplosGrupos_contaSomentePendentes() = runTest {
+        // Grupo 1 (grupoId já criado no setUp) — pendente com 3 participantes
+        inserir("A"); inserir("B"); inserir("C")
+
+        // Grupo 2 — sorteio realizado
+        val g2Id = grupoDao.inserir(Grupo(nome = "Grupo 2", data = "01/01/2025")).toInt()
+        repository.inserir(Participante(nome = "D"), g2Id)
+        repository.inserir(Participante(nome = "E"), g2Id)
+        repository.inserir(Participante(nome = "F"), g2Id)
+        val listaG2 = repository.listarPorGrupo(g2Id)
+        repository.salvarSorteio(listaG2, listOf(listaG2[1], listaG2[2], listaG2[0]))
+
+        assertEquals(1, repository.contarGruposPendentes(3))
+    }
+
+    // =========================================================
     // buscarPorId
     // =========================================================
 
