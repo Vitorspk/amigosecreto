@@ -14,19 +14,19 @@ import activity.amigosecreto.db.Sorteio
 import activity.amigosecreto.db.SorteioPar
 
 /**
- * Banco de dados Room do aplicativo.
+ * Room database for the application.
  *
  * Version history:
- * - 1..9:  MySQLiteOpenHelper (descontinuado)
- * - 10:    MySQLiteOpenHelper — últimas migrações via helper legado
- * - 11:    Room assume o gerenciamento; schema idêntico ao v10.
- *          A migration 10→11 é uma no-op: valida o schema existente sem alterar dados.
- * - 12:    Adiciona colunas de configuração de grupo e rastreamento de participante.
- * - 13:    Corrige mismatch de schema: adiciona defaultValue nas anotações @ColumnInfo
- *          de participante (enviado, grupo_id) e desejo (preco_minimo, preco_maximo,
- *          participante_id). Sem alteração de dados — migration no-op.
+ * - 1..9:  MySQLiteOpenHelper (discontinued)
+ * - 10:    MySQLiteOpenHelper — last migrations via legacy helper
+ * - 11:    Room takes over management; schema identical to v10.
+ *          Migration 10→11 adapts NOT NULL constraints and indexes to match Room expectations.
+ * - 12:    Adds group configuration columns and participant tracking columns.
+ * - 13:    Schema correction: adds missing defaultValue to @ColumnInfo annotations on
+ *          participante (enviado, grupo_id) and desejo (preco_minimo, preco_maximo,
+ *          participante_id). No data changes — no-op migration.
  *
- * O banco físico continua sendo "amigosecreto_v10.db" para preservar dados dos usuários.
+ * The physical database file remains "amigosecreto_v10.db" to preserve user data.
  */
 @Database(
     entities = [
@@ -54,19 +54,19 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         /**
-         * Migration 10 → 11: adapta o schema criado pelo MySQLiteOpenHelper para o formato
-         * exato esperado pelo Room (colunas NOT NULL, índices, FKs com ON DELETE CASCADE).
+         * Migration 10 → 11: adapts the schema created by MySQLiteOpenHelper to the exact
+         * format expected by Room (NOT NULL columns, indexes, FKs with ON DELETE CASCADE).
          *
-         * O MySQLiteOpenHelper criava as tabelas sem NOT NULL e sem índices auxiliares.
-         * O Room valida o schema rigorosamente — divergências causam IllegalStateException.
-         * Solução: rename → recreate com schema correto → copy → drop old → create indexes.
+         * MySQLiteOpenHelper created tables without NOT NULL and without auxiliary indexes.
+         * Room validates the schema strictly — divergences cause IllegalStateException.
+         * Strategy: rename → recreate with correct schema → copy → drop old → create indexes.
          *
-         * Tabelas afetadas:
-         * - participante: grupo_id e enviado precisam de NOT NULL
-         * - desejo:        preco_minimo, preco_maximo e participante_id precisam de NOT NULL
-         * - exclusao:      precisa do índice index_exclusao_excluido_id
+         * Affected tables:
+         * - participante: grupo_id and enviado need NOT NULL DEFAULT 0
+         * - desejo:        preco_minimo, preco_maximo, participante_id need NOT NULL DEFAULT 0
+         * - exclusao:      needs index index_exclusao_excluido_id
          *
-         * grupo, sorteio e sorteio_par já estão corretos ou são novas — sem alteração.
+         * grupo, sorteio and sorteio_par are already correct or are new — no changes.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -115,11 +115,11 @@ abstract class AppDatabase : RoomDatabase() {
                 """.trimIndent())
                 db.execSQL("DROP TABLE desejo_old")
 
-                // --- exclusao: índice exigido pelo Room ---
+                // --- exclusao: index required by Room ---
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `exclusao` (`excluido_id`)")
 
-                // --- sorteio e sorteio_par: criados pelo MySQLiteOpenHelper v10 via SorteioDAO ---
-                // Garantir que existem (banco pode ter sido criado antes do v10 completo)
+                // --- sorteio and sorteio_par: created by MySQLiteOpenHelper v10 via SorteioDAO ---
+                // Ensure they exist (database may have been created before v10 was complete)
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS sorteio (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -203,9 +203,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
 
         /**
-         * Inicializa o banco usando o mesmo arquivo que MySQLiteOpenHelper (Robolectric).
-         * Deve ser chamado no @Before de testes que usam BackupManager.importarDeJson,
-         * garantindo que Room e DAOs legados compartilhem a mesma conexão de banco.
+         * Initializes the database using the same file as MySQLiteOpenHelper (Robolectric).
+         * Must be called in @Before for tests that use BackupManager.importarDeJson,
+         * ensuring Room and legacy DAOs share the same database connection.
          */
         @androidx.annotation.VisibleForTesting
         fun initForTesting(context: Context) {
@@ -214,10 +214,10 @@ abstract class AppDatabase : RoomDatabase() {
                 // This prevents the old WAL connection from interfering with the new one
                 // and ensures MySQLiteOpenHelper can see data written by legacy DAOs.
                 INSTANCE?.close()
-                // Usa o mesmo arquivo de banco que MySQLiteOpenHelper para que Room e DAOs legados
-                // compartilhem os mesmos dados nos testes Robolectric.
-                // fallbackToDestructiveMigration evita falhas de schema validation em banco novo.
-                // disableWriteAheadLogging: evita conflito de WAL entre Room e MySQLiteOpenHelper.
+                // Uses the same database file as MySQLiteOpenHelper so that Room and legacy DAOs
+                // share the same data in Robolectric tests.
+                // fallbackToDestructiveMigration avoids schema validation failures on a new database.
+                // disableWriteAheadLogging: avoids WAL conflict between Room and MySQLiteOpenHelper.
                 INSTANCE = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -227,24 +227,24 @@ abstract class AppDatabase : RoomDatabase() {
                     .fallbackToDestructiveMigration()
                     .build()
                     .also {
-                        // Força a materialização do banco (cria arquivo + aplica schema completo)
-                        // antes que qualquer DAO legado abra via MySQLiteOpenHelper.
-                        // Sem isso, MySQLiteOpenHelper abre primeiro com DATABASE_VERSION=10
-                        // e cria o banco sem as colunas adicionadas nas migrações v11→v12
-                        // (ex: confirmou_presente), causando IllegalArgumentException nos testes.
+                        // Forces database materialization (creates file + applies full schema)
+                        // before any legacy DAO opens it via MySQLiteOpenHelper.
+                        // Without this, MySQLiteOpenHelper opens first with DATABASE_VERSION=10
+                        // and creates the database without columns added in migrations v11→v12
+                        // (e.g. confirmou_presente), causing IllegalArgumentException in tests.
                         it.openHelper.writableDatabase
                     }
             }
         }
 
         /**
-         * Fecha e invalida o singleton Room.
+         * Closes and invalidates the Room singleton.
          *
-         * Deve ser chamado antes de operações que escrevem diretamente no SQLite via
-         * MySQLiteOpenHelper (ex: BackupManager.importarDeJson), para garantir que:
-         * 1. Não haja conflito de WAL entre as duas conexões.
-         * 2. O Room reabra uma conexão limpa na próxima vez que getInstance() for chamado,
-         *    tornando os dados importados imediatamente visíveis para queries Room/DAOs.
+         * Must be called before operations that write directly to SQLite via
+         * MySQLiteOpenHelper (e.g. BackupManager.importarDeJson), to ensure:
+         * 1. No WAL conflict between the two connections.
+         * 2. Room reopens a clean connection the next time getInstance() is called,
+         *    making imported data immediately visible to Room/DAO queries.
          */
         fun closeInstance() {
             synchronized(this) {
@@ -253,7 +253,7 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /** Fecha e limpa o singleton após testes. */
+        /** Closes and clears the singleton after tests. */
         @androidx.annotation.VisibleForTesting
         fun closeForTesting() {
             synchronized(this) {
