@@ -20,7 +20,7 @@ object AnimationUtils {
     /** Apply slide transition when finishing/going back */
     @JvmStatic
     fun applySlideBackTransition(activity: Activity) {
-        overrideTransition(activity, R.anim.slide_in_left, R.anim.slide_out_right)
+        overrideTransition(activity, R.anim.slide_in_left, R.anim.slide_out_right, closeTransition = true)
     }
 
     /** Apply fade transition */
@@ -30,9 +30,15 @@ object AnimationUtils {
     }
 
     @Suppress("DEPRECATION")
-    private fun overrideTransition(activity: Activity, enterAnim: Int, exitAnim: Int) {
+    private fun overrideTransition(
+        activity: Activity,
+        enterAnim: Int,
+        exitAnim: Int,
+        closeTransition: Boolean = false
+    ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, enterAnim, exitAnim)
+            val type = if (closeTransition) Activity.OVERRIDE_TRANSITION_CLOSE else Activity.OVERRIDE_TRANSITION_OPEN
+            activity.overrideActivityTransition(type, enterAnim, exitAnim)
         } else {
             activity.overridePendingTransition(enterAnim, exitAnim)
         }

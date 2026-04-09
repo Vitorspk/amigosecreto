@@ -1,6 +1,6 @@
 package activity.amigosecreto.util
 
-import android.app.Application
+import android.content.Context
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.*
@@ -15,7 +15,7 @@ import java.util.regex.Pattern
 @Config(sdk = [28])
 class ValidationUtilsTest {
 
-    private lateinit var ctx: Application
+    private lateinit var ctx: Context
 
     @Before
     fun setUp() {
@@ -78,7 +78,7 @@ class ValidationUtilsTest {
     @Test
     fun getDatabaseErrorMessage_UNIQUE_retorna_msg_amigavel() {
         val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception("UNIQUE constraint failed"))
-        assertTrue(msg.lowercase().contains("existe") || msg.lowercase().contains("unique") || msg.contains("banco"))
+        assertEquals(ctx.getString(activity.amigosecreto.R.string.validation_db_unique), msg)
     }
 
     @Test
