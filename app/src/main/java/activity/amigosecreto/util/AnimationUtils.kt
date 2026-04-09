@@ -1,34 +1,46 @@
 package activity.amigosecreto.util
 
 import android.app.Activity
+import android.os.Build
 import activity.amigosecreto.R
 
-// overridePendingTransition deprecated in API 34 (use overrideActivityTransition).
-// TODO: migrate to overrideActivityTransition() in Fase 10e (Activities migration).
-
 /**
- * Utility class for applying consistent animations across the app
+ * Utility class for applying consistent animations across the app.
+ * Uses [Activity.overrideActivityTransition] on API 34+ and falls back to the
+ * deprecated [Activity.overridePendingTransition] on older versions.
  */
 object AnimationUtils {
 
     /** Apply slide transition when starting a new activity */
     @JvmStatic
-    @Suppress("DEPRECATION")
     fun applySlideTransition(activity: Activity) {
-        activity.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        overrideTransition(activity, R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     /** Apply slide transition when finishing/going back */
     @JvmStatic
-    @Suppress("DEPRECATION")
     fun applySlideBackTransition(activity: Activity) {
-        activity.overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        overrideTransition(activity, R.anim.slide_in_left, R.anim.slide_out_right, closeTransition = true)
     }
 
     /** Apply fade transition */
     @JvmStatic
-    @Suppress("DEPRECATION")
     fun applyFadeTransition(activity: Activity) {
-        activity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+        overrideTransition(activity, R.anim.fade_in, R.anim.fade_out)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun overrideTransition(
+        activity: Activity,
+        enterAnim: Int,
+        exitAnim: Int,
+        closeTransition: Boolean = false
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val type = if (closeTransition) Activity.OVERRIDE_TRANSITION_CLOSE else Activity.OVERRIDE_TRANSITION_OPEN
+            activity.overrideActivityTransition(type, enterAnim, exitAnim)
+        } else {
+            activity.overridePendingTransition(enterAnim, exitAnim)
+        }
     }
 }

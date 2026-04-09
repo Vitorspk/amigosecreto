@@ -419,4 +419,18 @@
     <string name="ordenar_criacao">Data de criação</string>
     <string name="ordenar_evento">Data do evento</string>
 
+    <!-- Validação de campos (ValidationUtils) -->
+    <string name="validation_name_required">Nome é obrigatório</string>
+    <string name="validation_name_min_length">Nome deve ter pelo menos 2 caracteres</string>
+    <string name="validation_email_invalid">Email inválido</string>
+    <string name="validation_phone_invalid">Telefone inválido (ex: (11) 91234-5678)</string>
+    <string name="validation_min_participants">É necessário pelo menos %1$d participantes para realizar o sorteio</string>
+    <string name="validation_db_unique">Este item já existe no banco de dados</string>
+    <string name="validation_db_not_null">Alguns campos obrigatórios estão vazios</string>
+    <string name="validation_db_foreign_key">Não é possível excluir. Item está sendo usado</string>
+    <string name="validation_db_generic">Erro ao acessar o banco de dados. Tente novamente</string>
+    <string name="validation_network_timeout">Tempo de conexão esgotado. Verifique sua internet</string>
+    <string name="validation_network_no_connection">Sem conexão com a internet</string>
+    <string name="validation_network_generic">Erro de rede. Verifique sua conexão</string>
+
 </resources>

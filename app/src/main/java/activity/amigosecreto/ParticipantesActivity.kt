@@ -439,9 +439,9 @@ class ParticipantesActivity : AppCompatActivity() {
         builder.setNegativeButton(getString(R.string.button_cancel), null)
         val dialog = builder.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            if (!ValidationUtils.validateName(etNome)) return@setOnClickListener
-            if (!ValidationUtils.validatePhone(etTelefone)) return@setOnClickListener
-            if (!ValidationUtils.validateEmail(etEmail)) return@setOnClickListener
+            if (!ValidationUtils.validateName(this, etNome)) return@setOnClickListener
+            if (!ValidationUtils.validatePhone(this, etTelefone)) return@setOnClickListener
+            if (!ValidationUtils.validateEmail(this, etEmail)) return@setOnClickListener
 
             val nome = etNome.text.toString().trim()
             val telefone = etTelefone.text.toString().trim()
@@ -481,9 +481,9 @@ class ParticipantesActivity : AppCompatActivity() {
         builder.setNegativeButton(getString(R.string.button_cancel), null)
         val dialog = builder.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { v ->
-            if (!ValidationUtils.validateName(etNome)) return@setOnClickListener
-            if (!ValidationUtils.validatePhone(etTelefone)) return@setOnClickListener
-            if (!ValidationUtils.validateEmail(etEmail)) return@setOnClickListener
+            if (!ValidationUtils.validateName(this, etNome)) return@setOnClickListener
+            if (!ValidationUtils.validatePhone(this, etTelefone)) return@setOnClickListener
+            if (!ValidationUtils.validateEmail(this, etEmail)) return@setOnClickListener
 
             val nome = etNome.text.toString().trim()
             val telefone = etTelefone.text.toString().trim()
