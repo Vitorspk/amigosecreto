@@ -9,7 +9,7 @@
 | Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~370) |
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
-| Min SDK | 21 (Android 5.0) |
+| Min SDK | 23 (Android 6.0) |
 | Target / Compile SDK | 36 (Android 15) |
 | Linguagem | Kotlin (migração completa — Fase 10f, PR #43) |
 | Branch principal | `master` |
@@ -31,7 +31,8 @@
 ```
 app/src/main/java/activity/amigosecreto/
 ├── AmigoSecretoApplication.kt             # @HiltAndroidApp — ponto de entrada do Hilt
-├── GruposActivity.kt                      # LAUNCHER — tela principal, gerenciar grupos
+├── GruposActivity.kt                      # @AndroidEntryPoint LAUNCHER — gerenciar grupos (C2)
+├── GruposViewModel.kt                     # @HiltViewModel — lógica de negócio de grupos (C2)
 ├── ParticipantesActivity.kt               # @AndroidEntryPoint — gerenciar participantes de um grupo
 ├── ParticipantesViewModel.kt              # @HiltViewModel — lógica de negócio + LiveData
 ├── RevelarAmigoActivity.kt               # revelar amigo secreto interativamente
@@ -43,7 +44,8 @@ app/src/main/java/activity/amigosecreto/
 ├── DetalheDesejoActivity.kt               # detalhes do desejo + busca Buscape
 │
 ├── adapter/
-│   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes
+│   ├── GruposRecyclerAdapter.kt           # RecyclerView adapter para grupos (extraído C4) — usa DiffUtil (C3)
+│   └── ParticipantesRecyclerAdapter.kt    # RecyclerView adapter para participantes — usa DiffUtil (C3)
 │
 ├── db/
 │   ├── MySQLiteOpenHelper.kt              # schema SQLite v9 + migrações (ON DELETE CASCADE — PR #47)
@@ -58,8 +60,11 @@ app/src/main/java/activity/amigosecreto/
 │   └── DatabaseModule.kt                  # @Module @InstallIn(SingletonComponent) — provê Repositories
 │
 ├── repository/
+│   ├── GruposRepository.kt               # encapsula GrupoRoomDao; provido via Hilt (C2)
 │   ├── ParticipanteRepository.kt          # encapsula ParticipanteDAO; chamado de coroutine IO — Kotlin
-│   └── DesejoRepository.kt               # encapsula DesejoDAO; chamado de coroutine IO — Kotlin
+│   ├── DesejoRepository.kt               # encapsula DesejoDAO; chamado de coroutine IO — Kotlin
+│   ├── SorteioRepository.kt              # encapsula SorteioRoomDao (B1)
+│   └── BackupRepository.kt               # exportar/importar JSON; provido via Hilt (C2)
 │
 └── util/
     ├── AnimationUtils.kt                  # animações reutilizáveis — Kotlin
@@ -70,7 +75,9 @@ app/src/main/java/activity/amigosecreto/
     ├── SorteioEngine.kt                   # motor de sorteio (extraído para testabilidade) — Kotlin
     ├── StateViewHelper.kt                 # gerencia estados loading/empty/content via ViewStub — Kotlin (PR #49)
     ├── ValidationUtils.kt                 # validação centralizada de inputs — Kotlin
-    └── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
+    ├── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
+    ├── GeminiClient.kt                   # OkHttp POST para Gemini 2.0 Flash (B3) — graceful degradation sem chave
+    └── BackupManager.kt                  # serialização/deserialização JSON para backup
 ```
 
 ```
@@ -771,17 +778,17 @@ Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro d
 | # | Tarefa | Status |
 |---|--------|--------|
 | B1 | **Desfazer sorteio** — botão para reverter o último sorteio (zera `amigo_sorteado_id` de todos, remove `sorteio`/`sorteio_par`) sem apagar participantes | ✅ Concluído |
-| B2 | **Compartilhar lista de desejos** — participante gera link/QR com seus próprios desejos para enviar ao amigo sorteado | 🔲 Pendente |
-| B3 | **Sugestão de presentes via IA** — baseado na lista de desejos, sugerir presentes complementares via API | 🔲 Pendente |
+| B2 | **Compartilhar lista de desejos** — participante gera link/QR com seus próprios desejos para enviar ao amigo sorteado | ✅ Concluído |
+| B3 | **Sugestão de presentes via IA** — baseado na lista de desejos, sugerir presentes complementares via API | ✅ Concluído |
 
 ### Fase 4C — Qualidade técnica
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15 | 🔲 Pendente |
-| C2 | **MVVM completo em `GruposActivity`** — extrair lógica para `GruposViewModel` + `GruposRepository`; hoje toda a lógica está na Activity | 🔲 Pendente |
-| C3 | **DiffUtil nos adapters** — substituir `notifyDataSetChanged()` por `DiffUtil.calculateDiff()` em `ParticipantesAdapter` e `GruposRecyclerAdapter` para evitar re-render completo | 🔲 Pendente |
-| C4 | **Extrair `GruposRecyclerAdapter`** — mover inner class para `adapter/GruposRecyclerAdapter.kt` (atualmente acoplada à Activity, ~560 linhas) | 🔲 Pendente |
+| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15 | ✅ Concluído |
+| C2 | **MVVM completo em `GruposActivity`** — extrair lógica para `GruposViewModel` + `GruposRepository`; hoje toda a lógica está na Activity | ✅ Concluído |
+| C3 | **DiffUtil nos adapters** — substituir `notifyDataSetChanged()` por `DiffUtil.calculateDiff()` em `ParticipantesAdapter` e `GruposRecyclerAdapter` para evitar re-render completo | ✅ Concluído |
+| C4 | **Extrair `GruposRecyclerAdapter`** — mover inner class para `adapter/GruposRecyclerAdapter.kt` (atualmente acoplada à Activity, ~560 linhas) | ✅ Concluído |
 
 ### Histórico completo (Fases 1–3, todos concluídos)
 
