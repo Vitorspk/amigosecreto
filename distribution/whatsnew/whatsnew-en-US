@@ -1,5 +1,5 @@
-Version 3.0.2 - Critical bug fix
+Version 3.0.3 - Critical bug fix
 
-Fixes crash on home screen after app update
-Improved database initialization
+Fixes 'Error loading groups' crash after app update
+Fixes database migration on devices with pre-existing data
 Enhanced stability and reliability

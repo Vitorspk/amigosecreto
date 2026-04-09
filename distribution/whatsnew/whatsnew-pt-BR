@@ -1,5 +1,5 @@
-Versão 3.0.2 - Correção de bug crítico
+Versão 3.0.3 - Correção de bug crítico
 
-Corrige crash na tela inicial após atualização do app
-Melhoria na inicialização do banco de dados
+Corrige crash 'Erro ao carregar grupos' após atualização do app
+Corrige migração do banco de dados em dispositivos com dados pré-existentes
 Estabilidade e confiabilidade aprimoradas
