@@ -3,13 +3,18 @@ package activity.amigosecreto.util
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
+import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
-import activity.amigosecreto.db.GrupoDAO
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.ParticipanteDAO
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.db.room.AppDatabase
+import activity.amigosecreto.db.room.GrupoRoomDao
+import activity.amigosecreto.db.room.ParticipanteRoomDao
+import activity.amigosecreto.repository.ParticipanteRepository
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
@@ -30,64 +35,67 @@ import org.robolectric.annotation.Config
 class LembreteWorkerTest {
 
     private lateinit var context: Context
-    private lateinit var grupoDao: GrupoDAO
-    private lateinit var participanteDao: ParticipanteDAO
+    private lateinit var db: AppDatabase
+    private lateinit var grupoDao: GrupoRoomDao
+    private lateinit var participanteDao: ParticipanteRoomDao
     private lateinit var notificationManager: NotificationManager
+    private lateinit var participanteRepository: ParticipanteRepository
 
     @Before
-    fun setUp() {
+    fun setUp() = runBlocking {
         context = ApplicationProvider.getApplicationContext()
         notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         NotificationHelper.criarCanal(context)
         Shadows.shadowOf(context as android.app.Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        grupoDao = db.grupoDao()
+        participanteDao = db.participanteDao()
+        participanteRepository = ParticipanteRepository(participanteDao)
+
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
-
-        grupoDao = GrupoDAO(context)
-        grupoDao.open()
-        participanteDao = ParticipanteDAO(context)
-        participanteDao.open()
     }
 
     @After
     fun tearDown() {
-        grupoDao.limparTudo()
-        participanteDao.close()
-        grupoDao.close()
+        db.close()
     }
 
-    private fun criarGrupo(nome: String): Grupo {
+    private suspend fun criarGrupo(nome: String): Grupo {
         val g = Grupo().apply { this.nome = nome; data = "17/03/2026" }
         g.id = grupoDao.inserir(g).toInt()
         return g
     }
 
-    private fun criarParticipante(nome: String, grupoId: Int): Participante {
-        val p = Participante().apply { this.nome = nome }
-        participanteDao.inserir(p, grupoId)
+    private suspend fun criarParticipante(nome: String, grupoId: Int): Participante {
+        val p = Participante(nome = nome, grupoId = grupoId)
+        val id = participanteDao.inserir(p)
+        p.id = id.toInt()
         return p
     }
 
     private fun buildWorker(): LembreteWorker {
-        participanteDao.close()
-        grupoDao.close()
-        return TestListenableWorkerBuilder<LembreteWorker>(context).build()
-    }
-
-    private fun reabrirDaos() {
-        grupoDao.open()
-        participanteDao.open()
+        return TestListenableWorkerBuilder<LembreteWorker>(context)
+            .setWorkerFactory(object : WorkerFactory() {
+                override fun createWorker(
+                    appContext: Context,
+                    workerClassName: String,
+                    workerParameters: WorkerParameters
+                ): ListenableWorker = LembreteWorker(appContext, workerParameters, participanteRepository)
+            })
+            .build()
     }
 
     @Test
     fun doWork_banco_vazio_retorna_success_sem_notificacao() = runBlocking {
         val worker = buildWorker()
         val result = worker.doWork()
-        reabrirDaos()
 
         assertEquals(ListenableWorker.Result.success(), result)
         val lembrete = notificationManager.activeNotifications
@@ -103,7 +111,6 @@ class LembreteWorkerTest {
 
         val worker = buildWorker()
         val result = worker.doWork()
-        reabrirDaos()
 
         assertEquals(ListenableWorker.Result.success(), result)
         val lembrete = notificationManager.activeNotifications
@@ -120,7 +127,6 @@ class LembreteWorkerTest {
 
         val worker = buildWorker()
         val result = worker.doWork()
-        reabrirDaos()
 
         assertEquals(ListenableWorker.Result.success(), result)
         val lembrete = notificationManager.activeNotifications
@@ -134,11 +140,11 @@ class LembreteWorkerTest {
         val a = criarParticipante("A", g.id)
         val b = criarParticipante("B", g.id)
         criarParticipante("C", g.id)
+        // mark participant A as having drawn B
         participanteDao.atualizarAmigoSorteado(a.id, b.id)
 
         val worker = buildWorker()
         val result = worker.doWork()
-        reabrirDaos()
 
         assertEquals(ListenableWorker.Result.success(), result)
         val lembrete = notificationManager.activeNotifications
@@ -153,7 +159,6 @@ class LembreteWorkerTest {
 
         val worker = buildWorker()
         worker.doWork()
-        reabrirDaos()
 
         val trabalhos = WorkManager.getInstance(context)
             .getWorkInfosForUniqueWork(LembreteScheduler.NOME_TRABALHO)
