@@ -35,11 +35,11 @@ jobs:
 
       - name: Compute versionCode
         run: |
-          # Use total git commit count to ensure unique, monotonically increasing
-          # versionCode across ALL workflows (CI and release share the same counter).
-          # Base offset of 100 ensures we stay above any manually published versions.
+          # Production releases use offset 10000 + commit count to stay permanently above
+          # internal track builds (offset 100 + commit count), ensuring the Play Store
+          # never rejects a production upload due to a versionCode already used internally.
           COMMIT_COUNT=$(git rev-list --count HEAD)
-          VERSION_CODE=$((100 + COMMIT_COUNT))
+          VERSION_CODE=$((10000 + COMMIT_COUNT))
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "::notice::Building versionName=${{ env.VERSION_NAME }} versionCode=$VERSION_CODE (commits=$COMMIT_COUNT)"
 
