@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.util.toAvatarText
 
 /**
  * Modern RecyclerView Adapter for Participantes with animations
@@ -81,9 +82,7 @@ class ParticipantesRecyclerAdapter(
             tvNumero.text = (bindingAdapterPosition + 1).toString()
 
             // Avatar with first letter
-            // TODO: extrair para fun String?.toAvatarText() — mesma expressão duplicada em
-            //       ExclusionViewHolder e no ViewHolder inline do bottom sheet em ParticipantesActivity.
-            tvAvatar.text = participante.nome?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+            tvAvatar.text = participante.nome.toAvatarText()
 
             // Status
             tvEmail.text = if (participante.isEnviado) context.getString(R.string.status_item_sent) else context.getString(R.string.status_item_pending)

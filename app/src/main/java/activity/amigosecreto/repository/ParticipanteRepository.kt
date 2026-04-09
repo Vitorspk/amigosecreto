@@ -11,7 +11,6 @@ import activity.amigosecreto.db.room.ParticipanteRoomDao
  * Todos os métodos são suspend — devem ser chamados a partir de uma coroutine.
  *
  * A classe é `open` para que testes Kotlin possam criar subclasses anônimas com override.
- * TODO: substituir por constructor injection via @TestInstallIn quando conveniente.
  */
 open class ParticipanteRepository @VisibleForTesting internal constructor(
     private val dao: ParticipanteRoomDao,
