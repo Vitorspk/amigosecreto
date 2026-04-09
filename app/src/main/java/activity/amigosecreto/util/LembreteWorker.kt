@@ -2,9 +2,12 @@ package activity.amigosecreto.util
 
 import android.content.Context
 import timber.log.Timber
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import activity.amigosecreto.db.ParticipanteDAO
+import activity.amigosecreto.repository.ParticipanteRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -25,18 +28,17 @@ import kotlinx.coroutines.withContext
  *   Chamadas a [LembreteScheduler.agendar] com policy KEEP não resetam esse backoff — em caso
  *   de falhas repetidas o lembrete pode atrasar mais de 24h. Esse comportamento é aceitável dado
  *   que lembretes são best-effort, não críticos.
- *
- * TODO: Migrar para @HiltWorker + @AssistedInject (WorkManager 2.9.1 já suportado neste projeto)
- *   para injetar ParticipanteRepository via Hilt e seguir o Repository pattern do projeto.
  */
-class LembreteWorker(
-    private val appContext: Context,
-    workerParams: WorkerParameters
+@HiltWorker
+class LembreteWorker @AssistedInject constructor(
+    @Assisted private val appContext: Context,
+    @Assisted workerParams: WorkerParameters,
+    private val participanteRepository: ParticipanteRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val gruposPendentes = contarGruposPendentes(appContext)
+            val gruposPendentes = participanteRepository.contarGruposPendentes(MIN_PARTICIPANTES)
             if (gruposPendentes == 0) {
                 // Sem grupos pendentes — cancela o agendamento para poupar recursos
                 LembreteScheduler.cancelar(appContext)
@@ -50,18 +52,7 @@ class LembreteWorker(
         }
     }
 
-    private fun contarGruposPendentes(context: Context): Int {
-        val participanteDao = ParticipanteDAO(context)
-        participanteDao.open()
-        return try {
-            participanteDao.contarGruposPendentes(MIN_PARTICIPANTES)
-        } finally {
-            participanteDao.close()
-        }
-    }
-
     companion object {
-        private const val TAG = "LembreteWorker"
         const val MIN_PARTICIPANTES = 3
     }
 }

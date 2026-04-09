@@ -1,18 +1,34 @@
 package activity.amigosecreto
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import activity.amigosecreto.db.room.AppDatabase
 import activity.amigosecreto.util.NotificationHelper
 import timber.log.Timber
+import javax.inject.Inject
 
 /**
  * Application class required by Hilt for component generation.
  *
+ * Implements [Configuration.Provider] to provide [HiltWorkerFactory] to WorkManager,
+ * enabling @HiltWorker constructor injection (e.g. [activity.amigosecreto.util.LembreteWorker]).
+ * The default WorkManager initializer is removed from AndroidManifest via tools:node="remove"
+ * so that our custom configuration takes effect.
+ *
  * Registered in AndroidManifest.xml via android:name=".AmigoSecretoApplication".
  */
 @HiltAndroidApp
-class AmigoSecretoApplication : Application() {
+class AmigoSecretoApplication : Application(), Configuration.Provider {
+
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration by lazy {
+        Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+    }
 
     override fun onCreate() {
         super.onCreate()

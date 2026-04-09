@@ -65,6 +65,9 @@ open class ParticipanteRepository @VisibleForTesting internal constructor(
 
     open suspend fun buscarPorId(id: Int): Participante? = dao.buscarPorId(id)
 
+    open suspend fun contarGruposPendentes(minParticipantes: Int): Int =
+        dao.contarGruposPendentes(minParticipantes)
+
     companion object {
         const val NOME_AMIGO_DESCONHECIDO = "Ninguém"
     }
