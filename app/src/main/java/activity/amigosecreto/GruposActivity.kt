@@ -1,7 +1,6 @@
 package activity.amigosecreto
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -23,26 +22,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
+import activity.amigosecreto.adapter.GruposRecyclerAdapter
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.util.HapticFeedbackUtils
 import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.WindowInsetsUtils
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.recyclerview.widget.DiffUtil
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
 
 @AndroidEntryPoint
-class GruposActivity : AppCompatActivity() {
+class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionListener {
 
     private companion object {
-        const val MENU_EDITAR = 1
-        const val MENU_EXCLUIR = 2
         const val BACKUP_MIME_TYPE = "application/json"
         const val PREFS_NAME = "grupos_prefs"
         const val PREF_SORT_ORDER = "sort_order"
@@ -118,7 +110,7 @@ class GruposActivity : AppCompatActivity() {
             contentView = rvGrupos
         )
 
-        adapter = GruposRecyclerAdapter(this, emojis, gradientes)
+        adapter = GruposRecyclerAdapter(this, emojis, gradientes, this)
         rvGrupos.layoutManager = LinearLayoutManager(this)
         rvGrupos.adapter = adapter
 
@@ -379,152 +371,40 @@ class GruposActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // TODO: extract to adapter/ package when coupling is reduced (Fase 4C4)
-    @Suppress("NotifyDataSetChanged")
-    private inner class GruposRecyclerAdapter(
-        private val ctx: Context,
-        private val emojis: Array<String>,
-        private val gradientes: IntArray,
-    ) : RecyclerView.Adapter<GruposRecyclerAdapter.ViewHolder>() {
+    // --- GruposRecyclerAdapter.OnGrupoActionListener ---
 
-        private val itens = mutableListOf<GruposViewModel.GrupoComContagem>()
+    override fun onGrupoClick(grupo: Grupo) {
+        startActivity(
+            Intent(this, ParticipantesActivity::class.java)
+                .putExtra(Grupo.EXTRA_GRUPO, grupo)
+        )
+    }
 
-        fun setItens(novaLista: List<GruposViewModel.GrupoComContagem>) {
-            val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun getOldListSize() = itens.size
-                override fun getNewListSize() = novaLista.size
-                override fun areItemsTheSame(oldPos: Int, newPos: Int) =
-                    itens[oldPos].grupo.id == novaLista[newPos].grupo.id
-                override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean {
-                    val o = itens[oldPos]; val n = novaLista[newPos]
-                    return o.grupo.nome == n.grupo.nome &&
-                        o.totalParticipantes == n.totalParticipantes &&
-                        o.totalEnviados == n.totalEnviados
-                }
-            })
-            itens.clear()
-            itens.addAll(novaLista)
-            diff.dispatchUpdatesTo(this)
-        }
+    override fun onEditarNome(grupo: Grupo, novoNome: String, dialog: AlertDialog, button: View) {
+        // Cria cópia com o novo nome — não muta o objeto no adapter
+        // para que DiffUtil possa detectar a mudança ao comparar com o resultado do DB.
+        val grupoAtualizado = Grupo(
+            id = grupo.id, nome = novoNome, data = grupo.data, descricao = grupo.descricao,
+            dataEvento = grupo.dataEvento, localEvento = grupo.localEvento,
+            dataLimiteSorteio = grupo.dataLimiteSorteio, valorMinimo = grupo.valorMinimo,
+            valorMaximo = grupo.valorMaximo, regras = grupo.regras,
+            permitirVerDesejos = grupo.permitirVerDesejos,
+            exigirConfirmacaoCompra = grupo.exigirConfirmacaoCompra,
+        )
+        pendingEditNomeOriginal = grupo.nome
+        pendingEditGrupo = grupoAtualizado
+        pendingEditDialog = dialog
+        pendingEditButton = button
+        button.isEnabled = false
+        viewModel.atualizarNomeGrupo(grupoAtualizado)
+    }
 
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val tvNome: TextView = view.findViewById(R.id.tv_grupo_nome)
-            val tvParticipantes: TextView = view.findViewById(R.id.tv_grupo_participantes)
-            val tvEmoji: TextView = view.findViewById(R.id.tv_grupo_emoji)
-            val layoutContent: LinearLayout = view.findViewById(R.id.layout_grupo_content)
-
-            init {
-                itemView.setOnClickListener {
-                    val pos = bindingAdapterPosition
-                    if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
-                    val g = itens[pos].grupo
-                    startActivity(
-                        Intent(this@GruposActivity, ParticipantesActivity::class.java)
-                            .putExtra(Grupo.EXTRA_GRUPO, g)
-                    )
-                }
-                itemView.setOnLongClickListener { v ->
-                    val pos = bindingAdapterPosition
-                    if (pos == RecyclerView.NO_POSITION) return@setOnLongClickListener false
-                    val g = itens[pos].grupo
-                    HapticFeedbackUtils.performMediumFeedback(v)
-                    exibirMenuContextoGrupo(v, g)
-                    true
-                }
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(ctx).inflate(R.layout.item_grupo, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun getItemCount() = itens.size
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val pos = holder.bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION } ?: position
-            val item = itens[pos]
-            val g = item.grupo
-
-            holder.tvNome.text = g.nome
-            holder.tvEmoji.text = emojis[g.id % emojis.size]
-            holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
-
-            holder.tvParticipantes.text = if (item.totalEnviados > 0) {
-                ctx.getString(R.string.label_progresso_sorteio, item.totalEnviados, item.totalParticipantes)
-            } else {
-                ctx.resources.getQuantityString(R.plurals.label_participants, item.totalParticipantes, item.totalParticipantes)
-            }
-        }
-
-        private fun exibirMenuContextoGrupo(anchorView: View, g: Grupo) {
-            val popup = PopupMenu(ctx, anchorView)
-            popup.menu.add(0, MENU_EDITAR, 0, ctx.getString(R.string.grupo_menu_editar_nome))
-            popup.menu.add(0, MENU_EXCLUIR, 1, ctx.getString(R.string.grupo_menu_excluir))
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    MENU_EDITAR -> { exibirDialogEditarNome(g); true }
-                    MENU_EXCLUIR -> { confirmarRemoverGrupo(g); true }
-                    else -> false
-                }
-            }
-            popup.show()
-        }
-
-        private fun exibirDialogEditarNome(g: Grupo) {
-            val dialogView = layoutInflater.inflate(R.layout.dialog_criar_grupo, null)
-
-            val etNome = dialogView.findViewById<TextInputEditText>(R.id.et_nome_grupo)
-            val btnCriar = dialogView.findViewById<MaterialButton>(R.id.btn_criar)
-            val btnCancelar = dialogView.findViewById<MaterialButton>(R.id.btn_cancelar)
-
-            dialogView.findViewById<View>(R.id.chip_group_sugestoes)?.visibility = View.GONE
-
-            etNome.setText(g.nome)
-            etNome.setSelection(etNome.text?.length ?: 0)
-            btnCriar.setText(R.string.button_save)
-
-            val dialog = AlertDialog.Builder(ctx)
-                .setView(dialogView)
-                .create()
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-            btnCriar.setOnClickListener { v ->
-                val novoNome = etNome.text?.toString()?.trim() ?: ""
-                if (novoNome.isEmpty()) {
-                    Toast.makeText(this@GruposActivity, R.string.grupo_erro_nome_obrigatorio, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                // Cria cópia com o novo nome — não muta o objeto no adapter
-                // para que DiffUtil possa detectar a mudança ao comparar com o resultado do DB.
-                val grupoAtualizado = Grupo(
-                    id = g.id, nome = novoNome, data = g.data, descricao = g.descricao,
-                    dataEvento = g.dataEvento, localEvento = g.localEvento,
-                    dataLimiteSorteio = g.dataLimiteSorteio, valorMinimo = g.valorMinimo,
-                    valorMaximo = g.valorMaximo, regras = g.regras,
-                    permitirVerDesejos = g.permitirVerDesejos,
-                    exigirConfirmacaoCompra = g.exigirConfirmacaoCompra,
-                )
-                pendingEditNomeOriginal = g.nome
-                pendingEditGrupo = grupoAtualizado
-                pendingEditDialog = dialog
-                pendingEditButton = v
-                v.isEnabled = false
-                viewModel.atualizarNomeGrupo(grupoAtualizado)
-            }
-
-            btnCancelar.setOnClickListener { dialog.dismiss() }
-            dialog.show()
-        }
-
-        private fun confirmarRemoverGrupo(g: Grupo) {
-            AlertDialog.Builder(ctx)
-                .setTitle(R.string.grupo_dialog_excluir_titulo)
-                .setMessage(ctx.getString(R.string.grupo_dialog_excluir_mensagem, g.nome))
-                .setPositiveButton(R.string.button_remove_yes) { _, _ -> viewModel.removerGrupo(g) }
-                .setNegativeButton(R.string.button_cancel, null)
-                .show()
-        }
+    override fun onRemover(grupo: Grupo) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.grupo_dialog_excluir_titulo)
+            .setMessage(getString(R.string.grupo_dialog_excluir_mensagem, grupo.nome))
+            .setPositiveButton(R.string.button_remove_yes) { _, _ -> viewModel.removerGrupo(grupo) }
+            .setNegativeButton(R.string.button_cancel, null)
+            .show()
     }
 }
