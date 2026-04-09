@@ -1,11 +1,5 @@
-Version 3.0.1 - Improvements and optimizations
+Version 3.0.2 - Critical bug fix
 
-AI-powered gift suggestions (Gemini)
-Share participant wishlist
-Undo draw with one tap
-Participant search and filter
-Group sorting by name or date
-Send progress counter on group card
-Event date and price range display
-Improved reminder notifications
-Performance and stability improvements
+Fixes crash on home screen after app update
+Improved database initialization
+Enhanced stability and reliability

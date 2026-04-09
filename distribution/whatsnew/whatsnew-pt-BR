@@ -1,11 +1,5 @@
-Versão 3.0.1 - Melhorias e otimizações
+Versão 3.0.2 - Correção de bug crítico
 
-Sugestão de presentes via inteligência artificial (Gemini)
-Compartilhamento de lista de desejos por participante
-Desfazer sorteio com um toque
-Busca e filtro de participantes
-Ordenação de grupos por nome ou data
-Contador de progresso de envios no card do grupo
-Exibição de data do evento e faixa de valor
-Notificações de lembrete aprimoradas
-Melhorias de desempenho e estabilidade
+Corrige crash na tela inicial após atualização do app
+Melhoria na inicialização do banco de dados
+Estabilidade e confiabilidade aprimoradas
