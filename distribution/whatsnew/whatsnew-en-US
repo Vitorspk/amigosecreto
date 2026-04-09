@@ -1,10 +1,11 @@
-Version 2.0 - Major update!
+Version 3.0.1 - Improvements and optimizations
 
-Complete new design with modern purple theme
-Group system for multiple draws
-Wishlist per participant with prices and stores
-Interactive secret friend reveal
-Compatible with Android 5 to 15
-Security and stability improvements
-New icon and splash screen
-Optimized performance
+AI-powered gift suggestions (Gemini)
+Share participant wishlist
+Undo draw with one tap
+Participant search and filter
+Group sorting by name or date
+Send progress counter on group card
+Event date and price range display
+Improved reminder notifications
+Performance and stability improvements
