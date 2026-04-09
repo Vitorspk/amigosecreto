@@ -15,11 +15,11 @@ object FormatUtils {
     @JvmField
     val LOCALE_PT_BR: Locale = Locale.forLanguageTag("pt-BR")
 
-    /** Formato monetário brasileiro: R$ 1.234,56 */
+    /** Formato monetário brasileiro: R$ 1.234,56. Cria nova instância a cada chamada — NumberFormat não é thread-safe. */
     @JvmStatic
     fun currencyFormatPtBr(): NumberFormat = NumberFormat.getCurrencyInstance(LOCALE_PT_BR)
 
-    /** Formato numérico brasileiro com 2 casas decimais: 1.234,56 */
+    /** Formato numérico brasileiro com 2 casas decimais: 1.234,56. Cria nova instância a cada chamada — NumberFormat não é thread-safe. */
     @JvmStatic
     fun numberFormatPtBr(): NumberFormat = NumberFormat.getNumberInstance(LOCALE_PT_BR).apply {
         minimumFractionDigits = 2
