@@ -80,15 +80,17 @@ class LembreteWorkerTest {
         return p
     }
 
+    private inner class FakeLembreteWorkerFactory : WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): ListenableWorker = LembreteWorker(appContext, workerParameters, participanteRepository)
+    }
+
     private fun buildWorker(): LembreteWorker {
         return TestListenableWorkerBuilder<LembreteWorker>(context)
-            .setWorkerFactory(object : WorkerFactory() {
-                override fun createWorker(
-                    appContext: Context,
-                    workerClassName: String,
-                    workerParameters: WorkerParameters
-                ): ListenableWorker = LembreteWorker(appContext, workerParameters, participanteRepository)
-            })
+            .setWorkerFactory(FakeLembreteWorkerFactory())
             .build()
     }
 
