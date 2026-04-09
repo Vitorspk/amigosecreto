@@ -12,6 +12,7 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import activity.amigosecreto.db.Desejo
@@ -41,6 +42,13 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
     private lateinit var tvPresentesCount: TextView
     private lateinit var layoutEmpty: View
     private lateinit var adapter: DesejosAdapter
+
+    /** Launcher para InserirDesejoActivity — recarrega a lista quando retorna com RESULT_OK. */
+    private val inserirDesejoLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) carregarDesejos()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +80,11 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         adapter = DesejosAdapter(this, listaDesejos)
         lvDesejos.adapter = adapter
 
-        btnAddDesejo.setOnClickListener { mostrarDialogAdicionarDesejo() }
+        btnAddDesejo.setOnClickListener {
+            val intent = Intent(this, InserirDesejoActivity::class.java)
+                .putExtra(InserirDesejoActivity.EXTRA_PARTICIPANTE_ID, participante.id)
+            inserirDesejoLauncher.launch(intent)
+        }
 
         carregarDesejos()
     }

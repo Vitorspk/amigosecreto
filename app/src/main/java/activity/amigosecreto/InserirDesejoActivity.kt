@@ -112,6 +112,7 @@ class InserirDesejoActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) { repo.inserir(desejo) }
                 if (!isDestroyed && !isFinishing) {
                     Toast.makeText(this@InserirDesejoActivity, R.string.toast_wish_saved, Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK)
                     finish()
                 }
             } catch (e: Exception) {
