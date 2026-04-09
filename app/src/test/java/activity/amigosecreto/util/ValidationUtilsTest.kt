@@ -1,8 +1,10 @@
 package activity.amigosecreto.util
 
+import android.app.Application
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -12,6 +14,13 @@ import java.util.regex.Pattern
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class ValidationUtilsTest {
+
+    private lateinit var ctx: Application
+
+    @Before
+    fun setUp() {
+        ctx = ApplicationProvider.getApplicationContext()
+    }
 
     // --- isNotEmpty ---
 
@@ -44,55 +53,55 @@ class ValidationUtilsTest {
 
     @Test
     fun validateMinParticipants_exatamente_minimo_retorna_null() {
-        assertNull(ValidationUtils.validateMinParticipants(3, 3))
+        assertNull(ValidationUtils.validateMinParticipants(ctx, 3, 3))
     }
 
     @Test
     fun validateMinParticipants_acima_do_minimo_retorna_null() {
-        assertNull(ValidationUtils.validateMinParticipants(5, 3))
+        assertNull(ValidationUtils.validateMinParticipants(ctx, 5, 3))
     }
 
     @Test
     fun validateMinParticipants_abaixo_do_minimo_retorna_mensagem() {
-        val msg = ValidationUtils.validateMinParticipants(2, 3)
+        val msg = ValidationUtils.validateMinParticipants(ctx, 2, 3)
         assertNotNull(msg)
         assertTrue(msg!!.contains("3"))
     }
 
     @Test
     fun validateMinParticipants_zero_participantes_retorna_mensagem() {
-        assertNotNull(ValidationUtils.validateMinParticipants(0, 3))
+        assertNotNull(ValidationUtils.validateMinParticipants(ctx, 0, 3))
     }
 
     // --- getDatabaseErrorMessage ---
 
     @Test
     fun getDatabaseErrorMessage_UNIQUE_retorna_msg_amigavel() {
-        val msg = ValidationUtils.getDatabaseErrorMessage(Exception("UNIQUE constraint failed"))
+        val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception("UNIQUE constraint failed"))
         assertTrue(msg.lowercase().contains("existe") || msg.lowercase().contains("unique") || msg.contains("banco"))
     }
 
     @Test
     fun getDatabaseErrorMessage_NOT_NULL_retorna_msg_amigavel() {
-        val msg = ValidationUtils.getDatabaseErrorMessage(Exception("NOT NULL constraint failed"))
+        val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception("NOT NULL constraint failed"))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getDatabaseErrorMessage_FOREIGN_KEY_retorna_msg_amigavel() {
-        val msg = ValidationUtils.getDatabaseErrorMessage(Exception("FOREIGN KEY constraint failed"))
+        val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception("FOREIGN KEY constraint failed"))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getDatabaseErrorMessage_erro_generico_retorna_msg_padrao() {
-        val msg = ValidationUtils.getDatabaseErrorMessage(Exception("algum erro desconhecido"))
+        val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception("algum erro desconhecido"))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getDatabaseErrorMessage_message_null_retorna_msg_padrao() {
-        val msg = ValidationUtils.getDatabaseErrorMessage(Exception(null as String?))
+        val msg = ValidationUtils.getDatabaseErrorMessage(ctx, Exception(null as String?))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
@@ -138,25 +147,25 @@ class ValidationUtilsTest {
 
     @Test
     fun getNetworkErrorMessage_timeout_retorna_msg_amigavel() {
-        val msg = ValidationUtils.getNetworkErrorMessage(Exception("connection timeout exceeded"))
+        val msg = ValidationUtils.getNetworkErrorMessage(ctx, Exception("connection timeout exceeded"))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getNetworkErrorMessage_unable_to_resolve_host_retorna_msg_amigavel() {
-        val msg = ValidationUtils.getNetworkErrorMessage(Exception("Unable to resolve host \"api.example.com\""))
+        val msg = ValidationUtils.getNetworkErrorMessage(ctx, Exception("Unable to resolve host \"api.example.com\""))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getNetworkErrorMessage_erro_generico_retorna_msg_padrao() {
-        val msg = ValidationUtils.getNetworkErrorMessage(Exception("unknown network error"))
+        val msg = ValidationUtils.getNetworkErrorMessage(ctx, Exception("unknown network error"))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
     @Test
     fun getNetworkErrorMessage_message_null_retorna_msg_padrao() {
-        val msg = ValidationUtils.getNetworkErrorMessage(Exception(null as String?))
+        val msg = ValidationUtils.getNetworkErrorMessage(ctx, Exception(null as String?))
         assertNotNull(msg); assertFalse(msg.isEmpty())
     }
 
@@ -164,7 +173,6 @@ class ValidationUtilsTest {
 
     @Test
     fun validateNotEmpty_campoVazio_retorna_false_e_seta_erro() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("") }
         assertFalse(ValidationUtils.validateNotEmpty(et, "Campo obrigatório"))
         assertEquals("Campo obrigatório", et.error.toString())
@@ -172,13 +180,11 @@ class ValidationUtilsTest {
 
     @Test
     fun validateNotEmpty_campoSoEspacos_retorna_false() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         assertFalse(ValidationUtils.validateNotEmpty(EditText(ctx).also { it.setText("   ") }, "Campo obrigatório"))
     }
 
     @Test
     fun validateNotEmpty_campoPreenchido_retorna_true_e_limpa_erro() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("Ana") }
         assertTrue(ValidationUtils.validateNotEmpty(et, "Campo obrigatório"))
         assertNull(et.error)
@@ -188,33 +194,29 @@ class ValidationUtilsTest {
 
     @Test
     fun validateName_nomeVazio_retorna_false() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("") }
-        assertFalse(ValidationUtils.validateName(et))
+        assertFalse(ValidationUtils.validateName(ctx, et))
         assertNotNull(et.error)
     }
 
     @Test
     fun validateName_nomeUmCaractere_retorna_false() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("A") }
-        assertFalse(ValidationUtils.validateName(et))
+        assertFalse(ValidationUtils.validateName(ctx, et))
         assertNotNull(et.error)
     }
 
     @Test
     fun validateName_nomeDoisCaracteres_retorna_true() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("Al") }
-        assertTrue(ValidationUtils.validateName(et))
+        assertTrue(ValidationUtils.validateName(ctx, et))
         assertNull(et.error)
     }
 
     @Test
     fun validateName_nomeValido_retorna_true() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("Carlos") }
-        assertTrue(ValidationUtils.validateName(et))
+        assertTrue(ValidationUtils.validateName(ctx, et))
         assertNull(et.error)
     }
 
@@ -222,23 +224,20 @@ class ValidationUtilsTest {
 
     @Test
     fun validateEmail_vazio_retorna_true_email_opcional() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        assertTrue(ValidationUtils.validateEmail(EditText(ctx).also { it.setText("") }))
+        assertTrue(ValidationUtils.validateEmail(ctx, EditText(ctx).also { it.setText("") }))
     }
 
     @Test
     fun validateEmail_emailValido_retorna_true() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("user@example.com") }
-        assertTrue(ValidationUtils.validateEmail(et))
+        assertTrue(ValidationUtils.validateEmail(ctx, et))
         assertNull(et.error)
     }
 
     @Test
     fun validateEmail_emailInvalido_retorna_false() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("nao-e-email") }
-        assertFalse(ValidationUtils.validateEmail(et))
+        assertFalse(ValidationUtils.validateEmail(ctx, et))
         assertNotNull(et.error)
     }
 
@@ -246,23 +245,20 @@ class ValidationUtilsTest {
 
     @Test
     fun validatePhone_vazio_retorna_true_telefone_opcional() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
-        assertTrue(ValidationUtils.validatePhone(EditText(ctx).also { it.setText("") }))
+        assertTrue(ValidationUtils.validatePhone(ctx, EditText(ctx).also { it.setText("") }))
     }
 
     @Test
     fun validatePhone_telefoneValido_retorna_true() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("(11) 91234-5678") }
-        assertTrue(ValidationUtils.validatePhone(et))
+        assertTrue(ValidationUtils.validatePhone(ctx, et))
         assertNull(et.error)
     }
 
     @Test
     fun validatePhone_telefoneInvalido_retorna_false() {
-        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val et = EditText(ctx).also { it.setText("123") }
-        assertFalse(ValidationUtils.validatePhone(et))
+        assertFalse(ValidationUtils.validatePhone(ctx, et))
         assertNotNull(et.error)
     }
 

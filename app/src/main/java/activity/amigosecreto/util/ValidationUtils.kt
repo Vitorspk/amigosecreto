@@ -1,10 +1,13 @@
 package activity.amigosecreto.util
 
+import android.content.Context
 import android.widget.EditText
+import activity.amigosecreto.R
 import java.util.regex.Pattern
 
 /**
- * Utility class for input validation with friendly error messages
+ * Utility class for input validation with friendly error messages.
+ * Methods that set EditText errors require a [Context] to load strings from resources.
  */
 object ValidationUtils {
 
@@ -34,19 +37,17 @@ object ValidationUtils {
         }
     }
 
-    // TODO: fase10e — mover strings de erro hardcoded (validateName/validateEmail/validatePhone)
-    //  para strings.xml; ValidationUtils não tem Context, então requer refactor via Activity.
     @JvmStatic
-    fun validateName(editText: EditText): Boolean {
+    fun validateName(context: Context, editText: EditText): Boolean {
         val name = editText.text.toString().trim()
         return when {
             name.isEmpty() -> {
-                editText.error = "Nome é obrigatório"
+                editText.error = context.getString(R.string.validation_name_required)
                 editText.requestFocus()
                 false
             }
             name.length < 2 -> {
-                editText.error = "Nome deve ter pelo menos 2 caracteres"
+                editText.error = context.getString(R.string.validation_name_min_length)
                 editText.requestFocus()
                 false
             }
@@ -58,11 +59,11 @@ object ValidationUtils {
     }
 
     @JvmStatic
-    fun validateEmail(editText: EditText): Boolean {
+    fun validateEmail(context: Context, editText: EditText): Boolean {
         val email = editText.text.toString().trim()
         if (email.isEmpty()) return true // Email is optional
         return if (!EMAIL_PATTERN.matcher(email).matches()) {
-            editText.error = "Email inválido"
+            editText.error = context.getString(R.string.validation_email_invalid)
             editText.requestFocus()
             false
         } else {
@@ -72,11 +73,11 @@ object ValidationUtils {
     }
 
     @JvmStatic
-    fun validatePhone(editText: EditText): Boolean {
+    fun validatePhone(context: Context, editText: EditText): Boolean {
         val phone = editText.text.toString().trim()
         if (phone.isEmpty()) return true // Phone is optional
         return if (!PHONE_PATTERN.matcher(phone).matches()) {
-            editText.error = "Telefone inválido (ex: (11) 91234-5678)"
+            editText.error = context.getString(R.string.validation_phone_invalid)
             editText.requestFocus()
             false
         } else {
@@ -86,28 +87,28 @@ object ValidationUtils {
     }
 
     @JvmStatic
-    fun validateMinParticipants(count: Int, minimum: Int): String? {
+    fun validateMinParticipants(context: Context, count: Int, minimum: Int): String? {
         return if (count < minimum)
-            "É necessário pelo menos $minimum participantes para realizar o sorteio"
+            context.getString(R.string.validation_min_participants, minimum)
         else null
     }
 
     @JvmStatic
-    fun getDatabaseErrorMessage(e: Exception): String {
+    fun getDatabaseErrorMessage(context: Context, e: Exception): String {
         return when {
-            e.message?.contains("UNIQUE") == true -> "Este item já existe no banco de dados"
-            e.message?.contains("NOT NULL") == true -> "Alguns campos obrigatórios estão vazios"
-            e.message?.contains("FOREIGN KEY") == true -> "Não é possível excluir. Item está sendo usado"
-            else -> "Erro ao acessar o banco de dados. Tente novamente"
+            e.message?.contains("UNIQUE") == true -> context.getString(R.string.validation_db_unique)
+            e.message?.contains("NOT NULL") == true -> context.getString(R.string.validation_db_not_null)
+            e.message?.contains("FOREIGN KEY") == true -> context.getString(R.string.validation_db_foreign_key)
+            else -> context.getString(R.string.validation_db_generic)
         }
     }
 
     @JvmStatic
-    fun getNetworkErrorMessage(e: Exception): String {
+    fun getNetworkErrorMessage(context: Context, e: Exception): String {
         return when {
-            e.message?.contains("timeout") == true -> "Tempo de conexão esgotado. Verifique sua internet"
-            e.message?.contains("Unable to resolve host") == true -> "Sem conexão com a internet"
-            else -> "Erro de rede. Verifique sua conexão"
+            e.message?.contains("timeout") == true -> context.getString(R.string.validation_network_timeout)
+            e.message?.contains("Unable to resolve host") == true -> context.getString(R.string.validation_network_no_connection)
+            else -> context.getString(R.string.validation_network_generic)
         }
     }
 }
