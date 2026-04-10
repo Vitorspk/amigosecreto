@@ -24,6 +24,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
 import activity.amigosecreto.adapter.GruposRecyclerAdapter
 import activity.amigosecreto.db.Grupo
+import activity.amigosecreto.util.FormatUtils
 import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
 import dagger.hilt.android.AndroidEntryPoint
@@ -358,7 +359,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
         btnCriar.setOnClickListener {
             val nome = etNome.text?.toString()?.trim() ?: ""
             if (nome.isNotEmpty()) {
-                val data = activity.amigosecreto.util.FormatUtils.formatDate(Date(), getString(R.string.date_format_short))
+                val data = FormatUtils.formatDate(Date(), getString(R.string.date_format_short))
                 viewModel.inserirGrupo(nome, data)
                 dialog.dismiss()
             } else {

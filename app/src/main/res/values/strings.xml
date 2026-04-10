@@ -439,12 +439,16 @@
     <string name="share_msg_amigo_label">Seu Amigo Secreto e:\n</string>
     <string name="share_msg_wishlist_header">🛍️ *Lista de desejos de %1$s:*\n</string>
     <string name="share_msg_farewell">Lembre-se: o segredo é seu! Não conte para ninguém. 🤫</string>
-    <string name="share_msg_price_range"> - R$ %1$s a R$ %2$s</string>
-    <string name="share_msg_price_up_to"> - ate R$ %1$s</string>
-    <string name="share_msg_price_from"> - a partir de R$ %1$s</string>
+    <string name="share_msg_price_range">\ - R$ %1$s a R$ %2$s</string>
+    <string name="share_msg_price_up_to">\ - ate R$ %1$s</string>
+    <string name="share_msg_price_from">\ - a partir de R$ %1$s</string>
 
     <!-- Formato de data exibido na UI (dd/MM/yyyy para pt-BR e es, MM/dd/yyyy para en) -->
+    <!-- TRANSLATORS: This is a SimpleDateFormat pattern. Text between single quotes is literal.
+         Example for en: MM/dd/yyyy 'at' HH:mm → "12/25/2024 at 14:30" -->
     <string name="date_format_short" translatable="false">dd/MM/yyyy</string>
     <string name="date_format_display">dd/MM/yyyy \'às\' HH:mm</string>
+    <!-- TODO Phase 2: share_msg_price_* strings hardcode "R$". Each locale's values-XX/strings.xml
+         should adapt the currency symbol (e.g. "$" for en-US, "€" for es-ES if needed). -->
 
 </resources>

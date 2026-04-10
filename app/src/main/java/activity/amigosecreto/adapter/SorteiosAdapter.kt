@@ -11,6 +11,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Sorteio
+import activity.amigosecreto.util.FormatUtils
 
 class SorteiosAdapter(
     private val ctx: Context,
@@ -73,6 +74,6 @@ class SorteiosAdapter(
     internal fun formatarDataHora(dataHora: String): String {
         if (dataHora == ctx.getString(R.string.historico_sorteio_anterior)) return dataHora
         val displayPattern = ctx.getString(R.string.date_format_display)
-        return activity.amigosecreto.util.FormatUtils.formatIsoDateTime(dataHora, displayPattern)
+        return FormatUtils.formatIsoDateTime(dataHora, displayPattern)
     }
 }

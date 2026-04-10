@@ -315,13 +315,13 @@ class ParticipantesViewModel @Inject constructor(
         val nomeMap = participantesAtuais.associate { it.id to it.nome }
         val comTelefone = mutableListOf<Participante>()
         val mensagens = mutableMapOf<Int, String>()
+        val strings = MensagemSecretaBuilder.Strings.from(getApplication())
         for (p in snapshot) {
             if (!p.telefone.isNullOrBlank()) {
                 comTelefone.add(p)
                 val validAmigoId = p.amigoSorteadoId?.takeIf { it > 0 }
                 val nomeAmigo = validAmigoId?.let { nomeMap[it] }
                 val desejos: List<Desejo> = validAmigoId?.let { desejosMap[it] } ?: emptyList()
-                val strings = MensagemSecretaBuilder.Strings.from(getApplication())
                 mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos, strings)
             }
         }
