@@ -1,0 +1,36 @@
+Organize seu amigo secreto de forma simples, rápida e divertida!
+
+O Amigo Secreto é o app ideal para grupos de família, amigos e empresa. Crie quantos grupos quiser, adicione participantes e realize o sorteio em segundos — com restrições personalizadas para quem não pode tirar quem.
+
+FUNCIONALIDADES PRINCIPAIS
+
+🎯 Sorteio inteligente
+Sorteie automaticamente respeitando restrições (ex: cônjuges não se tiram). Ninguém sorteia a si mesmo. Resultados salvos no histórico.
+
+📱 Compartilhamento via WhatsApp e SMS
+Envie o resultado de cada participante direto pelo WhatsApp ou SMS, com proteção anti-spoiler. O organizador não consegue ver quem tirou quem.
+
+🛍️ Lista de desejos
+Cada participante cadastra seus presentes desejados com categoria, faixa de preço e lojas. Compartilhe sua lista com o amigo sorteado.
+
+👥 Múltiplos grupos
+Gerencie vários grupos ao mesmo tempo — família, trabalho, turma — cada um com seus próprios participantes e configurações.
+
+🕐 Histórico de sorteios
+Consulte sorteios anteriores com data, hora e todos os pares sorteados.
+
+⚙️ Configurações do grupo
+Defina data do evento, local, valor mínimo e máximo do presente, regras personalizadas e muito mais.
+
+💡 Sugestão de presentes com IA
+Receba sugestões de presentes baseadas na lista de desejos do seu amigo secreto.
+
+📦 Backup e restauração
+Exporte e importe seus grupos em formato JSON para nunca perder seus dados.
+
+🌙 Modo escuro
+Interface adaptada ao modo escuro do sistema, com suporte completo a acessibilidade.
+
+🌍 Disponível em português, inglês e espanhol.
+
+Simples, sem anúncios, sem cadastro. Tudo no seu celular.
