@@ -64,7 +64,7 @@
     <string name="error_prepare_messages_failed">Error al preparar mensajes. Por favor inténtalo de nuevo.</string>
     <string name="error_no_phone_participants">Ningún participante con teléfono registrado.</string>
     <string name="error_no_sms_app">No se encontró ninguna app de SMS.</string>
-    <string name="warning_phone_no_country_code">\n\n⚠️ El número puede no tener código de país (ej: +54). El enlace wa.me puede fallar.</string>
+    <string name="warning_phone_no_country_code">\n\n⚠️ El número puede no tener código de país (ej: +34, +52, +54). El enlace wa.me puede fallar.</string>
     <string name="status_result_sent">✓ Resultado enviado</string>
     <string name="status_item_sent">✓ Enviado</string>
     <string name="status_item_pending">Pendiente</string>
@@ -128,7 +128,7 @@
     <string name="label_wishes_count_format">Regalos (%1$d)</string>
     <string name="dialog_add_wish_title">Agregar Deseo</string>
     <string name="label_my_wishes_list">Mi lista de deseos</string>
-    <string name="description_add_wishes_hint">Agrega regalos para que tu Papá Noel secreto no falle contigo 😘</string>
+    <string name="description_add_wishes_hint">Agrega regalos para que tu Amigo Secreto sepa exactamente qué regalarte 😘</string>
     <string name="label_gifts_initial_count">Regalos (0)</string>
     <string name="empty_state_no_wishes_added">Ningún deseo agregado</string>
     <string name="empty_state_click_add">Toca \'Agregar\' para empezar</string>
@@ -323,7 +323,7 @@
     <string name="validation_name_required">El nombre es obligatorio</string>
     <string name="validation_name_min_length">El nombre debe tener al menos 2 caracteres</string>
     <string name="validation_email_invalid">Correo inválido</string>
-    <string name="validation_phone_invalid">Teléfono inválido (ej: (11) 91234-5678)</string>
+    <string name="validation_phone_invalid">Teléfono inválido (ej: +52 55 1234-5678)</string>
     <string name="validation_min_participants">Se necesitan al menos %1$d participantes para realizar el sorteo</string>
     <string name="validation_db_unique">Este elemento ya existe en la base de datos</string>
     <string name="validation_db_not_null">Algunos campos obligatorios están vacíos</string>

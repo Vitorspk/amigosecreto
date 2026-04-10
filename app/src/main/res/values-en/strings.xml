@@ -64,7 +64,7 @@
     <string name="error_prepare_messages_failed">Error preparing messages. Please try again.</string>
     <string name="error_no_phone_participants">No participants with a registered phone number.</string>
     <string name="error_no_sms_app">No SMS app found.</string>
-    <string name="warning_phone_no_country_code">\n\n⚠️ Number may be missing a country code (e.g. +1). The wa.me link may fail.</string>
+    <string name="warning_phone_no_country_code">\n\n⚠️ Number may be missing a country code (e.g. +1, +44, +61). The wa.me link may fail.</string>
     <string name="status_result_sent">✓ Result sent</string>
     <string name="status_item_sent">✓ Sent</string>
     <string name="status_item_pending">Pending</string>
@@ -128,7 +128,7 @@
     <string name="label_wishes_count_format">Gifts (%1$d)</string>
     <string name="dialog_add_wish_title">Add Wish</string>
     <string name="label_my_wishes_list">My wish list</string>
-    <string name="description_add_wishes_hint">Add gifts so your secret Santa doesn\'t miss with you 😘</string>
+    <string name="description_add_wishes_hint">Add gifts so your Secret Santa knows exactly what to get you 😘</string>
     <string name="label_gifts_initial_count">Gifts (0)</string>
     <string name="empty_state_no_wishes_added">No wishes added</string>
     <string name="empty_state_click_add">Tap \'Add\' to get started</string>
@@ -340,5 +340,5 @@
     <string name="share_msg_price_range">\ - $ %1$s to $ %2$s</string>
     <string name="share_msg_price_up_to">\ - up to $ %1$s</string>
     <string name="share_msg_price_from">\ - from $ %1$s</string>
-    <string name="date_format_display">MM/dd/yyyy \'at\' HH:mm</string>
+    <string name="date_format_display">MM/dd/yyyy \'at\' hh:mm a</string>
 </resources>

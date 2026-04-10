@@ -1,5 +1,4 @@
-Version 3.0.3 - Critical bug fix
+Version 3.1 - Multilanguage support
 
-Fixes 'Error loading groups' crash after app update
-Fixes database migration on devices with pre-existing data
-Enhanced stability and reliability
+The app is now available in English and Spanish.
+The language is automatically selected based on your device settings.

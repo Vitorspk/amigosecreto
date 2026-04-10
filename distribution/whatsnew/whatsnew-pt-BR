@@ -1,5 +1,4 @@
-Versão 3.0.3 - Correção de bug crítico
+Versão 3.1 - Suporte a múltiplos idiomas
 
-Corrige crash 'Erro ao carregar grupos' após atualização do app
-Corrige migração do banco de dados em dispositivos com dados pré-existentes
-Estabilidade e confiabilidade aprimoradas
+O app agora está disponível em inglês e espanhol.
+O idioma é selecionado automaticamente conforme a configuração do dispositivo.
