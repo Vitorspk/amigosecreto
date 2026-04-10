@@ -433,4 +433,18 @@
     <string name="validation_network_no_connection">Sem conexão com a internet</string>
     <string name="validation_network_generic">Erro de rede. Verifique sua conexão</string>
 
+    <!-- Mensagem de compartilhamento do sorteio (WhatsApp/SMS) -->
+    <string name="share_msg_greeting">🎁 Ola, *%1$s*!\n\n</string>
+    <string name="share_msg_intro">Voce foi sorteado(a) no *Amigo Secreto* e vai presentear alguem especial!\n\n</string>
+    <string name="share_msg_amigo_label">Seu Amigo Secreto e:\n</string>
+    <string name="share_msg_wishlist_header">🛍️ *Lista de desejos de %1$s:*\n</string>
+    <string name="share_msg_farewell">Lembre-se: o segredo é seu! Não conte para ninguém. 🤫</string>
+    <string name="share_msg_price_range"> - R$ %1$s a R$ %2$s</string>
+    <string name="share_msg_price_up_to"> - ate R$ %1$s</string>
+    <string name="share_msg_price_from"> - a partir de R$ %1$s</string>
+
+    <!-- Formato de data exibido na UI (dd/MM/yyyy para pt-BR e es, MM/dd/yyyy para en) -->
+    <string name="date_format_short" translatable="false">dd/MM/yyyy</string>
+    <string name="date_format_display">dd/MM/yyyy \'às\' HH:mm</string>
+
 </resources>

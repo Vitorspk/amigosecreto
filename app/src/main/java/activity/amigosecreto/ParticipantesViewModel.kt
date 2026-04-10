@@ -321,7 +321,8 @@ class ParticipantesViewModel @Inject constructor(
                 val validAmigoId = p.amigoSorteadoId?.takeIf { it > 0 }
                 val nomeAmigo = validAmigoId?.let { nomeMap[it] }
                 val desejos: List<Desejo> = validAmigoId?.let { desejosMap[it] } ?: emptyList()
-                mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos)
+                val strings = MensagemSecretaBuilder.Strings.from(getApplication())
+                mensagens[p.id] = MensagemSecretaBuilder.gerar(p.nome, nomeAmigo, desejos, strings)
             }
         }
         return MensagensSmsResultado(comTelefone, mensagens)
@@ -377,7 +378,8 @@ class ParticipantesViewModel @Inject constructor(
                     val validAmigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
                     val nomeAmigo = validAmigoId?.let { participanteRepository.getNomeAmigoSorteado(it) }
                     val desejos: List<Desejo> = validAmigoId?.let { desejoRepository.listarPorParticipante(it) } ?: emptyList()
-                    val msg = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos)
+                    val strings = MensagemSecretaBuilder.Strings.from(getApplication())
+                    val msg = MensagemSecretaBuilder.gerar(participante.nome, nomeAmigo, desejos, strings)
                     participanteRepository.marcarComoEnviado(participante.id)
                     msg
                 }

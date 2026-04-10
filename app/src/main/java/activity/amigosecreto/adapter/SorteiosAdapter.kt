@@ -11,9 +11,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import activity.amigosecreto.R
 import activity.amigosecreto.db.Sorteio
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class SorteiosAdapter(
     private val ctx: Context,
@@ -75,13 +72,7 @@ class SorteiosAdapter(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun formatarDataHora(dataHora: String): String {
         if (dataHora == ctx.getString(R.string.historico_sorteio_anterior)) return dataHora
-        return try {
-            val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-            val sdfOut = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale("pt", "BR"))
-            val date = sdfIn.parse(dataHora)
-            if (date != null) sdfOut.format(date) else dataHora
-        } catch (e: ParseException) {
-            dataHora
-        }
+        val displayPattern = ctx.getString(R.string.date_format_display)
+        return activity.amigosecreto.util.FormatUtils.formatIsoDateTime(dataHora, displayPattern)
     }
 }

@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -220,7 +219,8 @@ class GruposViewModel @Inject constructor(
         return when (ordem) {
             SORT_NOME -> grupos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nome ?: "" })
             SORT_EVENTO -> {
-                val fmt = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+                val pattern = getApplication<Application>().getString(activity.amigosecreto.R.string.date_format_short)
+                val fmt = SimpleDateFormat(pattern, java.util.Locale.getDefault())
                 grupos.sortedWith(compareBy { g ->
                     g.dataEvento?.let { raw ->
                         try { fmt.parse(raw) } catch (e: ParseException) { null }
