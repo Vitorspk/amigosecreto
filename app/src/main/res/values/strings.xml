@@ -444,8 +444,11 @@
     <string name="share_msg_price_from">\ - a partir de R$ %1$s</string>
 
     <!-- Formato de data exibido na UI (dd/MM/yyyy para pt-BR e es, MM/dd/yyyy para en) -->
-    <!-- TRANSLATORS: This is a SimpleDateFormat pattern. Text between single quotes is literal.
-         Example for en: MM/dd/yyyy 'at' HH:mm → "12/25/2024 at 14:30" -->
+    <!-- TRANSLATORS: This is a SimpleDateFormat pattern. Text between single quotes is LITERAL
+         and must ALSO be translated. The date/time placeholders (dd, MM, yyyy, HH, mm) must
+         NOT be changed. Only translate the literal word between single quotes.
+         Example for en: MM/dd/yyyy 'at' HH:mm  → "12/25/2024 at 14:30"
+         Example for es: dd/MM/yyyy 'a las' HH:mm → "25/12/2024 a las 14:30" -->
     <string name="date_format_short" translatable="false">dd/MM/yyyy</string>
     <string name="date_format_display">dd/MM/yyyy \'às\' HH:mm</string>
     <!-- TODO Phase 2: share_msg_price_* strings hardcode "R$". Each locale's values-XX/strings.xml

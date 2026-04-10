@@ -1,6 +1,8 @@
 package activity.amigosecreto.util
 
+import activity.amigosecreto.R
 import activity.amigosecreto.db.Desejo
+import android.content.Context
 
 /**
  * Constrói a mensagem de amigo secreto enviada via SMS/WhatsApp.
@@ -41,16 +43,16 @@ object MensagemSecretaBuilder {
             )
 
             /** Cria a partir de strings localizadas do Context (produção). */
-            fun from(ctx: android.content.Context): Strings {
+            fun from(ctx: Context): Strings {
                 return Strings(
-                    greeting = ctx.getString(activity.amigosecreto.R.string.share_msg_greeting),
-                    intro = ctx.getString(activity.amigosecreto.R.string.share_msg_intro),
-                    amigoLabel = ctx.getString(activity.amigosecreto.R.string.share_msg_amigo_label),
-                    wishlistHeader = ctx.getString(activity.amigosecreto.R.string.share_msg_wishlist_header),
-                    farewell = ctx.getString(activity.amigosecreto.R.string.share_msg_farewell),
-                    priceRange = ctx.getString(activity.amigosecreto.R.string.share_msg_price_range),
-                    priceUpTo = ctx.getString(activity.amigosecreto.R.string.share_msg_price_up_to),
-                    priceFrom = ctx.getString(activity.amigosecreto.R.string.share_msg_price_from)
+                    greeting = ctx.getString(R.string.share_msg_greeting),
+                    intro = ctx.getString(R.string.share_msg_intro),
+                    amigoLabel = ctx.getString(R.string.share_msg_amigo_label),
+                    wishlistHeader = ctx.getString(R.string.share_msg_wishlist_header),
+                    farewell = ctx.getString(R.string.share_msg_farewell),
+                    priceRange = ctx.getString(R.string.share_msg_price_range),
+                    priceUpTo = ctx.getString(R.string.share_msg_price_up_to),
+                    priceFrom = ctx.getString(R.string.share_msg_price_from)
                 )
             }
         }
@@ -114,6 +116,9 @@ object MensagemSecretaBuilder {
 
     // Visivel para testes unitarios (FormatarPrecoTest). numberFormatPtBr() usa apenas
     // java.text.NumberFormat + java.util.Locale — sem dependencia de Android/Context.
+    // TODO i18n: mover LOCALE_PT_BR e numberFormatPtBr() de WindowInsetsUtils para FormatUtils;
+    //  após a mudança, formatarPreco() deve receber o Locale do dispositivo para suportar
+    //  moedas diferentes do R$ nas Fases 2/3 (en-US → USD, es-ES → EUR, etc.).
     @JvmStatic
     fun formatarPreco(valor: Double): String = WindowInsetsUtils.numberFormatPtBr().format(valor)
 }

@@ -1,6 +1,7 @@
 package activity.amigosecreto.util
 
 import java.text.NumberFormat
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,7 +49,7 @@ object FormatUtils {
             val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
             val date = sdfIn.parse(input) ?: return input
             SimpleDateFormat(displayPattern, Locale.getDefault()).format(date)
-        } catch (e: Exception) {
+        } catch (e: ParseException) {
             input
         }
     }
