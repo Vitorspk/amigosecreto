@@ -1,0 +1,36 @@
+Organize your Secret Santa simply, quickly and fun!
+
+Secret Santa is the perfect app for family, friends and office groups. Create as many groups as you want, add participants and draw names in seconds — with custom restrictions so certain people can't draw each other.
+
+KEY FEATURES
+
+🎯 Smart draw
+Automatically assigns Secret Santas while respecting restrictions (e.g. couples can't draw each other). No one draws themselves. Results are saved to history.
+
+📱 Share via WhatsApp and SMS
+Send each participant's result directly via WhatsApp or SMS, with spoiler protection. The organizer can't see who drew whom.
+
+🛍️ Wish lists
+Each participant adds their gift wishes with category, price range and stores. Share your list with your Secret Santa.
+
+👥 Multiple groups
+Manage several groups at once — family, work, friends — each with their own participants and settings.
+
+🕐 Draw history
+Review past draws with date, time and all assigned pairs.
+
+⚙️ Group settings
+Set the event date, location, minimum and maximum gift value, custom rules and more.
+
+💡 AI gift suggestions
+Get gift ideas based on your Secret Santa's wish list.
+
+📦 Backup and restore
+Export and import your groups as JSON so you never lose your data.
+
+🌙 Dark mode
+Interface adapts to the system dark mode with full accessibility support.
+
+🌍 Available in Portuguese, English and Spanish.
+
+Simple, no ads, no sign-up. Everything on your phone.
