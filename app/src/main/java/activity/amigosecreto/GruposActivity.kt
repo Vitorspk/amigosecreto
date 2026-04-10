@@ -24,9 +24,9 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
 import activity.amigosecreto.adapter.GruposRecyclerAdapter
 import activity.amigosecreto.db.Grupo
+import activity.amigosecreto.util.FormatUtils
 import activity.amigosecreto.util.LembreteScheduler
 import activity.amigosecreto.util.StateViewHelper
-import activity.amigosecreto.util.WindowInsetsUtils
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -359,7 +359,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
         btnCriar.setOnClickListener {
             val nome = etNome.text?.toString()?.trim() ?: ""
             if (nome.isNotEmpty()) {
-                val data = SimpleDateFormat("dd/MM/yyyy", WindowInsetsUtils.LOCALE_PT_BR).format(Date())
+                val data = FormatUtils.formatDate(Date(), getString(R.string.date_format_short))
                 viewModel.inserirGrupo(nome, data)
                 dialog.dismiss()
             } else {

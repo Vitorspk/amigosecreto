@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -220,7 +219,10 @@ class GruposViewModel @Inject constructor(
         return when (ordem) {
             SORT_NOME -> grupos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nome ?: "" })
             SORT_EVENTO -> {
-                val fmt = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+                // Datas são gravadas no banco sempre em "dd/MM/yyyy" (locale de gravação pt-BR).
+                // Usamos padrão fixo para parse para garantir ordenação correta independente do
+                // locale do dispositivo — evita quebra quando Phase 2 adiciona values-en com MM/dd/yyyy.
+                val fmt = SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US)
                 grupos.sortedWith(compareBy { g ->
                     g.dataEvento?.let { raw ->
                         try { fmt.parse(raw) } catch (e: ParseException) { null }
