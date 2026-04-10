@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
  * sem reflection, com benefício de rename safety automático pelo IDE.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33])
+@Config(sdk = [33], qualifiers = "b+pt+BR")
 class SorteiosAdapterTest {
 
     private lateinit var adapter: SorteiosAdapter

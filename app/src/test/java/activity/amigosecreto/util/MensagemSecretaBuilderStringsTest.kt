@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  * continuariam passando com os valores antigos — este teste pega a divergência.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33])
+@Config(sdk = [33], qualifiers = "b+pt+BR")
 class MensagemSecretaBuilderStringsTest {
 
     private val ctx: Context get() = ApplicationProvider.getApplicationContext()
