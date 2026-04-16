@@ -15,9 +15,6 @@
     <!-- Device permissions -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-    <!-- Contacts permission - optional, used to import participants from contacts -->
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-
     <!-- Notification permission (required on Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
