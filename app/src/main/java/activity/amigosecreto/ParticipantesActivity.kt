@@ -1,12 +1,10 @@
 package activity.amigosecreto
 
-import android.Manifest
 import timber.log.Timber
 import android.content.Context
 import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -24,7 +22,6 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -47,7 +44,6 @@ class ParticipantesActivity : AppCompatActivity() {
 
     private companion object {
         private const val TAG = "ParticipantesActivity"
-        const val PERMISSIONS_REQUEST_READ_CONTACTS = 100
         const val REQUEST_CONTACT_PICKER = 200
     }
 
@@ -423,11 +419,7 @@ class ParticipantesActivity : AppCompatActivity() {
         val btnPickContact = view.findViewById<View>(R.id.btn_pick_contact)
 
         btnPickContact.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), PERMISSIONS_REQUEST_READ_CONTACTS)
-            } else {
-                abrirSeletorContatos()
-            }
+            abrirSeletorContatos()
         }
 
         val builder = AlertDialog.Builder(this)
@@ -656,14 +648,6 @@ class ParticipantesActivity : AppCompatActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                abrirSeletorContatos()
-            }
-        }
-    }
 
     private fun confirmarLimparTudo() {
         AlertDialog.Builder(this)

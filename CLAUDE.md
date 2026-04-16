@@ -284,7 +284,6 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - `INTERNET` — WhatsApp e Buscape
 - `ACCESS_NETWORK_STATE` — verificação de conectividade
 - `VIBRATE` — feedback háptico
-- `READ_CONTACTS` — importar participantes
 
 ---
 
