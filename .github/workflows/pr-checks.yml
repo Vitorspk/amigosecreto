@@ -41,13 +41,16 @@ jobs:
 
       - name: Upload unit test results
         if: always()
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: unit-test-results-pr-${{ github.event.pull_request.number }}
           path: |
             app/build/reports/tests/testDebugUnitTest/
             app/build/test-results/testDebugUnitTest/
-          retention-days: 14
+          retention-days: 3
 
       - name: Publish unit test results as PR check
         if: always()
@@ -66,11 +69,14 @@ jobs:
 
       - name: Upload lint results
         if: always()
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: lint-results-pr-${{ github.event.pull_request.number }}
           path: app/build/reports/lint-results-release.html
-          retention-days: 14
+          retention-days: 3
 
   # -----------------------------------------------------------------------
   # Job 2: Testes instrumentados Espresso (requer emulador Android)
@@ -116,13 +122,16 @@ jobs:
 
       - name: Upload instrumented test results
         if: always()
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: instrumented-test-results-pr-${{ github.event.pull_request.number }}
           path: |
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
-          retention-days: 14
+          retention-days: 3
 
       - name: Publish instrumented test results as PR check
         if: always()
@@ -164,8 +173,11 @@ jobs:
         run: ./gradlew :app:assembleDebug
 
       - name: Upload debug APK
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: debug-apk-pr-${{ github.event.pull_request.number }}
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
+          retention-days: 3
