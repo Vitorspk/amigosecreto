@@ -96,6 +96,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload AAB as build artifact
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: release-aab
@@ -103,6 +106,9 @@ jobs:
           retention-days: 90
 
       - name: Upload mapping file
+        # Upload de artifact é auxiliar — erro de quota de storage não pode
+        # derrubar o job (conta atingiu a quota em 2026-06-11).
+        continue-on-error: true
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: mapping
