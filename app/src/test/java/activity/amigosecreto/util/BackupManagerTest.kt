@@ -101,7 +101,15 @@ class BackupManagerTest {
     fun exportar_inclui_schema_version_correto() {
         val json = BackupManager.exportarParaJson(ctx)
         val root = org.json.JSONObject(json)
-        assertEquals(MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC, root.getInt("schema_version"))
+        // O backup carrega dados do schema gerenciado pelo Room (v13+), não da versão
+        // congelada do MySQLiteOpenHelper (10). Ver AppDatabase.SCHEMA_VERSION.
+        assertEquals(AppDatabase.SCHEMA_VERSION, root.getInt("schema_version"))
+    }
+
+    @Test
+    fun exportar_declara_backup_version_2() {
+        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        assertEquals(2, root.getInt("version"))
     }
 
     @Test
@@ -202,7 +210,7 @@ class BackupManagerTest {
 
     @Test
     fun importar_json_schema_version_maior_que_atual_retorna_failure() {
-        val futureVersion = MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC + 1
+        val futureVersion = AppDatabase.SCHEMA_VERSION + 1
         val json = """{"version":1,"schema_version":$futureVersion,"grupos":[]}"""
         val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
         assertTrue(result is BackupManager.ImportResult.Failure)
@@ -323,5 +331,162 @@ class BackupManagerTest {
         val sorteios = sorteioDao.listarPorGrupo(grupos[0].id)
         assertEquals(1, sorteios.size)
         assertEquals(1, sorteios[0].pares.size)
+    }
+
+    // --- Configurações do grupo e rastreamento do participante (colunas v12) ---
+
+    /** Insere um grupo com TODAS as colunas de configuração v12 preenchidas, via Room. */
+    private fun criarGrupoConfigurado(): Grupo {
+        val g = Grupo(
+            nome = "Família",
+            data = "17/03/2026",
+            descricao = "Ceia de Natal",
+            dataEvento = "24/12/2026",
+            localEvento = "Casa da vovó",
+            dataLimiteSorteio = "20/12/2026",
+            valorMinimo = 50.0,
+            valorMaximo = 150.0,
+            regras = "Sem meias",
+            permitirVerDesejos = false,
+            exigirConfirmacaoCompra = true,
+        )
+        g.id = kotlinx.coroutines.runBlocking {
+            AppDatabase.getInstance(ctx).grupoDao().inserir(g).toInt()
+        }
+        return g
+    }
+
+    private fun lerGrupoViaRoom(): Grupo = kotlinx.coroutines.runBlocking {
+        AppDatabase.getInstance(ctx).grupoDao().listar().single()
+    }
+
+    @Test
+    fun exportar_grupo_inclui_configuracoes_v12() {
+        criarGrupoConfigurado()
+        val root = org.json.JSONObject(semDaosAbertos { BackupManager.exportarParaJson(ctx) })
+        val g = root.getJSONArray("grupos").getJSONObject(0)
+
+        assertEquals("Ceia de Natal", g.getString("descricao"))
+        assertEquals("24/12/2026", g.getString("data_evento"))
+        assertEquals("Casa da vovó", g.getString("local_evento"))
+        assertEquals("20/12/2026", g.getString("data_limite_sorteio"))
+        assertEquals(50.0, g.getDouble("valor_minimo"), 0.001)
+        assertEquals(150.0, g.getDouble("valor_maximo"), 0.001)
+        assertEquals("Sem meias", g.getString("regras"))
+        assertEquals(0, g.getInt("permitir_ver_desejos"))
+        assertEquals(1, g.getInt("exigir_confirmacao_compra"))
+    }
+
+    @Test
+    fun roundtrip_preserva_configuracoes_do_grupo() {
+        criarGrupoConfigurado()
+
+        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        assertTrue("import falhou: $result", result is BackupManager.ImportResult.Success)
+
+        val g = lerGrupoViaRoom()
+        assertEquals("Ceia de Natal", g.descricao)
+        assertEquals("24/12/2026", g.dataEvento)
+        assertEquals("Casa da vovó", g.localEvento)
+        assertEquals("20/12/2026", g.dataLimiteSorteio)
+        assertEquals(50.0, g.valorMinimo, 0.001)
+        assertEquals(150.0, g.valorMaximo, 0.001)
+        assertEquals("Sem meias", g.regras)
+        // permitirVerDesejos=false é justamente o caso perigoso: o default da coluna é 1,
+        // então perder o campo reabriria os desejos de um grupo que os havia ocultado.
+        assertFalse(g.permitirVerDesejos)
+        assertTrue(g.exigirConfirmacaoCompra)
+    }
+
+    @Test
+    fun roundtrip_preserva_null_nos_campos_opcionais_do_grupo() {
+        // A UI grava null (não "") para campos de texto vazios — ver
+        // ConfiguracoesGrupoActivity.salvar(): takeIf { it.isNotEmpty() }.
+        val g = Grupo(nome = "Simples", data = "17/03/2026")
+        kotlinx.coroutines.runBlocking { AppDatabase.getInstance(ctx).grupoDao().inserir(g) }
+
+        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
+        assertTrue(semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+            is BackupManager.ImportResult.Success)
+
+        val lido = lerGrupoViaRoom()
+        assertNull(lido.descricao)
+        assertNull(lido.dataEvento)
+        assertNull(lido.localEvento)
+        assertNull(lido.dataLimiteSorteio)
+        assertNull(lido.regras)
+    }
+
+    @Test
+    fun roundtrip_preserva_rastreamento_do_participante() {
+        val g = criarGrupoConfigurado()
+        kotlinx.coroutines.runBlocking {
+            AppDatabase.getInstance(ctx).participanteDao().inserir(
+                Participante(
+                    nome = "Ana",
+                    grupoId = g.id,
+                    confirmouPresente = true,
+                    foiNotificado = true,
+                    observacoes = "Alergia a nozes",
+                )
+            )
+        }
+
+        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
+        assertTrue(semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+            is BackupManager.ImportResult.Success)
+
+        val p = kotlinx.coroutines.runBlocking {
+            AppDatabase.getInstance(ctx).participanteDao().listarPorGrupoSemExclusoes(
+                lerGrupoViaRoom().id
+            ).single()
+        }
+        assertTrue(p.confirmouPresente)
+        assertTrue(p.foiNotificado)
+        assertEquals("Alergia a nozes", p.observacoes)
+    }
+
+    @Test
+    fun importar_formato_antigo_sem_campos_v12_aplica_defaults() {
+        // Backup gerado pela versão anterior do app: version=1, schema_version=10,
+        // sem nenhuma das colunas v12. Deve importar aplicando os defaults do schema.
+        val antigo = """
+            {
+              "version": 1,
+              "schema_version": 10,
+              "exported_at": "2026-03-17T14:30:00",
+              "grupos": [
+                {
+                  "id": 1, "nome": "Antigo", "data": "01/01/2026",
+                  "participantes": [
+                    { "id": 10, "nome": "Ana", "email": "", "telefone": "",
+                      "amigo_sorteado_id": 0, "enviado": 0,
+                      "exclusoes": [], "desejos": [] }
+                  ],
+                  "sorteios": []
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, antigo) }
+        assertTrue("import de formato antigo falhou: $result",
+            result is BackupManager.ImportResult.Success)
+
+        val g = lerGrupoViaRoom()
+        assertEquals("Antigo", g.nome)
+        assertTrue("default da coluna permitir_ver_desejos é 1", g.permitirVerDesejos)
+        assertFalse("default da coluna exigir_confirmacao_compra é 0", g.exigirConfirmacaoCompra)
+        assertEquals(0.0, g.valorMinimo, 0.001)
+        assertNull(g.descricao)
+
+        val p = kotlinx.coroutines.runBlocking {
+            AppDatabase.getInstance(ctx).participanteDao()
+                .listarPorGrupoSemExclusoes(g.id).single()
+        }
+        assertFalse(p.confirmouPresente)
+        assertFalse(p.foiNotificado)
+        assertNull(p.observacoes)
     }
 }

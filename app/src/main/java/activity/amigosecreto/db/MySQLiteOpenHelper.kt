@@ -38,6 +38,20 @@ class MySQLiteOpenHelper private constructor(context: Context) : SQLiteOpenHelpe
         const val COLUMN_GRUPO_NOME = "nome"
         const val COLUMN_GRUPO_DATA = "data"
 
+        // Colunas de configuração do grupo criadas pela MIGRATION_11_12 do Room.
+        // Não constam de sqlCreateGrupo() — este helper está congelado na v10 e o Room
+        // é quem gerencia o schema a partir da v11. Só existem porque o Room inicializa
+        // antes (eager init em AmigoSecretoApplication.onCreate).
+        const val COLUMN_GRUPO_DESCRICAO = "descricao"
+        const val COLUMN_GRUPO_DATA_EVENTO = "data_evento"
+        const val COLUMN_GRUPO_LOCAL_EVENTO = "local_evento"
+        const val COLUMN_GRUPO_DATA_LIMITE_SORTEIO = "data_limite_sorteio"
+        const val COLUMN_GRUPO_VALOR_MINIMO = "valor_minimo"
+        const val COLUMN_GRUPO_VALOR_MAXIMO = "valor_maximo"
+        const val COLUMN_GRUPO_REGRAS = "regras"
+        const val COLUMN_GRUPO_PERMITIR_VER_DESEJOS = "permitir_ver_desejos"
+        const val COLUMN_GRUPO_EXIGIR_CONFIRMACAO_COMPRA = "exigir_confirmacao_compra"
+
         const val TABLE_PARTICIPANTE = "participante"
         const val COLUMN_ID = "id"
         const val COLUMN_NOME = "nome"
@@ -47,6 +61,8 @@ class MySQLiteOpenHelper private constructor(context: Context) : SQLiteOpenHelpe
         const val COLUMN_ENVIADO = "enviado"
         const val COLUMN_FK_GRUPO_ID = "grupo_id"
         const val COLUMN_CONFIRMOU_PRESENTE = "confirmou_presente"
+        const val COLUMN_FOI_NOTIFICADO = "foi_notificado"
+        const val COLUMN_OBSERVACOES = "observacoes"
 
         const val TABLE_EXCLUSAO = "exclusao"
         const val COLUMN_PARTICIPANTE_ID = "participante_id"

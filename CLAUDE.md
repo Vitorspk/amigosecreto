@@ -77,7 +77,7 @@ app/src/main/java/activity/amigosecreto/
     ├── ValidationUtils.kt                 # validação centralizada de inputs — Kotlin
     ├── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
     ├── GeminiClient.kt                   # OkHttp POST para Gemini 2.0 Flash (B3) — graceful degradation sem chave
-    └── BackupManager.kt                  # serialização/deserialização JSON para backup
+    └── BackupManager.kt                  # serialização/deserialização JSON para backup (formato v2)
 ```
 
 ```
@@ -196,6 +196,23 @@ CREATE TABLE desejo (
 - `v9 → v10` → adiciona tabelas `sorteio` e `sorteio_par` para histórico de sorteios (PR #56)
 - `v10 → v11` → Room assume gerenciamento; recria `participante` e `desejo` com `NOT NULL`; adiciona índice `index_exclusao_excluido_id` (PR #63)
 - `v11 → v12` → adiciona colunas de configuração do grupo (`descricao`, `data_evento`, `local_evento`, `data_limite_sorteio`, `valor_minimo`, `valor_maximo`, `regras`, `permitir_ver_desejos`, `exigir_confirmacao_compra`) e tabela `sorteio_par`; adiciona `confirmou_presente`, `foi_notificado`, `observacoes` em `participante` (PR #67)
+
+---
+
+## Formato do Backup (JSON)
+
+`BackupManager` exporta/importa todos os dados em JSON. O campo `version` identifica o formato:
+
+| `version` | Conteúdo |
+|-----------|----------|
+| 1 | grupo (`nome`, `data`) + participante (`nome`, `email`, `telefone`, `amigo_sorteado_id`, `enviado`) + exclusões, desejos e sorteios |
+| **2** | acrescenta as colunas da v12 do schema: configuração do grupo (`descricao`, `data_evento`, `local_evento`, `data_limite_sorteio`, `valor_minimo`, `valor_maximo`, `regras`, `permitir_ver_desejos`, `exigir_confirmacao_compra`) e rastreamento do participante (`confirmou_presente`, `foi_notificado`, `observacoes`) |
+
+Regras do formato:
+
+- **`schema_version`** grava `AppDatabase.SCHEMA_VERSION` (13), não `MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC` (10) — os dados vêm do schema gerenciado pelo Room. Import rejeita arquivos com `schema_version` maior que a versão atual.
+- **Compatibilidade retroativa:** arquivos `version: 1` continuam importáveis; os campos ausentes assumem os defaults do schema (`permitir_ver_desejos = 1`, `exigir_confirmacao_compra = 0`, valores `0.0`, textos `null`).
+- **Campos de texto opcionais são omitidos quando nulos**, em vez de gravados como `""`. A UI grava `null` para campos vazios (`ConfiguracoesGrupoActivity.salvar()` usa `takeIf { it.isNotEmpty() }`), então omitir mantém o ciclo exportar/importar uma identidade.
 
 ---
 

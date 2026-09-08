@@ -22,19 +22,41 @@ import java.util.Locale
  * Formato do arquivo:
  * ```json
  * {
- *   "version": 1,
- *   "schema_version": 10,
+ *   "version": 2,
+ *   "schema_version": 13,
  *   "exported_at": "2026-03-17T14:30:00",
  *   "grupos": [...]
  * }
  * ```
+ *
+ * ## Versões do formato
+ *
+ * - **1** — grupo com `nome`/`data`; participante com `nome`/`email`/`telefone`/
+ *   `amigo_sorteado_id`/`enviado`. As colunas de configuração da v12 do schema não eram
+ *   gravadas, então um ciclo exportar/importar as perdia silenciosamente.
+ * - **2** — adiciona as colunas de configuração do grupo e de rastreamento do participante
+ *   introduzidas na v12. Arquivos da versão 1 continuam sendo importados: os campos ausentes
+ *   assumem os defaults do schema.
+ *
+ * Campos de texto opcionais são **omitidos** quando nulos, em vez de serem gravados como `""`.
+ * A UI grava `null` para campos vazios (ver `ConfiguracoesGrupoActivity.salvar()`), então
+ * omitir preserva a distinção e mantém o ciclo exportar/importar uma identidade.
  *
  * Todos os métodos são síncronos e devem ser chamados a partir de uma thread de background.
  */
 object BackupManager {
 
     private const val TAG = "BackupManager"
-    private const val BACKUP_VERSION = 1
+    private const val BACKUP_VERSION = 2
+
+    /** Grava [valor] em [chave] apenas se não for nulo — preserva null vs "" no round-trip. */
+    private fun JSONObject.putSeNaoNulo(chave: String, valor: String?) {
+        if (valor != null) put(chave, valor)
+    }
+
+    /** Lê uma string opcional: chave ausente significa `null` (e não `""`). */
+    private fun JSONObject.optStringOuNulo(chave: String): String? =
+        if (has(chave) && !isNull(chave)) getString(chave) else null
 
     fun exportarParaJson(context: Context): String {
         val grupoDao = GrupoDAO(context)
@@ -49,7 +71,9 @@ object BackupManager {
         return try {
             val root = JSONObject()
             root.put("version", BACKUP_VERSION)
-            root.put("schema_version", MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC)
+            // Os dados vêm do schema gerenciado pelo Room, não da versão congelada
+            // do MySQLiteOpenHelper (10) — ver AppDatabase.SCHEMA_VERSION.
+            root.put("schema_version", AppDatabase.SCHEMA_VERSION)
             root.put("exported_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date()))
 
             val gruposJson = JSONArray()
@@ -58,6 +82,17 @@ object BackupManager {
                 gJson.put("id", grupo.id)
                 gJson.put("nome", grupo.nome ?: "")
                 gJson.put("data", grupo.data ?: "")
+
+                // Configuração do grupo (colunas da v12)
+                gJson.putSeNaoNulo("descricao", grupo.descricao)
+                gJson.putSeNaoNulo("data_evento", grupo.dataEvento)
+                gJson.putSeNaoNulo("local_evento", grupo.localEvento)
+                gJson.putSeNaoNulo("data_limite_sorteio", grupo.dataLimiteSorteio)
+                gJson.put("valor_minimo", grupo.valorMinimo)
+                gJson.put("valor_maximo", grupo.valorMaximo)
+                gJson.putSeNaoNulo("regras", grupo.regras)
+                gJson.put("permitir_ver_desejos", if (grupo.permitirVerDesejos) 1 else 0)
+                gJson.put("exigir_confirmacao_compra", if (grupo.exigirConfirmacaoCompra) 1 else 0)
 
                 // Participantes (listarPorGrupo já inclui exclusões via idsExcluidos)
                 val participantes = participanteDao.listarPorGrupo(grupo.id)
@@ -70,6 +105,11 @@ object BackupManager {
                     pJson.put("telefone", p.telefone ?: "")
                     pJson.put("amigo_sorteado_id", p.amigoSorteadoId ?: 0)
                     pJson.put("enviado", if (p.isEnviado) 1 else 0)
+
+                    // Rastreamento do participante (colunas da v12)
+                    pJson.put("confirmou_presente", if (p.confirmouPresente) 1 else 0)
+                    pJson.put("foi_notificado", if (p.foiNotificado) 1 else 0)
+                    pJson.putSeNaoNulo("observacoes", p.observacoes)
 
                     val excJson = JSONArray()
                     p.idsExcluidos.forEach { excJson.put(it) }
@@ -145,10 +185,13 @@ object BackupManager {
         val version = root.optInt("version", -1)
         if (version < 1) return ImportResult.Failure("Campo 'version' ausente ou inválido")
 
+        // Compara com a versão do Room (13+), não com a do MySQLiteOpenHelper (10):
+        // desde a v11 é o Room que gerencia o schema, e um backup da v12 em diante
+        // carrega colunas que a versão congelada do helper não conhece.
         val schemaVersion = root.optInt("schema_version", -1)
-        if (schemaVersion > MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC) {
+        if (schemaVersion > AppDatabase.SCHEMA_VERSION) {
             return ImportResult.Failure(
-                "schema_version $schemaVersion é maior que a versão atual ${MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC}"
+                "schema_version $schemaVersion é maior que a versão atual ${AppDatabase.SCHEMA_VERSION}"
             )
         }
 
@@ -179,6 +222,19 @@ object BackupManager {
                 val grupoValues = ContentValues().apply {
                     put(MySQLiteOpenHelper.COLUMN_GRUPO_NOME, gJson.optString("nome", ""))
                     put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA, gJson.optString("data", ""))
+
+                    // Configuração do grupo (v12). Backups no formato 1 não têm estes campos:
+                    // as strings ficam null e os demais assumem o default do schema
+                    // (permitir_ver_desejos = 1, exigir_confirmacao_compra = 0, valores = 0.0).
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_DESCRICAO, gJson.optStringOuNulo("descricao"))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA_EVENTO, gJson.optStringOuNulo("data_evento"))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_LOCAL_EVENTO, gJson.optStringOuNulo("local_evento"))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_DATA_LIMITE_SORTEIO, gJson.optStringOuNulo("data_limite_sorteio"))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_VALOR_MINIMO, gJson.optDouble("valor_minimo", 0.0))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_VALOR_MAXIMO, gJson.optDouble("valor_maximo", 0.0))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_REGRAS, gJson.optStringOuNulo("regras"))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_PERMITIR_VER_DESEJOS, gJson.optInt("permitir_ver_desejos", 1))
+                    put(MySQLiteOpenHelper.COLUMN_GRUPO_EXIGIR_CONFIRMACAO_COMPRA, gJson.optInt("exigir_confirmacao_compra", 0))
                 }
                 val novoGrupoId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_GRUPO, null, grupoValues)
                 if (novoGrupoId == -1L) throw IllegalStateException("Falha ao inserir grupo")
@@ -198,6 +254,11 @@ object BackupManager {
                         put(MySQLiteOpenHelper.COLUMN_TELEFONE, pJson.optString("telefone", ""))
                         put(MySQLiteOpenHelper.COLUMN_ENVIADO, pJson.optInt("enviado", 0))
                         put(MySQLiteOpenHelper.COLUMN_FK_GRUPO_ID, novoGrupoId)
+
+                        // Rastreamento do participante (v12) — ausente em backups do formato 1.
+                        put(MySQLiteOpenHelper.COLUMN_CONFIRMOU_PRESENTE, pJson.optInt("confirmou_presente", 0))
+                        put(MySQLiteOpenHelper.COLUMN_FOI_NOTIFICADO, pJson.optInt("foi_notificado", 0))
+                        put(MySQLiteOpenHelper.COLUMN_OBSERVACOES, pJson.optStringOuNulo("observacoes"))
                     }
                     val novoPartId = db.insertOrThrow(MySQLiteOpenHelper.TABLE_PARTICIPANTE, null, partValues)
                     if (novoPartId == -1L) throw IllegalStateException("Falha ao inserir participante")
