@@ -62,12 +62,12 @@ class GruposViewModelTest {
         var importarResult: BackupManager.ImportResult = BackupManager.ImportResult.Success(0)
         var shouldThrow = false
 
-        override fun exportar(): String {
+        override suspend fun exportar(): String {
             if (shouldThrow) throw RuntimeException("Erro simulado de exportação")
             return exportarResult ?: throw RuntimeException("resultado nulo")
         }
 
-        override fun importar(jsonString: String): BackupManager.ImportResult {
+        override suspend fun importar(jsonString: String): BackupManager.ImportResult {
             if (shouldThrow) throw RuntimeException("Erro simulado de importação")
             return importarResult
         }

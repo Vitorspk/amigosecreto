@@ -13,6 +13,7 @@ import activity.amigosecreto.repository.GruposRepository
 import activity.amigosecreto.repository.ParticipanteRepository
 import activity.amigosecreto.util.BackupManager
 import androidx.test.espresso.idling.CountingIdlingResource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -175,6 +176,10 @@ class GruposViewModel @Inject constructor(
         launchTracked {
             val json = try {
                 withContext(ioDispatcher) { backupRepository.exportar() }
+            } catch (e: CancellationException) {
+                // Cancelamento precisa propagar para cooperar com structured concurrency
+                // (ex.: Activity destruída durante a operação) — não é falha de exportação.
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "exportarBackup failed")
                 null
@@ -187,6 +192,10 @@ class GruposViewModel @Inject constructor(
         launchTracked {
             val resultado = try {
                 withContext(ioDispatcher) { backupRepository.importar(json) }
+            } catch (e: CancellationException) {
+                // Idem exportarBackup: a importação roda numa transação Room potencialmente
+                // longa, então o cancelamento no meio é plausível e não pode virar Failure.
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "importarBackup failed")
                 BackupManager.ImportResult.Failure("exception: ${e.message}")

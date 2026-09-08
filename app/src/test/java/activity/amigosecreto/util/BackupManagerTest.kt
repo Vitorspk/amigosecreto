@@ -10,78 +10,87 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.db.Exclusao
 import activity.amigosecreto.db.Grupo
-import activity.amigosecreto.db.GrupoDAO
-import activity.amigosecreto.db.MySQLiteOpenHelper
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
-import activity.amigosecreto.db.SorteioDAO
+import activity.amigosecreto.db.Sorteio
+import activity.amigosecreto.db.SorteioPar
 import activity.amigosecreto.db.room.AppDatabase
+import kotlinx.coroutines.runBlocking
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class BackupManagerTest {
 
     private lateinit var ctx: android.app.Application
-    private lateinit var grupoDao: GrupoDAO
-    private lateinit var participanteDao: ParticipanteDAO
-    private lateinit var desejoDao: DesejoDAO
-    private lateinit var sorteioDao: SorteioDAO
+    private lateinit var db: AppDatabase
 
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        // Inicializa o AppDatabase no contexto Robolectric para que BackupManager.importarDeJson
-        // possa usar sua conexão em vez de abrir uma conexão paralela via MySQLiteOpenHelper.
         AppDatabase.initForTesting(ctx)
-        abrirDaos()
+        db = AppDatabase.getInstance(ctx)
     }
 
     @After
     fun tearDown() {
-        abrirDaos() // garantir que estão abertos para limpar
-        grupoDao.limparTudo()
-        fecharDaos()
+        limparTudo()
         AppDatabase.closeForTesting()
-        MySQLiteOpenHelper.resetInstanceForTesting()
     }
 
-    private fun abrirDaos() {
-        grupoDao = GrupoDAO(ctx)
-        grupoDao.open()
-        participanteDao = ParticipanteDAO(ctx)
-        participanteDao.open()
-        desejoDao = DesejoDAO(ctx)
-        desejoDao.open()
-        sorteioDao = SorteioDAO(ctx)
-        sorteioDao.open()
+    // --- Acesso ao banco ---
+    //
+    // O BackupManager usa exclusivamente Room, então o teste também usa — abrir os DAOs
+    // legados aqui rebaixaria o user_version de 13 para 10 (SQLiteOpenHelper grava
+    // setVersion após onDowngrade) e mascararia justamente o bug que este PR corrige.
+
+    private fun exportar(): String = runBlocking { BackupManager.exportarParaJson(ctx) }
+
+    private fun importar(json: String): BackupManager.ImportResult =
+        runBlocking { BackupManager.importarDeJson(ctx, json) }
+
+    private fun limparTudo() = runBlocking { db.grupoDao().deletarTudo() }
+
+    private fun listarGrupos(): List<Grupo> = runBlocking { db.grupoDao().listar() }
+
+    private fun listarParticipantes(grupoId: Int): List<Participante> =
+        runBlocking { db.participanteDao().listarPorGrupo(grupoId) }
+
+    private fun listarDesejos(participanteId: Int): List<Desejo> =
+        runBlocking { db.desejoDao().listarPorParticipante(participanteId) }
+
+    private fun listarSorteios(grupoId: Int): List<Sorteio> =
+        runBlocking { db.sorteioDao().listarPorGrupo(grupoId) }
+
+    private fun adicionarExclusao(participanteId: Int, excluidoId: Int) =
+        runBlocking { db.participanteDao().inserirExclusao(Exclusao(participanteId, excluidoId)) }
+
+    private fun inserirDesejo(d: Desejo) = runBlocking { db.desejoDao().inserir(d) }
+
+    private fun inserirSorteio(grupoId: Int, dataHora: String): Int = runBlocking {
+        db.sorteioDao().inserirSorteio(Sorteio(grupoId = grupoId, dataHora = dataHora)).toInt()
     }
 
-    private fun fecharDaos() {
-        grupoDao.close()
-        participanteDao.close()
-        desejoDao.close()
-        sorteioDao.close()
-    }
-
-    /** Fecha os DAOs, executa o bloco (import/export), e reabre os DAOs para verificações. */
-    private fun <T> semDaosAbertos(block: () -> T): T {
-        fecharDaos()
-        return try { block() } finally { abrirDaos() }
+    private fun inserirPar(
+        sorteioId: Int, participanteId: Int, sorteadoId: Int,
+        nomeParticipante: String, nomeSorteado: String, enviado: Int,
+    ) = runBlocking {
+        db.sorteioDao().inserirPar(
+            SorteioPar(sorteioId, participanteId, sorteadoId, nomeParticipante, nomeSorteado, enviado == 1)
+        )
     }
 
     // --- Helpers ---
 
     private fun criarGrupo(nome: String): Grupo {
         val g = Grupo(); g.nome = nome; g.data = "17/03/2026"
-        g.id = grupoDao.inserir(g).toInt()
+        g.id = runBlocking { db.grupoDao().inserir(g) }.toInt()
         return g
     }
 
     private fun criarParticipante(nome: String, grupoId: Int): Participante {
-        val p = Participante(); p.nome = nome
-        participanteDao.inserir(p, grupoId)
+        val p = Participante(); p.nome = nome; p.grupoId = grupoId
+        p.id = runBlocking { db.participanteDao().inserir(p) }.toInt()
         return p
     }
 
@@ -89,7 +98,7 @@ class BackupManagerTest {
 
     @Test
     fun exportar_banco_vazio_retorna_json_valido_com_grupos_vazio() {
-        val json = BackupManager.exportarParaJson(ctx)
+        val json = exportar()
         assertTrue(json.contains("\"grupos\""))
         assertTrue(json.contains("\"version\""))
         assertTrue(json.contains("\"schema_version\""))
@@ -99,7 +108,7 @@ class BackupManagerTest {
 
     @Test
     fun exportar_inclui_schema_version_correto() {
-        val json = BackupManager.exportarParaJson(ctx)
+        val json = exportar()
         val root = org.json.JSONObject(json)
         // O backup carrega dados do schema gerenciado pelo Room (v13+), não da versão
         // congelada do MySQLiteOpenHelper (10). Ver AppDatabase.SCHEMA_VERSION.
@@ -108,13 +117,13 @@ class BackupManagerTest {
 
     @Test
     fun exportar_declara_backup_version_2() {
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         assertEquals(2, root.getInt("version"))
     }
 
     @Test
     fun exportar_inclui_timestamp_no_json() {
-        val json = BackupManager.exportarParaJson(ctx)
+        val json = exportar()
         val root = org.json.JSONObject(json)
         val exportedAt = root.optString("exported_at", "")
         assertTrue("exported_at deve estar presente", exportedAt.isNotEmpty())
@@ -124,7 +133,7 @@ class BackupManagerTest {
     @Test
     fun exportar_um_grupo_serializa_nome_e_data() {
         criarGrupo("Família")
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         val grupos = root.getJSONArray("grupos")
         assertEquals(1, grupos.length())
         val g = grupos.getJSONObject(0)
@@ -138,7 +147,7 @@ class BackupManagerTest {
         criarParticipante("Ana", g.id)
         criarParticipante("Bob", g.id)
 
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         val participantes = root.getJSONArray("grupos").getJSONObject(0).getJSONArray("participantes")
         assertEquals(2, participantes.length())
         val nomes = (0 until participantes.length()).map { participantes.getJSONObject(it).getString("nome") }
@@ -151,9 +160,9 @@ class BackupManagerTest {
         val g = criarGrupo("Amigos")
         val p1 = criarParticipante("P1", g.id)
         val p2 = criarParticipante("P2", g.id)
-        participanteDao.adicionarExclusao(p1.id, p2.id)
+        adicionarExclusao(p1.id, p2.id)
 
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         val parts = root.getJSONArray("grupos").getJSONObject(0).getJSONArray("participantes")
         val p1Json = (0 until parts.length()).map { parts.getJSONObject(it) }
             .first { it.getString("nome") == "P1" }
@@ -167,10 +176,10 @@ class BackupManagerTest {
         val g = criarGrupo("Sorteio")
         val p1 = criarParticipante("Ana", g.id)
         val p2 = criarParticipante("Bob", g.id)
-        val sorteioId = sorteioDao.inserirSorteio(g.id, "2026-03-17T19:00:00")
-        sorteioDao.inserirPar(sorteioId, p1.id, p2.id, "Ana", "Bob", 0)
+        val sorteioId = inserirSorteio(g.id, "2026-03-17T19:00:00")
+        inserirPar(sorteioId, p1.id, p2.id, "Ana", "Bob", 0)
 
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         val sorteios = root.getJSONArray("grupos").getJSONObject(0).getJSONArray("sorteios")
         assertEquals(1, sorteios.length())
         val pares = sorteios.getJSONObject(0).getJSONArray("pares")
@@ -184,9 +193,9 @@ class BackupManagerTest {
         val g = criarGrupo("Desejos")
         val p = criarParticipante("Ana", g.id)
         val d = Desejo(); d.produto = "Livro"; d.participanteId = p.id
-        desejoDao.inserir(d)
+        inserirDesejo(d)
 
-        val root = org.json.JSONObject(BackupManager.exportarParaJson(ctx))
+        val root = org.json.JSONObject(exportar())
         val parts = root.getJSONArray("grupos").getJSONObject(0).getJSONArray("participantes")
         val desejos = parts.getJSONObject(0).getJSONArray("desejos")
         assertEquals(1, desejos.length())
@@ -197,14 +206,14 @@ class BackupManagerTest {
 
     @Test
     fun importar_json_malformado_retorna_failure() {
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, "{ isso nao e json valido") }
+        val result = importar("{ isso nao e json valido")
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
     @Test
     fun importar_json_sem_version_retorna_failure() {
         val json = """{"schema_version":10,"grupos":[]}"""
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val result = importar(json)
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
@@ -212,14 +221,14 @@ class BackupManagerTest {
     fun importar_json_schema_version_maior_que_atual_retorna_failure() {
         val futureVersion = AppDatabase.SCHEMA_VERSION + 1
         val json = """{"version":1,"schema_version":$futureVersion,"grupos":[]}"""
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val result = importar(json)
         assertTrue(result is BackupManager.ImportResult.Failure)
     }
 
     @Test
     fun importar_json_valido_sem_grupos_retorna_success_zero() {
         val json = """{"version":1,"schema_version":10,"grupos":[]}"""
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val result = importar(json)
         assertTrue(result is BackupManager.ImportResult.Success)
         assertEquals(0, (result as BackupManager.ImportResult.Success).gruposImportados)
     }
@@ -230,10 +239,10 @@ class BackupManagerTest {
             {"nome":"Família","data":"17/03/2026","participantes":[],"sorteios":[]},
             {"nome":"Trabalho","data":"17/03/2026","participantes":[],"sorteios":[]}
         ]}"""
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val result = importar(json)
         assertTrue(result is BackupManager.ImportResult.Success)
         assertEquals(2, (result as BackupManager.ImportResult.Success).gruposImportados)
-        val grupos = grupoDao.listar()
+        val grupos = listarGrupos()
         assertEquals(2, grupos.size)
         assertTrue(grupos.any { it.nome == "Família" })
         assertTrue(grupos.any { it.nome == "Trabalho" })
@@ -246,9 +255,9 @@ class BackupManagerTest {
                 {"id":1,"nome":"Ana","email":"ana@x.com","telefone":"11999","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]},
                 {"id":2,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
-        val grupos = grupoDao.listar()
-        val participantes = participanteDao.listarPorGrupo(grupos[0].id)
+        importar(json)
+        val grupos = listarGrupos()
+        val participantes = listarParticipantes(grupos[0].id)
         assertEquals(2, participantes.size)
         assertTrue(participantes.any { it.nome == "Ana" && it.email == "ana@x.com" })
         assertTrue(participantes.any { it.nome == "Bob" })
@@ -257,14 +266,14 @@ class BackupManagerTest {
     @Test
     fun importar_limpa_dados_anteriores() {
         criarGrupo("Antigo")
-        assertEquals(1, grupoDao.listar().size)
+        assertEquals(1, listarGrupos().size)
 
         val json = """{"version":1,"schema_version":10,"grupos":[
             {"nome":"Novo","data":"","participantes":[],"sorteios":[]}
         ]}"""
-        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        importar(json)
 
-        val grupos = grupoDao.listar()
+        val grupos = listarGrupos()
         assertEquals(1, grupos.size)
         assertEquals("Novo", grupos[0].nome)
     }
@@ -276,10 +285,10 @@ class BackupManagerTest {
                 {"id":10,"nome":"Ana","email":"","telefone":"","amigo_sorteado_id":20,"enviado":0,"exclusoes":[],"desejos":[]},
                 {"id":20,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":10,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        importar(json)
 
-        val grupos = grupoDao.listar()
-        val participantes = participanteDao.listarPorGrupo(grupos[0].id)
+        val grupos = listarGrupos()
+        val participantes = listarParticipantes(grupos[0].id)
         val ana = participantes.first { it.nome == "Ana" }
         val bob = participantes.first { it.nome == "Bob" }
         // amigo_sorteado_id deve ser remapeado para os novos IDs
@@ -294,10 +303,10 @@ class BackupManagerTest {
                 {"id":1,"nome":"Ana","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[2],"desejos":[]},
                 {"id":2,"nome":"Bob","email":"","telefone":"","amigo_sorteado_id":0,"enviado":0,"exclusoes":[],"desejos":[]}
             ],"sorteios":[]}]}"""
-        semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        importar(json)
 
-        val grupos = grupoDao.listar()
-        val participantes = participanteDao.listarPorGrupo(grupos[0].id)
+        val grupos = listarGrupos()
+        val participantes = listarParticipantes(grupos[0].id)
         val ana = participantes.first { it.nome == "Ana" }
         val bob = participantes.first { it.nome == "Bob" }
         assertTrue("Ana deve excluir Bob", ana.idsExcluidos.contains(bob.id))
@@ -308,27 +317,27 @@ class BackupManagerTest {
         val g = criarGrupo("Original")
         val p1 = criarParticipante("Ana", g.id)
         val p2 = criarParticipante("Bob", g.id)
-        participanteDao.adicionarExclusao(p1.id, p2.id)
-        val d = Desejo(); d.produto = "Presente"; d.participanteId = p1.id; desejoDao.inserir(d)
-        val sid = sorteioDao.inserirSorteio(g.id, "2026-03-17T19:00:00")
-        sorteioDao.inserirPar(sid, p1.id, p2.id, "Ana", "Bob", 0)
+        adicionarExclusao(p1.id, p2.id)
+        val d = Desejo(); d.produto = "Presente"; d.participanteId = p1.id; inserirDesejo(d)
+        val sid = inserirSorteio(g.id, "2026-03-17T19:00:00")
+        inserirPar(sid, p1.id, p2.id, "Ana", "Bob", 0)
 
-        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val json = exportar()
+        val result = importar(json)
 
         assertTrue(result is BackupManager.ImportResult.Success)
-        val grupos = grupoDao.listar()
+        val grupos = listarGrupos()
         assertEquals(1, grupos.size)
         assertEquals("Original", grupos[0].nome)
-        val participantes = participanteDao.listarPorGrupo(grupos[0].id)
+        val participantes = listarParticipantes(grupos[0].id)
         assertEquals(2, participantes.size)
         val ana = participantes.first { it.nome == "Ana" }
         val bob = participantes.first { it.nome == "Bob" }
         assertTrue(ana.idsExcluidos.contains(bob.id))
-        val desejos = desejoDao.listarPorParticipante(ana.id)
+        val desejos = listarDesejos(ana.id)
         assertEquals(1, desejos.size)
         assertEquals("Presente", desejos[0].produto)
-        val sorteios = sorteioDao.listarPorGrupo(grupos[0].id)
+        val sorteios = listarSorteios(grupos[0].id)
         assertEquals(1, sorteios.size)
         assertEquals(1, sorteios[0].pares.size)
     }
@@ -363,7 +372,7 @@ class BackupManagerTest {
     @Test
     fun exportar_grupo_inclui_configuracoes_v12() {
         criarGrupoConfigurado()
-        val root = org.json.JSONObject(semDaosAbertos { BackupManager.exportarParaJson(ctx) })
+        val root = org.json.JSONObject(exportar())
         val g = root.getJSONArray("grupos").getJSONObject(0)
 
         assertEquals("Ceia de Natal", g.getString("descricao"))
@@ -381,8 +390,8 @@ class BackupManagerTest {
     fun roundtrip_preserva_configuracoes_do_grupo() {
         criarGrupoConfigurado()
 
-        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val json = exportar()
+        val result = importar(json)
         assertTrue("import falhou: $result", result is BackupManager.ImportResult.Success)
 
         val g = lerGrupoViaRoom()
@@ -406,8 +415,8 @@ class BackupManagerTest {
         val g = Grupo(nome = "Simples", data = "17/03/2026")
         kotlinx.coroutines.runBlocking { AppDatabase.getInstance(ctx).grupoDao().inserir(g) }
 
-        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
-        assertTrue(semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val json = exportar()
+        assertTrue(importar(json)
             is BackupManager.ImportResult.Success)
 
         val lido = lerGrupoViaRoom()
@@ -433,8 +442,8 @@ class BackupManagerTest {
             )
         }
 
-        val json = semDaosAbertos { BackupManager.exportarParaJson(ctx) }
-        assertTrue(semDaosAbertos { BackupManager.importarDeJson(ctx, json) }
+        val json = exportar()
+        assertTrue(importar(json)
             is BackupManager.ImportResult.Success)
 
         val p = kotlinx.coroutines.runBlocking {
@@ -470,7 +479,7 @@ class BackupManagerTest {
             }
         """.trimIndent()
 
-        val result = semDaosAbertos { BackupManager.importarDeJson(ctx, antigo) }
+        val result = importar(antigo)
         assertTrue("import de formato antigo falhou: $result",
             result is BackupManager.ImportResult.Success)
 
@@ -488,5 +497,44 @@ class BackupManagerTest {
         assertFalse(p.confirmouPresente)
         assertFalse(p.foiNotificado)
         assertNull(p.observacoes)
+    }
+
+    // --- Regressão: user_version não pode ser rebaixado ---
+
+    @Test
+    fun schema_version_bate_com_a_versao_gravada_pelo_room() {
+        // A anotação @Database exige um literal, então AppDatabase.SCHEMA_VERSION é uma
+        // duplicação manual daquele número. A anotação tem retenção BINARY e não é legível
+        // por reflexão, então a comparação é contra a versão que o Room gravou no arquivo:
+        // bumpar `version` sem atualizar a constante quebra este teste.
+        assertEquals(
+            "SCHEMA_VERSION divergiu da @Database(version) — o backup declararia um " +
+                "schema_version desatualizado",
+            db.openHelper.readableDatabase.version, AppDatabase.SCHEMA_VERSION
+        )
+    }
+
+    @Test
+    fun exportar_e_importar_nao_rebaixam_a_versao_do_banco() {
+        // O MySQLiteOpenHelper legado está congelado em DATABASE_VERSION = 10. Ao abrir um
+        // arquivo que o Room migrou para 13, o SQLiteOpenHelper chama onDowngrade() e em
+        // seguida grava setVersion(10). O Room então re-executava a MIGRATION_10_11 no start
+        // seguinte, que recria `participante` sem as colunas da v12 e perde
+        // confirmou_presente, foi_notificado e observacoes.
+        //
+        // Com o BackupManager usando apenas Room, o stamp precisa continuar em SCHEMA_VERSION
+        // depois de exportar e importar.
+        val g = criarGrupo("Família")
+        criarParticipante("Ana", g.id)
+
+        val json = exportar()
+        assertTrue(importar(json) is BackupManager.ImportResult.Success)
+
+        val versaoDepois = db.openHelper.readableDatabase.version
+        assertEquals(
+            "backup rebaixou o user_version — o Room re-executaria MIGRATION_10_11 e " +
+                "perderia as colunas v12 de participante",
+            AppDatabase.SCHEMA_VERSION, versaoDepois
+        )
     }
 }

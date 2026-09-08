@@ -55,7 +55,15 @@ abstract class AppDatabase : RoomDatabase() {
          * [Database] acima (a anotação exige um literal, por isso a duplicação).
          *
          * Usada por `BackupManager` para marcar e validar o `schema_version` dos arquivos
-         * de backup. `BackupManagerTest` amarra as duas por reflexão para evitar drift.
+         * de backup.
+         *
+         * Guarda contra drift: `BackupManagerTest.schema_version_bate_com_a_versao_gravada_pelo_room`
+         * compara esta constante com a versão que o Room gravou no arquivo. Bumpar `version`
+         * na anotação sem atualizar esta constante quebra aquele teste — caso contrário o
+         * backup passaria a declarar um `schema_version` silenciosamente desatualizado.
+         *
+         * A anotação tem retenção BINARY e não é legível por reflexão em runtime, por isso a
+         * comparação é feita contra o banco aberto, e não contra a anotação.
          */
         const val SCHEMA_VERSION = 13
 
@@ -263,22 +271,6 @@ abstract class AppDatabase : RoomDatabase() {
                         // (e.g. confirmou_presente), causing IllegalArgumentException in tests.
                         it.openHelper.writableDatabase
                     }
-            }
-        }
-
-        /**
-         * Closes and invalidates the Room singleton.
-         *
-         * Must be called before operations that write directly to SQLite via
-         * MySQLiteOpenHelper (e.g. BackupManager.importarDeJson), to ensure:
-         * 1. No WAL conflict between the two connections.
-         * 2. Room reopens a clean connection the next time getInstance() is called,
-         *    making imported data immediately visible to Room/DAO queries.
-         */
-        fun closeInstance() {
-            synchronized(this) {
-                INSTANCE?.close()
-                INSTANCE = null
             }
         }
 
