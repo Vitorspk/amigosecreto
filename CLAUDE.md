@@ -337,18 +337,32 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Queries parametrizadas (prevenção SQL injection)
 - `AmigoSecretoApplication` inicializa Room de forma **eager** (`openHelper.writableDatabase`) para garantir que as migrations concluem antes do primeiro uso
 
-#### DAOs legados — sem chamadores em produção
+#### DAOs legados — ⚠️ bug conhecido em aberto
 
-`GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`, `SorteioDAO` e `MySQLiteOpenHelper` continuam no
-repositório, mas **nenhum código de produção os usa**. O último chamador era o `BackupManager`,
-migrado para Room. São candidatos a remoção.
+**Não usar `MySQLiteOpenHelper` (nem os DAOs legados) sobre o banco gerenciado pelo Room.**
+O helper está congelado em `DATABASE_VERSION = 10`; ao abrir um arquivo que o Room migrou para 13,
+o `SQLiteOpenHelper` chama `onDowngrade()` e em seguida grava `setVersion(10)`. Isso rebaixa o
+`user_version` e faz o Room re-executar a `MIGRATION_10_11` no start seguinte — que recria
+`participante` sem as colunas da v12 e perde `confirmou_presente`, `foi_notificado` e
+`observacoes`.
 
-**Não voltar a usá-los sobre o banco gerenciado pelo Room.** O `MySQLiteOpenHelper` está congelado
-em `DATABASE_VERSION = 10`; ao abrir um arquivo que o Room migrou para 13, o `SQLiteOpenHelper`
-chama `onDowngrade()` e em seguida grava `setVersion(10)`. Isso rebaixa o `user_version` e faz o
-Room re-executar a `MIGRATION_10_11` no start seguinte — que recria `participante` sem as colunas
-da v12 e perde `confirmou_presente`, `foi_notificado` e `observacoes`. Coberto pelo teste de
-regressão `BackupManagerTest.exportar_e_importar_nao_rebaixam_a_versao_do_banco`.
+O `BackupManager` foi migrado para Room e não dispara mais isso — coberto pelo teste de regressão
+`BackupManagerTest.exportar_e_importar_nao_rebaixam_a_versao_do_banco`. **Mas o bug continua
+aberto por outras telas**, que ainda instanciam `DesejoDAO`/`ParticipanteDAO` e chamam `.open()`:
+
+| Tela | DAO legado | Alcançável? |
+|------|-----------|-------------|
+| `ParticipanteDesejosActivity` | `DesejoDAO` | ✅ **sim** — via `ParticipantesActivity` |
+| `AlterarDesejoActivity` | `DesejoDAO` | ✅ **sim** — via `ParticipanteDesejosActivity` |
+| `ListarDesejos` | `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
+| `DetalheDesejoActivity` | `DesejoDAO` | ❌ não — só a partir de `ListarDesejos` |
+| `RevelarAmigoActivity` | `ParticipanteDAO`, `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
+| `VisualizarDesejosActivity` | `DesejoDAO` | ❌ não — só a partir de `RevelarAmigoActivity` |
+
+Ou seja: **abrir a lista de desejos de um participante ainda rebaixa o `user_version`** e causa a
+perda no start seguinte. Fechar isso exige migrar `ParticipanteDesejosActivity` e
+`AlterarDesejoActivity` para os DAOs Room. As outras quatro telas são código morto e somem quando
+forem removidas.
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
 - Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
 - Batch queries: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` com INNER JOIN + GROUP BY (elimina N+1)

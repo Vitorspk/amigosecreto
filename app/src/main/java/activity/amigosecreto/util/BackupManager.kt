@@ -2,6 +2,7 @@ package activity.amigosecreto.util
 
 import android.content.Context
 import androidx.room.withTransaction
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import org.json.JSONArray
 import org.json.JSONObject
@@ -317,6 +318,12 @@ object BackupManager {
                 }
             }
             ImportResult.Success(gruposImportados)
+        } catch (e: CancellationException) {
+            // Cancelamento não é falha de importação: precisa propagar para cooperar com
+            // structured concurrency (ex.: viewModelScope sendo cancelado). A transação do
+            // Room já fez rollback. Sem este catch, CancellationException — que é uma
+            // Exception em Kotlin — viraria um ImportResult.Failure e engoliria o cancelamento.
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "importarDeJson: falha na importação — rollback executado")
             ImportResult.Failure(e.message ?: "Erro desconhecido")
