@@ -5,14 +5,26 @@ import timber.log.Timber
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class AlterarDesejoActivity : AppCompatActivity() {
+
+    // Room via Hilt. Não voltar ao DesejoDAO legado: abrir o MySQLiteOpenHelper (congelado
+    // em DATABASE_VERSION = 10) sobre o banco que o Room migrou para 13 rebaixa o
+    // user_version e faz o Room re-executar a MIGRATION_10_11 no start seguinte, perdendo
+    // as colunas v12 de participante. Ver "DAOs legados" no CLAUDE.md.
+    @Inject lateinit var desejoRepository: DesejoRepository
 
     private companion object { const val TAG = "AlterarDesejoActivity" }
 
@@ -48,9 +60,13 @@ class AlterarDesejoActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btn_atualizar).setOnClickListener {
             if (validar()) {
-                alterar()
-                setResult(RESULT_OK)
-                finish()
+                // finish() dentro da coroutine: o lifecycleScope é cancelado no onDestroy,
+                // então encerrar a Activity antes da escrita terminar a perderia.
+                lifecycleScope.launch {
+                    alterar()
+                    setResult(RESULT_OK)
+                    finish()
+                }
             }
         }
 
@@ -79,16 +95,20 @@ class AlterarDesejoActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
         R.id.menu_salvar -> {
             if (validar()) {
-                alterar()
-                setResult(DetalheDesejoActivity.RESULT_SAVE)
-                finish()
+                lifecycleScope.launch {
+                    alterar()
+                    setResult(DetalheDesejoActivity.RESULT_SAVE)
+                    finish()
+                }
             }
             true
         }
         R.id.menu_excluir -> {
-            remover()
-            setResult(DetalheDesejoActivity.RESULT_REMOVE)
-            finish()
+            lifecycleScope.launch {
+                remover()
+                setResult(DetalheDesejoActivity.RESULT_REMOVE)
+                finish()
+            }
             true
         }
         android.R.id.home -> { finish(); true }
@@ -103,23 +123,19 @@ class AlterarDesejoActivity : AppCompatActivity() {
         return true
     }
 
-    private fun remover() {
-        val dao = DesejoDAO(this)
+    private suspend fun remover() {
         try {
-            dao.open()
-            dao.remover(oldDesejo)
+            desejoRepository.remover(oldDesejo)
             Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "remover: failed for desejo id=${oldDesejo.id}")
-        } finally {
-            dao.close()
         }
     }
 
-    private fun alterar() {
-        val dao = DesejoDAO(this)
+    private suspend fun alterar() {
         try {
-            dao.open()
             val newDesejo = Desejo()
             newDesejo.id = oldDesejo.id
             newDesejo.produto = etProduto.text.toString().trim()
@@ -136,15 +152,15 @@ class AlterarDesejoActivity : AppCompatActivity() {
             // Importante: preservar o participanteId do desejo original
             newDesejo.participanteId = oldDesejo.participanteId
 
-            dao.alterar(oldDesejo, newDesejo)
+            desejoRepository.alterar(oldDesejo, newDesejo)
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_update_wish_format, msg), Toast.LENGTH_LONG).show()
-        } finally {
-            dao.close()
         }
     }
 }
