@@ -117,20 +117,31 @@ O app implementa:
 
 ### KSP (Kotlin Symbol Processing)
 
-A versão do KSP no `build.gradle` raiz segue o formato `<kotlin_version>-<ksp_release>`:
+O KSP **não** segue mais o formato `<kotlin_version>-<ksp_release>` — ele é versionado de forma
+independente do Kotlin:
 
 ```gradle
-classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${kotlin_version}-1.0.28"
+classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.2"
 ```
 
-**Ao bumpar `kotlin_version`**, verificar a versão KSP compatível em:
-https://github.com/google/ksp/releases
+**Ao bumpar `kotlin_version`**, escolha a release do KSP que declara suporte à versão do Kotlin
+em uso: https://github.com/google/ksp/releases
 
-A versão KSP deve ter o mesmo prefixo da versão Kotlin. Exemplo:
-- `kotlin_version = '2.0.21'` → KSP `2.0.21-1.0.28`
-- `kotlin_version = '2.1.0'`  → verificar última release KSP com prefixo `2.1.0-x.x.xx`
+Não existe mais prefixo para casar. Se a release do KSP não suportar a versão do Kotlin, o build
+falha na configuração do plugin.
 
-Se o prefixo KSP não corresponder ao Kotlin, o build falha com erro de version mismatch.
+### Hilt
+
+O **plugin** Gradle do Hilt (`hilt-android-gradle-plugin`, no `build.gradle` raiz) e as
+**dependências** (`hilt-android` + `hilt-compiler`, no `app/build.gradle`) precisam estar sempre na
+mesma versão. Subir um sem o outro quebra o build com erro obscuro, por exemplo:
+
+```
+error: [Hilt] No property named rootComponentPackage was found in annotation AggregatedRoot
+```
+
+Esse erro significa que o plugin espera um formato de anotação gerada que a versão instalada do
+`hilt-compiler` não produz — ou seja, plugin e compiler estão em versões diferentes.
 
 ## 11. Suporte
 
