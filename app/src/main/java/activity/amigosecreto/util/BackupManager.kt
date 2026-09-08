@@ -67,8 +67,19 @@ object BackupManager {
     private fun JSONObject.optStringOuNulo(chave: String): String? =
         if (has(chave) && !isNull(chave)) getString(chave) else null
 
+    /**
+     * Serializa todos os dados para JSON.
+     *
+     * A leitura inteira roda dentro de uma transação para garantir um snapshot consistente:
+     * sem ela, uma escrita concorrente entre a listagem de grupos e a de desejos produziria
+     * um backup internamente inconsistente.
+     */
     suspend fun exportarParaJson(context: Context): String {
         val db = AppDatabase.getInstance(context)
+        return db.withTransaction { serializar(db) }
+    }
+
+    private suspend fun serializar(db: AppDatabase): String {
         val grupoDao = db.grupoDao()
         val participanteDao = db.participanteDao()
         val desejoDao = db.desejoDao()

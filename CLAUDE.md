@@ -571,7 +571,7 @@ app/src/androidTest/java/activity/amigosecreto/
 └── ParticipantesActivityTest.kt       # Espresso — fluxos críticos de ParticipantesActivity (PR #51)
 ```
 
-### Cobertura Atual (297 testes unitários — BUILD SUCCESSFUL)
+### Cobertura Atual (610 testes unitários — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
