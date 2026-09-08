@@ -52,6 +52,15 @@ class GrupoDAO(ctx: Context) {
         }
     }
 
+    /**
+     * Lista todos os grupos, incluindo as colunas de configuração adicionadas na v12.
+     *
+     * As colunas v12 são criadas pela `MIGRATION_11_12` do Room, não por
+     * [MySQLiteOpenHelper.onCreate] — que está congelado na v10. O eager init do Room em
+     * `AmigoSecretoApplication.onCreate()` garante que existam antes de qualquer DAO legado
+     * abrir o arquivo, por isso `getColumnIndexOrThrow` é seguro e falha ruidosamente se
+     * essa ordem for quebrada.
+     */
     fun listar(): List<Grupo> {
         val lista = mutableListOf<Grupo>()
         val cursor = database.query(
@@ -63,11 +72,29 @@ class GrupoDAO(ctx: Context) {
                 val idIndex = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_ID)
                 val nomeIndex = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_NOME)
                 val dataIndex = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_DATA)
+                val descricaoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_DESCRICAO)
+                val dataEventoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_DATA_EVENTO)
+                val localEventoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_LOCAL_EVENTO)
+                val dataLimiteIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_DATA_LIMITE_SORTEIO)
+                val valorMinIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_VALOR_MINIMO)
+                val valorMaxIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_VALOR_MAXIMO)
+                val regrasIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_REGRAS)
+                val permitirIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_PERMITIR_VER_DESEJOS)
+                val exigirIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_GRUPO_EXIGIR_CONFIRMACAO_COMPRA)
                 do {
                     val g = Grupo()
                     g.id = it.getInt(idIndex)
                     g.nome = it.getString(nomeIndex)
                     g.data = it.getString(dataIndex)
+                    g.descricao = it.getString(descricaoIdx)
+                    g.dataEvento = it.getString(dataEventoIdx)
+                    g.localEvento = it.getString(localEventoIdx)
+                    g.dataLimiteSorteio = it.getString(dataLimiteIdx)
+                    g.valorMinimo = it.getDouble(valorMinIdx)
+                    g.valorMaximo = it.getDouble(valorMaxIdx)
+                    g.regras = it.getString(regrasIdx)
+                    g.permitirVerDesejos = it.getInt(permitirIdx) == 1
+                    g.exigirConfirmacaoCompra = it.getInt(exigirIdx) == 1
                     lista.add(g)
                 } while (it.moveToNext())
             }

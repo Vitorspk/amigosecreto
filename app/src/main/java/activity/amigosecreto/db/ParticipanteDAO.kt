@@ -182,6 +182,8 @@ class ParticipanteDAO(ctx: Context) {
                 val amigoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_AMIGO_SORTEADO_ID)
                 val enviadoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_ENVIADO)
                 val confirmouIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_CONFIRMOU_PRESENTE)
+                val notificadoIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_FOI_NOTIFICADO)
+                val observacoesIdx = it.getColumnIndexOrThrow(MySQLiteOpenHelper.COLUMN_OBSERVACOES)
                 do {
                     val p = Participante()
                     p.id = it.getInt(idIdx)
@@ -191,6 +193,8 @@ class ParticipanteDAO(ctx: Context) {
                     if (!it.isNull(amigoIdx)) p.amigoSorteadoId = it.getInt(amigoIdx)
                     p.isEnviado = it.getInt(enviadoIdx) == 1
                     p.confirmouPresente = it.getInt(confirmouIdx) == 1
+                    p.foiNotificado = it.getInt(notificadoIdx) == 1
+                    p.observacoes = it.getString(observacoesIdx)
                     mapaParticipantes[p.id] = p
                 } while (it.moveToNext())
             }

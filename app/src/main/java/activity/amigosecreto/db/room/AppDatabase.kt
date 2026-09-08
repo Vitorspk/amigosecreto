@@ -50,6 +50,15 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         private const val DATABASE_NAME = "amigosecreto_v10.db"
 
+        /**
+         * Versão do schema gerenciado pelo Room — deve espelhar `version` da anotação
+         * [Database] acima (a anotação exige um literal, por isso a duplicação).
+         *
+         * Usada por `BackupManager` para marcar e validar o `schema_version` dos arquivos
+         * de backup. `BackupManagerTest` amarra as duas por reflexão para evitar drift.
+         */
+        const val SCHEMA_VERSION = 13
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
