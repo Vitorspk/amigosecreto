@@ -266,22 +266,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /**
-         * Closes and invalidates the Room singleton.
-         *
-         * Must be called before operations that write directly to SQLite via
-         * MySQLiteOpenHelper (e.g. BackupManager.importarDeJson), to ensure:
-         * 1. No WAL conflict between the two connections.
-         * 2. Room reopens a clean connection the next time getInstance() is called,
-         *    making imported data immediately visible to Room/DAO queries.
-         */
-        fun closeInstance() {
-            synchronized(this) {
-                INSTANCE?.close()
-                INSTANCE = null
-            }
-        }
-
         /** Closes and clears the singleton after tests. */
         @androidx.annotation.VisibleForTesting
         fun closeForTesting() {

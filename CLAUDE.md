@@ -77,7 +77,7 @@ app/src/main/java/activity/amigosecreto/
     ├── ValidationUtils.kt                 # validação centralizada de inputs — Kotlin
     ├── WindowInsetsUtils.kt               # IME padding, Locale pt-BR, formatação monetária — Kotlin
     ├── GeminiClient.kt                   # OkHttp POST para Gemini 2.0 Flash (B3) — graceful degradation sem chave
-    └── BackupManager.kt                  # serialização/deserialização JSON para backup (formato v2)
+    └── BackupManager.kt                  # backup JSON (formato v2) — suspend, Room + withTransaction
 ```
 
 ```
@@ -211,6 +211,7 @@ CREATE TABLE desejo (
 Regras do formato:
 
 - **`schema_version`** grava `AppDatabase.SCHEMA_VERSION` (13), não `MySQLiteOpenHelper.DATABASE_VERSION_PUBLIC` (10) — os dados vêm do schema gerenciado pelo Room. Import rejeita arquivos com `schema_version` maior que a versão atual.
+- **Acesso a dados via Room apenas.** `exportarParaJson` e `importarDeJson` são `suspend`; o import roda inteiro dentro de um `db.withTransaction { }` (tudo ou nada). Ver "DAOs legados" em Padrões de Arquitetura para o motivo de não usar o helper legado aqui.
 - **Compatibilidade retroativa:** arquivos `version: 1` continuam importáveis; os campos ausentes assumem os defaults do schema (`permitir_ver_desejos = 1`, `exigir_confirmacao_compra = 0`, valores `0.0`, textos `null`).
 - **Campos de texto opcionais são omitidos quando nulos**, em vez de gravados como `""`. A UI grava `null` para campos vazios (`ConfiguracoesGrupoActivity.salvar()` usa `takeIf { it.isNotEmpty() }`), então omitir mantém o ciclo exportar/importar uma identidade.
 
@@ -332,12 +333,22 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Erros de banco tratados via `handleDbError()` no ViewModel: loga com `Log.e` + posta `errorMessage` via `Handler.post` — nunca relança de dentro do executor (relançar de `Runnable` vai para `UncaughtExceptionHandler` sem feedback ao usuário)
 
 ### DAO Pattern
-- `GrupoDAO`, `ParticipanteDAO`, `DesejoDAO` — DAOs legados, usam `MySQLiteOpenHelper` singleton
-- `MySQLiteOpenHelper` é **singleton** (`getInstance(context)`) — evita race condition em `onUpgrade`
-- `close()` nos DAOs legados é **no-op** — fechar o singleton fecharia o pool compartilhado
-- `AmigoSecretoApplication` inicializa Room de forma **eager** (`openHelper.writableDatabase`) para garantir que `MIGRATION_10_11` conclui antes de qualquer DAO legado abrir o banco
-- Room DAOs (`GrupoRoomDao`, `ParticipanteRoomDao`, `DesejoRoomDao`, `SorteioRoomDao`) — usados pelo ViewModel via Hilt
+- Room DAOs (`GrupoRoomDao`, `ParticipanteRoomDao`, `DesejoRoomDao`, `SorteioRoomDao`) — **único** caminho de acesso a dados em produção, usados via Hilt
 - Queries parametrizadas (prevenção SQL injection)
+- `AmigoSecretoApplication` inicializa Room de forma **eager** (`openHelper.writableDatabase`) para garantir que as migrations concluem antes do primeiro uso
+
+#### DAOs legados — sem chamadores em produção
+
+`GrupoDAO`, `ParticipanteDAO`, `DesejoDAO`, `SorteioDAO` e `MySQLiteOpenHelper` continuam no
+repositório, mas **nenhum código de produção os usa**. O último chamador era o `BackupManager`,
+migrado para Room. São candidatos a remoção.
+
+**Não voltar a usá-los sobre o banco gerenciado pelo Room.** O `MySQLiteOpenHelper` está congelado
+em `DATABASE_VERSION = 10`; ao abrir um arquivo que o Room migrou para 13, o `SQLiteOpenHelper`
+chama `onDowngrade()` e em seguida grava `setVersion(10)`. Isso rebaixa o `user_version` e faz o
+Room re-executar a `MIGRATION_10_11` no start seguinte — que recria `participante` sem as colunas
+da v12 e perde `confirmou_presente`, `foi_notificado` e `observacoes`. Coberto pelo teste de
+regressão `BackupManagerTest.exportar_e_importar_nao_rebaixam_a_versao_do_banco`.
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
 - Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
 - Batch queries: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` com INNER JOIN + GROUP BY (elimina N+1)
