@@ -2,40 +2,68 @@
 
 ## 1. Gerar Keystore (Primeira vez apenas)
 
-Execute o comando abaixo para criar seu keystore:
+### Duas chaves, não uma
+
+O app é publicado como App Bundle (`.aab`), o que exige **Play App Signing**. Existem, portanto,
+duas chaves distintas — e é importante não confundi-las:
+
+| Chave | Quem guarda | O que assina |
+|-------|-------------|--------------|
+| Chave de assinatura do app | Google | os APKs que o Play gera a partir do bundle e entrega aos usuários |
+| **Chave de upload** (o keystore deste projeto) | Você | o `.aab` enviado ao Play, apenas para autenticar o upload |
+
+O keystore gerado abaixo é a **chave de upload**.
+
+### Gerar
 
 ```bash
 keytool -genkey -v -keystore amigosecreto.keystore -alias amigosecreto -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 **IMPORTANTE:**
-- Guarde a senha do keystore em local seguro
-- Nunca commit o keystore no git
-- Faça backup do keystore em local seguro (se perder, não poderá mais atualizar o app na Play Store)
 
-## 2. Configurar Signing no build.gradle
+- Guarde a senha do keystore em local seguro.
+- Nunca commite o keystore no git — o `.gitignore` já cobre `*.keystore`, `amigosecreto.keystore`
+  e `keystore.properties`.
+- Faça backup do keystore. Perder a chave de upload **é recuperável**, mas custa tempo: é preciso
+  solicitar um *reset da chave de upload* no Play Console, gerar um keystore novo e registrar o
+  novo certificado. Enquanto o reset não é processado, não é possível publicar atualizações.
+- A chave de assinatura do app **não** pode ser perdida por você — ela fica sob custódia do Google.
+  Por isso trocar de keystore de upload não quebra as atualizações para quem já instalou o app.
 
-Edite o arquivo `app/build.gradle` e descomente as linhas na seção `signingConfigs.release`:
+## 2. Configurar Signing (local)
 
-```gradle
-signingConfigs {
-    release {
-        storeFile file("../amigosecreto.keystore")
-        storePassword "SUA_SENHA_AQUI"
-        keyAlias "amigosecreto"
-        keyPassword "SUA_SENHA_AQUI"
-    }
-}
+O `app/build.gradle` **já está configurado** — não há nada para descomentar. Ele lê as credenciais
+de duas fontes, nesta ordem de precedência:
+
+1. `keystore.properties` na raiz do projeto (desenvolvimento local)
+2. Variáveis de ambiente `CI_KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` (CI)
+
+**Nunca** coloque senha diretamente no `app/build.gradle` — o arquivo é versionado.
+
+### Desenvolvimento local
+
+Crie `keystore.properties` na raiz do repositório (já coberto pelo `.gitignore`):
+
+```properties
+storeFile=amigosecreto.keystore
+storePassword=<senha do keystore>
+keyAlias=amigosecreto
+keyPassword=<senha da chave>
 ```
 
-E descomente também no buildTypes.release:
+`storeFile` é resolvido via `rootProject.file(...)`, ou seja, o caminho é relativo à raiz do
+repositório — não ao diretório `app/`.
 
-```gradle
-release {
-    signingConfig signingConfigs.release
-    // ... resto da configuração
-}
-```
+Se `keystore.properties` não existir e nenhuma variável de ambiente de CI estiver presente, o build
+de release sai **sem** `signingConfig` (`signingConfig canSign ? signingConfigs.release : null`).
+O `.aab` gerado fica não assinado e não serve para upload no Play.
+
+### CI (GitHub Actions)
+
+Os workflows decodificam o secret `KEYSTORE_BASE64` para um arquivo temporário e exportam
+`CI_KEYSTORE_PATH`; as demais credenciais vêm dos secrets `KEYSTORE_PASSWORD`, `KEY_ALIAS` e
+`KEY_PASSWORD`. Nenhuma configuração local é necessária para o deploy automatizado.
 
 ## 3. Gerar App Bundle para Play Store
 
