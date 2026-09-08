@@ -502,6 +502,19 @@ class BackupManagerTest {
     // --- Regressão: user_version não pode ser rebaixado ---
 
     @Test
+    fun schema_version_bate_com_a_versao_gravada_pelo_room() {
+        // A anotação @Database exige um literal, então AppDatabase.SCHEMA_VERSION é uma
+        // duplicação manual daquele número. A anotação tem retenção BINARY e não é legível
+        // por reflexão, então a comparação é contra a versão que o Room gravou no arquivo:
+        // bumpar `version` sem atualizar a constante quebra este teste.
+        assertEquals(
+            "SCHEMA_VERSION divergiu da @Database(version) — o backup declararia um " +
+                "schema_version desatualizado",
+            db.openHelper.readableDatabase.version, AppDatabase.SCHEMA_VERSION
+        )
+    }
+
+    @Test
     fun exportar_e_importar_nao_rebaixam_a_versao_do_banco() {
         // O MySQLiteOpenHelper legado está congelado em DATABASE_VERSION = 10. Ao abrir um
         // arquivo que o Room migrou para 13, o SQLiteOpenHelper chama onDowngrade() e em

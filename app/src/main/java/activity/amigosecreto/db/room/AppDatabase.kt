@@ -55,7 +55,15 @@ abstract class AppDatabase : RoomDatabase() {
          * [Database] acima (a anotação exige um literal, por isso a duplicação).
          *
          * Usada por `BackupManager` para marcar e validar o `schema_version` dos arquivos
-         * de backup. `BackupManagerTest` amarra as duas por reflexão para evitar drift.
+         * de backup.
+         *
+         * Guarda contra drift: `BackupManagerTest.schema_version_bate_com_a_versao_gravada_pelo_room`
+         * compara esta constante com a versão que o Room gravou no arquivo. Bumpar `version`
+         * na anotação sem atualizar esta constante quebra aquele teste — caso contrário o
+         * backup passaria a declarar um `schema_version` silenciosamente desatualizado.
+         *
+         * A anotação tem retenção BINARY e não é legível por reflexão em runtime, por isso a
+         * comparação é feita contra o banco aberto, e não contra a anotação.
          */
         const val SCHEMA_VERSION = 13
 
