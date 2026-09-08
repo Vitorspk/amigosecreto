@@ -252,8 +252,10 @@ CREATE TABLE desejo (
 ## Tecnologias e Dependências
 
 ### Build
-- Android Gradle Plugin: 9.0.1
-- Compile SDK: 35
+- Android Gradle Plugin: 9.2.0
+- Gradle: 9.4.1
+- Kotlin: 2.2.10
+- Compile SDK: 36
 - Java: 17
 - ViewBinding: habilitado
 - MultiDex: habilitado
@@ -261,8 +263,9 @@ CREATE TABLE desejo (
 
 ### Dependências
 ```gradle
-implementation 'com.google.dagger:hilt-android:2.51.1'
-kapt 'com.google.dagger:hilt-compiler:2.51.1'
+// Plugin e dependências do Hilt devem estar sempre na mesma versão.
+implementation 'com.google.dagger:hilt-android:2.57.2'
+ksp 'com.google.dagger:hilt-compiler:2.57.2'
 
 implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
