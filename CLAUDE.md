@@ -370,6 +370,14 @@ lista de exceções não mascare um uso novo). Ao remover essas telas, esvazie a
 **Cuidado ao migrar telas que fazem `finish()` logo após gravar:** o `lifecycleScope` é cancelado
 no `onDestroy`, então a coroutine precisa envolver a escrita **e** o `finish()`, não só a escrita.
 Ver `AlterarDesejoActivity.onOptionsItemSelected`.
+
+**Limitação conhecida — escrita em voo durante mudança de configuração.** O `lifecycleScope` é
+cancelado não só no `finish()` explícito, mas também em rotação de tela e morte de processo. Se o
+usuário girar o aparelho exatamente enquanto uma gravação está em voo, a coroutine pode ser
+cancelada antes do Room concluir, descartando aquela edição sem aviso. A janela é muito pequena
+(escritas SQLite locais são sub-milissegundo) e foi aceita conscientemente; eliminá-la exigiria um
+escopo que sobreviva à Activity — um `ViewModel` com `viewModelScope`, que é o caminho natural
+caso essas telas ganhem mais lógica.
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
 - Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
 - Batch queries: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` com INNER JOIN + GROUP BY (elimina N+1)

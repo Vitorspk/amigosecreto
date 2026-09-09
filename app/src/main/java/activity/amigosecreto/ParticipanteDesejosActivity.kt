@@ -172,6 +172,14 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                 }
             } catch (e: NumberFormatException) {
                 Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                // Rede de proteção do bloco síncrono de parse. Antes de a escrita virar
+                // coroutine, um único catch-all cobria parse e gravação; agora o catch-all
+                // interno cobre só a gravação, então este aqui evita que uma exceção
+                // inesperada do parse escape sem feedback ao usuário.
+                Timber.e(e, "adicionarDesejo: falha ao montar o desejo")
+                val msg = e.message ?: getString(R.string.error_unknown)
+                Toast.makeText(this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -205,6 +213,9 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_remove_wish_title)
                 .setMessage(getString(R.string.dialog_remove_wish_message_format, desejo.produto))
+                // Sem trava de double-tap aqui, ao contrário dos outros fluxos de escrita:
+                // o setPositiveButton padrão dispensa o dialog de forma síncrona no primeiro
+                // toque, então não há segundo toque possível.
                 .setPositiveButton(R.string.button_remove_yes) { _, _ ->
                     lifecycleScope.launch {
                         // Sem try/catch, uma exceção aqui seria não capturada: o lifecycleScope
