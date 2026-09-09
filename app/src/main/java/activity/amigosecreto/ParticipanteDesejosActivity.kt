@@ -15,28 +15,39 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import timber.log.Timber
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
 import activity.amigosecreto.db.Participante
+import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.util.GeminiClient
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@AndroidEntryPoint
 class ParticipanteDesejosActivity : AppCompatActivity() {
 
     private companion object {
         const val REQUEST_EDIT_DESEJO = 100
     }
 
+    // Room via Hilt. Não voltar ao DesejoDAO legado: abrir o MySQLiteOpenHelper (congelado
+    // em DATABASE_VERSION = 10) sobre o banco que o Room migrou para 13 rebaixa o
+    // user_version e faz o Room re-executar a MIGRATION_10_11 no start seguinte, perdendo
+    // as colunas v12 de participante. Ver "DAOs legados" no CLAUDE.md.
+    @Inject lateinit var desejoRepository: DesejoRepository
+
     private lateinit var participante: Participante
-    private lateinit var desejoDAO: DesejoDAO
     private val listaDesejos = mutableListOf<Desejo>()
     private lateinit var lvDesejos: ListView
     private lateinit var tvPresentesCount: TextView
@@ -54,9 +65,6 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_participante_desejos)
-
-        desejoDAO = DesejoDAO(this)
-        desejoDAO.open()
 
         @Suppress("DEPRECATION")
         val p = intent.getSerializableExtra("participante") as? Participante
@@ -89,9 +97,10 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         carregarDesejos()
     }
 
-    private fun carregarDesejos() {
+    private fun carregarDesejos() = lifecycleScope.launch {
+        val desejos = desejoRepository.listarPorParticipante(participante.id)
         listaDesejos.clear()
-        listaDesejos.addAll(desejoDAO.listarPorParticipante(participante.id))
+        listaDesejos.addAll(desejos)
         adapter.notifyDataSetChanged()
 
         tvPresentesCount.text = getString(R.string.label_wishes_count_format, listaDesejos.size)
@@ -138,13 +147,37 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                 desejo.lojas = etLojas.text?.toString()?.trim() ?: ""
                 desejo.participanteId = participante.id
 
-                desejoDAO.inserir(desejo)
-                Toast.makeText(this, R.string.toast_wish_added, Toast.LENGTH_SHORT).show()
-                carregarDesejos()
-                dialog.dismiss()
+                // O parse acima é síncrono para que NumberFormatException continue sendo
+                // tratada aqui; só a escrita no banco vai para a coroutine.
+                //
+                // O botão é desabilitado durante a escrita: enquanto ela era síncrona na main
+                // thread, a própria thread bloqueada impedia double-tap; com a coroutine a UI
+                // fica livre e dois toques rápidos inseririam o desejo duas vezes (o segundo
+                // ainda enxergaria desejo.id == 0 e geraria uma linha nova).
+                val botaoSalvar = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                botaoSalvar.isEnabled = false
+                lifecycleScope.launch {
+                    try {
+                        desejoRepository.inserir(desejo)
+                        Toast.makeText(this@ParticipanteDesejosActivity, R.string.toast_wish_added, Toast.LENGTH_SHORT).show()
+                        carregarDesejos()
+                        dialog.dismiss()
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        val msg = e.message ?: getString(R.string.error_unknown)
+                        Toast.makeText(this@ParticipanteDesejosActivity, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
+                        botaoSalvar.isEnabled = true
+                    }
+                }
             } catch (e: NumberFormatException) {
                 Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
+                // Rede de proteção do bloco síncrono de parse. Antes de a escrita virar
+                // coroutine, um único catch-all cobria parse e gravação; agora o catch-all
+                // interno cobre só a gravação, então este aqui evita que uma exceção
+                // inesperada do parse escape sem feedback ao usuário.
+                Timber.e(e, "adicionarDesejo: falha ao montar o desejo")
                 val msg = e.message ?: getString(R.string.error_unknown)
                 Toast.makeText(this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
             }
@@ -180,10 +213,26 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_remove_wish_title)
                 .setMessage(getString(R.string.dialog_remove_wish_message_format, desejo.produto))
+                // Sem trava de double-tap aqui, ao contrário dos outros fluxos de escrita:
+                // o setPositiveButton padrão dispensa o dialog de forma síncrona no primeiro
+                // toque, então não há segundo toque possível.
                 .setPositiveButton(R.string.button_remove_yes) { _, _ ->
-                    desejoDAO.remover(desejo)
-                    Toast.makeText(this, R.string.toast_wish_removed, Toast.LENGTH_SHORT).show()
-                    carregarDesejos()
+                    lifecycleScope.launch {
+                        // Sem try/catch, uma exceção aqui seria não capturada: o lifecycleScope
+                        // não tem CoroutineExceptionHandler, então o app quebraria. Mesmo
+                        // tratamento do fluxo de inserção acima.
+                        try {
+                            desejoRepository.remover(desejo)
+                            Toast.makeText(this@ParticipanteDesejosActivity, R.string.toast_wish_removed, Toast.LENGTH_SHORT).show()
+                            carregarDesejos()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.e(e, "remover: failed for desejo id=${desejo.id}")
+                            val msg = e.message ?: getString(R.string.error_unknown)
+                            Toast.makeText(this@ParticipanteDesejosActivity, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
                 .setNegativeButton(R.string.button_cancel, null)
                 .show()
@@ -278,11 +327,6 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                 }
                 .show()
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        desejoDAO.close()
     }
 
     @Deprecated("Deprecated in Java")

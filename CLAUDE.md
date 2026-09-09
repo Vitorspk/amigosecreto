@@ -337,7 +337,7 @@ androidTestImplementation 'androidx.test:rules:1.6.1'
 - Queries parametrizadas (prevenção SQL injection)
 - `AmigoSecretoApplication` inicializa Room de forma **eager** (`openHelper.writableDatabase`) para garantir que as migrations concluem antes do primeiro uso
 
-#### DAOs legados — ⚠️ bug conhecido em aberto
+#### DAOs legados — não usar sobre o banco do Room
 
 **Não usar `MySQLiteOpenHelper` (nem os DAOs legados) sobre o banco gerenciado pelo Room.**
 O helper está congelado em `DATABASE_VERSION = 10`; ao abrir um arquivo que o Room migrou para 13,
@@ -346,23 +346,38 @@ o `SQLiteOpenHelper` chama `onDowngrade()` e em seguida grava `setVersion(10)`. 
 `participante` sem as colunas da v12 e perde `confirmou_presente`, `foi_notificado` e
 `observacoes`.
 
-O `BackupManager` foi migrado para Room e não dispara mais isso — coberto pelo teste de regressão
-`BackupManagerTest.exportar_e_importar_nao_rebaixam_a_versao_do_banco`. **Mas o bug continua
-aberto por outras telas**, que ainda instanciam `DesejoDAO`/`ParticipanteDAO` e chamam `.open()`:
+Nenhum caminho alcançável dispara mais isso:
+
+- `BackupManager` migrado para Room — regressão coberta por
+  `BackupManagerTest.exportar_e_importar_nao_rebaixam_a_versao_do_banco`
+- `ParticipanteDesejosActivity` e `AlterarDesejoActivity` migradas para `DesejoRepository`
+  (Hilt + `lifecycleScope`)
 
 | Tela | DAO legado | Alcançável? |
 |------|-----------|-------------|
-| `ParticipanteDesejosActivity` | `DesejoDAO` | ✅ **sim** — via `ParticipantesActivity` |
-| `AlterarDesejoActivity` | `DesejoDAO` | ✅ **sim** — via `ParticipanteDesejosActivity` |
+| `ParticipanteDesejosActivity` | — migrada para Room | ✅ sim |
+| `AlterarDesejoActivity` | — migrada para Room | ✅ sim |
 | `ListarDesejos` | `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
 | `DetalheDesejoActivity` | `DesejoDAO` | ❌ não — só a partir de `ListarDesejos` |
 | `RevelarAmigoActivity` | `ParticipanteDAO`, `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
 | `VisualizarDesejosActivity` | `DesejoDAO` | ❌ não — só a partir de `RevelarAmigoActivity` |
 
-Ou seja: **abrir a lista de desejos de um participante ainda rebaixa o `user_version`** e causa a
-perda no start seguinte. Fechar isso exige migrar `ParticipanteDesejosActivity` e
-`AlterarDesejoActivity` para os DAOs Room. As outras quatro telas são código morto e somem quando
-forem removidas.
+As quatro telas restantes são código morto: continuam usando DAO legado, mas nenhum `Intent` as
+alcança. `DaosLegadosGuardTest` trava o invariante — falha se qualquer tela **alcançável** voltar
+a instanciar um DAO legado, e também se um dos quatro tolerados deixar de existir (para que a
+lista de exceções não mascare um uso novo). Ao remover essas telas, esvazie a lista no teste.
+
+**Cuidado ao migrar telas que fazem `finish()` logo após gravar:** o `lifecycleScope` é cancelado
+no `onDestroy`, então a coroutine precisa envolver a escrita **e** o `finish()`, não só a escrita.
+Ver `AlterarDesejoActivity.onOptionsItemSelected`.
+
+**Limitação conhecida — escrita em voo durante mudança de configuração.** O `lifecycleScope` é
+cancelado não só no `finish()` explícito, mas também em rotação de tela e morte de processo. Se o
+usuário girar o aparelho exatamente enquanto uma gravação está em voo, a coroutine pode ser
+cancelada antes do Room concluir, descartando aquela edição sem aviso. A janela é muito pequena
+(escritas SQLite locais são sub-milissegundo) e foi aceita conscientemente; eliminá-la exigiria um
+escopo que sobreviva à Activity — um `ViewModel` com `viewModelScope`, que é o caminho natural
+caso essas telas ganhem mais lógica.
 - `getColumnIndexOrThrow()` para robustez na leitura de cursors
 - Transações atômicas: `salvarSorteio()`, `salvarExclusoes()`
 - Batch queries: `contarDesejosPorGrupo()` e `listarDesejosPorGrupo()` com INNER JOIN + GROUP BY (elimina N+1)
@@ -571,7 +586,7 @@ app/src/androidTest/java/activity/amigosecreto/
 └── ParticipantesActivityTest.kt       # Espresso — fluxos críticos de ParticipantesActivity (PR #51)
 ```
 
-### Cobertura Atual (610 testes unitários — BUILD SUCCESSFUL)
+### Cobertura Atual (619 testes unitários — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -594,6 +609,8 @@ app/src/androidTest/java/activity/amigosecreto/
 | Repository | `DesejoRepositoryTest` | 16 |
 | Repository | `ParticipanteRepositorySalvarExclusoesTest` | 7 |
 | ViewModel | `ParticipantesViewModelTest` | 33 |
+| Arquitetura | `DaosLegadosGuardTest` | 2 |
+| Activity | `AlterarDesejoMapeamentoTest` | 7 |
 
 **Espresso (androidTest):** `ParticipantesActivityTest` — testes instrumentados (PR #51)
 

@@ -4,17 +4,35 @@ import android.os.Bundle
 import timber.log.Timber
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.util.WindowInsetsUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class AlterarDesejoActivity : AppCompatActivity() {
 
-    private companion object { const val TAG = "AlterarDesejoActivity" }
+    // Room via Hilt. Não voltar ao DesejoDAO legado: abrir o MySQLiteOpenHelper (congelado
+    // em DATABASE_VERSION = 10) sobre o banco que o Room migrou para 13 rebaixa o
+    // user_version e faz o Room re-executar a MIGRATION_10_11 no start seguinte, perdendo
+    // as colunas v12 de participante. Ver "DAOs legados" no CLAUDE.md.
+    @Inject lateinit var desejoRepository: DesejoRepository
+
+    /**
+     * Impede double-tap em Salvar/Excluir. Enquanto a escrita era síncrona na main thread,
+     * a própria thread bloqueada servia de trava; com a coroutine a UI fica livre e dois
+     * toques rápidos disparariam duas operações antes do finish().
+     */
+    private var operacaoEmAndamento = false
 
     private lateinit var oldDesejo: Desejo
 
@@ -47,10 +65,20 @@ class AlterarDesejoActivity : AppCompatActivity() {
         etLojas = findViewById(R.id.et_lojas)
 
         findViewById<MaterialButton>(R.id.btn_atualizar).setOnClickListener {
-            if (validar()) {
-                alterar()
-                setResult(RESULT_OK)
-                finish()
+            if (validar() && !operacaoEmAndamento) {
+                operacaoEmAndamento = true
+                // finish() dentro da coroutine: o lifecycleScope é cancelado no onDestroy,
+                // então encerrar a Activity antes da escrita terminar a perderia.
+                lifecycleScope.launch {
+                    if (alterar()) {
+                        setResult(RESULT_OK)
+                        finish()
+                    } else {
+                        // Falha ao salvar: mantém a tela aberta para o usuário corrigir,
+                        // em vez de fechar aparentando sucesso.
+                        operacaoEmAndamento = false
+                    }
+                }
             }
         }
 
@@ -78,17 +106,33 @@ class AlterarDesejoActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
         R.id.menu_salvar -> {
-            if (validar()) {
-                alterar()
-                setResult(DetalheDesejoActivity.RESULT_SAVE)
-                finish()
+            if (validar() && !operacaoEmAndamento) {
+                operacaoEmAndamento = true
+                lifecycleScope.launch {
+                    if (alterar()) {
+                        setResult(DetalheDesejoActivity.RESULT_SAVE)
+                        finish()
+                    } else {
+                        operacaoEmAndamento = false
+                    }
+                }
             }
             true
         }
         R.id.menu_excluir -> {
-            remover()
-            setResult(DetalheDesejoActivity.RESULT_REMOVE)
-            finish()
+            if (!operacaoEmAndamento) {
+                operacaoEmAndamento = true
+                lifecycleScope.launch {
+                    if (remover()) {
+                        setResult(DetalheDesejoActivity.RESULT_REMOVE)
+                        finish()
+                    } else {
+                        // Mesma simetria de alterar(): não fechar reportando uma remoção
+                        // que não aconteceu.
+                        operacaoEmAndamento = false
+                    }
+                }
+            }
             true
         }
         android.R.id.home -> { finish(); true }
@@ -103,48 +147,81 @@ class AlterarDesejoActivity : AppCompatActivity() {
         return true
     }
 
-    private fun remover() {
-        val dao = DesejoDAO(this)
-        try {
-            dao.open()
-            dao.remover(oldDesejo)
-            Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Timber.e(e, "remover: failed for desejo id=${oldDesejo.id}")
-        } finally {
-            dao.close()
+    companion object {
+        /**
+         * Monta o [Desejo] atualizado a partir dos valores brutos dos campos de texto.
+         *
+         * Função pura — sem dependência de Android — para que o parse de preço seja testável
+         * sem Robolectric nem infraestrutura de Hilt. Preços aceitam vírgula decimal (pt-BR)
+         * e campo vazio vira `0.0`; qualquer outro formato lança [NumberFormatException],
+         * tratada pelo chamador.
+         *
+         * `id` e `participanteId` vêm de [base] — perder o `participanteId` desvincularia o
+         * desejo do seu participante.
+         */
+        @VisibleForTesting
+        internal fun montarDesejoAtualizado(
+            base: Desejo,
+            produto: String,
+            categoria: String,
+            precoMinimo: String,
+            precoMaximo: String,
+            lojas: String,
+        ): Desejo = Desejo().apply {
+            id = base.id
+            participanteId = base.participanteId
+            this.produto = produto.trim()
+            this.categoria = categoria.trim()
+            this.lojas = lojas.trim()
+            this.precoMinimo = parsePreco(precoMinimo)
+            this.precoMaximo = parsePreco(precoMaximo)
+        }
+
+        private fun parsePreco(bruto: String): Double {
+            val normalizado = bruto.trim().replace(",", ".")
+            return if (normalizado.isEmpty()) 0.0 else normalizado.toDouble()
         }
     }
 
-    private fun alterar() {
-        val dao = DesejoDAO(this)
+    /** @return `true` se a remoção foi persistida; `false` mantém a tela aberta. */
+    private suspend fun remover(): Boolean {
         try {
-            dao.open()
-            val newDesejo = Desejo()
-            newDesejo.id = oldDesejo.id
-            newDesejo.produto = etProduto.text.toString().trim()
-            newDesejo.categoria = etCategoria.text.toString().trim()
+            desejoRepository.remover(oldDesejo)
+            Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
+            return true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "remover: failed for desejo id=${oldDesejo.id}")
+            val msg = e.message ?: getString(R.string.error_unknown)
+            Toast.makeText(this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
+        }
+        return false
+    }
 
-            val pMin = etPrecoMinimo.text.toString().trim().replace(",", ".")
-            newDesejo.precoMinimo = if (pMin.isEmpty()) 0.0 else pMin.toDouble()
-
-            val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
-            newDesejo.precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
-
-            newDesejo.lojas = etLojas.text.toString().trim()
-
-            // Importante: preservar o participanteId do desejo original
-            newDesejo.participanteId = oldDesejo.participanteId
-
-            dao.alterar(oldDesejo, newDesejo)
+    /** @return `true` se a alteração foi persistida; `false` mantém a tela aberta. */
+    private suspend fun alterar(): Boolean {
+        try {
+            val newDesejo = montarDesejoAtualizado(
+                base = oldDesejo,
+                produto = etProduto.text.toString(),
+                categoria = etCategoria.text.toString(),
+                precoMinimo = etPrecoMinimo.text.toString(),
+                precoMaximo = etPrecoMaximo.text.toString(),
+                lojas = etLojas.text.toString(),
+            )
+            desejoRepository.alterar(oldDesejo, newDesejo)
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
+            return true
         } catch (e: NumberFormatException) {
+            Timber.e(e, "alterar: preço malformado para desejo id=${oldDesejo.id}")
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_update_wish_format, msg), Toast.LENGTH_LONG).show()
-        } finally {
-            dao.close()
         }
+        return false
     }
 }
