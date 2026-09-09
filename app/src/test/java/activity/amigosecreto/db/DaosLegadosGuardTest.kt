@@ -48,6 +48,11 @@ class DaosLegadosGuardTest {
 
         // Os próprios arquivos de definição casam com o padrão ("class DesejoDAO(ctx: Context)"),
         // então são excluídos — o alvo aqui são os call sites, não as declarações.
+        //
+        // Limitação conhecida: o matching é textual. Um call site escrito como
+        // `DesejoDAO (this)` (espaço antes do parêntese) ou uma construção via reflexão
+        // escapariam. É aceitável para o estilo do projeto, mas quem mantiver este teste
+        // deve saber que ele não substitui análise estática de verdade.
         val definicoes = daosLegados.map { "$it.kt" }.toSet()
 
         val infratores = activities.filter { arquivo ->

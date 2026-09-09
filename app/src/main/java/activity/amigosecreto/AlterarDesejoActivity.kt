@@ -124,9 +124,14 @@ class AlterarDesejoActivity : AppCompatActivity() {
             if (!operacaoEmAndamento) {
                 operacaoEmAndamento = true
                 lifecycleScope.launch {
-                    remover()
-                    setResult(DetalheDesejoActivity.RESULT_REMOVE)
-                    finish()
+                    if (remover()) {
+                        setResult(DetalheDesejoActivity.RESULT_REMOVE)
+                        finish()
+                    } else {
+                        // Mesma simetria de alterar(): não fechar reportando uma remoção
+                        // que não aconteceu.
+                        operacaoEmAndamento = false
+                    }
                 }
             }
             true
@@ -143,15 +148,20 @@ class AlterarDesejoActivity : AppCompatActivity() {
         return true
     }
 
-    private suspend fun remover() {
+    /** @return `true` se a remoção foi persistida; `false` mantém a tela aberta. */
+    private suspend fun remover(): Boolean {
         try {
             desejoRepository.remover(oldDesejo)
             Toast.makeText(this, R.string.toast_wish_deleted, Toast.LENGTH_SHORT).show()
+            return true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "remover: failed for desejo id=${oldDesejo.id}")
+            val msg = e.message ?: getString(R.string.error_unknown)
+            Toast.makeText(this, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
         }
+        return false
     }
 
     /** @return `true` se a alteração foi persistida; `false` mantém a tela aberta. */
