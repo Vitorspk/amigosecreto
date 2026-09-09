@@ -41,11 +41,18 @@ class DaosLegadosGuardTest {
     @Test
     fun nenhuma_tela_alcancavel_instancia_DAO_legado() {
         val raiz = raizDasActivities()
-        val activities = raiz.listFiles { f -> f.isFile && f.name.endsWith(".kt") }.orEmpty()
-        assertTrue("nenhuma Activity encontrada — o teste não estaria verificando nada", activities.isNotEmpty())
+        // Recursivo de propósito: hoje todas as Activities são top-level, mas um DAO legado
+        // instanciado em adapter/, repository/ ou util/ causaria o mesmo downgrade.
+        val activities = raiz.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+        assertTrue("nenhum fonte encontrado — o teste não estaria verificando nada", activities.isNotEmpty())
+
+        // Os próprios arquivos de definição casam com o padrão ("class DesejoDAO(ctx: Context)"),
+        // então são excluídos — o alvo aqui são os call sites, não as declarações.
+        val definicoes = daosLegados.map { "$it.kt" }.toSet()
 
         val infratores = activities.filter { arquivo ->
             arquivo.name !in toleradosPorSeremCodigoMorto &&
+                arquivo.name !in definicoes &&
                 daosLegados.any { dao -> arquivo.readText().contains("$dao(") }
         }.map { it.name }
 

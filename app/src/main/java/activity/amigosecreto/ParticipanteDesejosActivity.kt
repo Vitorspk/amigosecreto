@@ -148,6 +148,13 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
 
                 // O parse acima é síncrono para que NumberFormatException continue sendo
                 // tratada aqui; só a escrita no banco vai para a coroutine.
+                //
+                // O botão é desabilitado durante a escrita: enquanto ela era síncrona na main
+                // thread, a própria thread bloqueada impedia double-tap; com a coroutine a UI
+                // fica livre e dois toques rápidos inseririam o desejo duas vezes (o segundo
+                // ainda enxergaria desejo.id == 0 e geraria uma linha nova).
+                val botaoSalvar = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                botaoSalvar.isEnabled = false
                 lifecycleScope.launch {
                     try {
                         desejoRepository.inserir(desejo)
@@ -159,6 +166,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                     } catch (e: Exception) {
                         val msg = e.message ?: getString(R.string.error_unknown)
                         Toast.makeText(this@ParticipanteDesejosActivity, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
+                        botaoSalvar.isEnabled = true
                     }
                 }
             } catch (e: NumberFormatException) {

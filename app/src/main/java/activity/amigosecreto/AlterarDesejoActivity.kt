@@ -26,6 +26,13 @@ class AlterarDesejoActivity : AppCompatActivity() {
     // as colunas v12 de participante. Ver "DAOs legados" no CLAUDE.md.
     @Inject lateinit var desejoRepository: DesejoRepository
 
+    /**
+     * Impede double-tap em Salvar/Excluir. Enquanto a escrita era síncrona na main thread,
+     * a própria thread bloqueada servia de trava; com a coroutine a UI fica livre e dois
+     * toques rápidos disparariam duas operações antes do finish().
+     */
+    private var operacaoEmAndamento = false
+
     private companion object { const val TAG = "AlterarDesejoActivity" }
 
     private lateinit var oldDesejo: Desejo
@@ -59,13 +66,19 @@ class AlterarDesejoActivity : AppCompatActivity() {
         etLojas = findViewById(R.id.et_lojas)
 
         findViewById<MaterialButton>(R.id.btn_atualizar).setOnClickListener {
-            if (validar()) {
+            if (validar() && !operacaoEmAndamento) {
+                operacaoEmAndamento = true
                 // finish() dentro da coroutine: o lifecycleScope é cancelado no onDestroy,
                 // então encerrar a Activity antes da escrita terminar a perderia.
                 lifecycleScope.launch {
-                    alterar()
-                    setResult(RESULT_OK)
-                    finish()
+                    if (alterar()) {
+                        setResult(RESULT_OK)
+                        finish()
+                    } else {
+                        // Falha ao salvar: mantém a tela aberta para o usuário corrigir,
+                        // em vez de fechar aparentando sucesso.
+                        operacaoEmAndamento = false
+                    }
                 }
             }
         }
@@ -94,20 +107,27 @@ class AlterarDesejoActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
         R.id.menu_salvar -> {
-            if (validar()) {
+            if (validar() && !operacaoEmAndamento) {
+                operacaoEmAndamento = true
                 lifecycleScope.launch {
-                    alterar()
-                    setResult(DetalheDesejoActivity.RESULT_SAVE)
-                    finish()
+                    if (alterar()) {
+                        setResult(DetalheDesejoActivity.RESULT_SAVE)
+                        finish()
+                    } else {
+                        operacaoEmAndamento = false
+                    }
                 }
             }
             true
         }
         R.id.menu_excluir -> {
-            lifecycleScope.launch {
-                remover()
-                setResult(DetalheDesejoActivity.RESULT_REMOVE)
-                finish()
+            if (!operacaoEmAndamento) {
+                operacaoEmAndamento = true
+                lifecycleScope.launch {
+                    remover()
+                    setResult(DetalheDesejoActivity.RESULT_REMOVE)
+                    finish()
+                }
             }
             true
         }
@@ -134,7 +154,8 @@ class AlterarDesejoActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun alterar() {
+    /** @return `true` se a alteração foi persistida; `false` mantém a tela aberta. */
+    private suspend fun alterar(): Boolean {
         try {
             val newDesejo = Desejo()
             newDesejo.id = oldDesejo.id
@@ -154,6 +175,7 @@ class AlterarDesejoActivity : AppCompatActivity() {
 
             desejoRepository.alterar(oldDesejo, newDesejo)
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
+            return true
         } catch (e: NumberFormatException) {
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
         } catch (e: CancellationException) {
@@ -162,5 +184,6 @@ class AlterarDesejoActivity : AppCompatActivity() {
             val msg = e.message ?: getString(R.string.error_unknown)
             Toast.makeText(this, getString(R.string.error_update_wish_format, msg), Toast.LENGTH_LONG).show()
         }
+        return false
     }
 }
