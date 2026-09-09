@@ -4,6 +4,7 @@ import android.os.Bundle
 import timber.log.Timber
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import activity.amigosecreto.db.Desejo
@@ -32,8 +33,6 @@ class AlterarDesejoActivity : AppCompatActivity() {
      * toques rápidos disparariam duas operações antes do finish().
      */
     private var operacaoEmAndamento = false
-
-    private companion object { const val TAG = "AlterarDesejoActivity" }
 
     private lateinit var oldDesejo: Desejo
 
@@ -148,6 +147,42 @@ class AlterarDesejoActivity : AppCompatActivity() {
         return true
     }
 
+    companion object {
+        /**
+         * Monta o [Desejo] atualizado a partir dos valores brutos dos campos de texto.
+         *
+         * Função pura — sem dependência de Android — para que o parse de preço seja testável
+         * sem Robolectric nem infraestrutura de Hilt. Preços aceitam vírgula decimal (pt-BR)
+         * e campo vazio vira `0.0`; qualquer outro formato lança [NumberFormatException],
+         * tratada pelo chamador.
+         *
+         * `id` e `participanteId` vêm de [base] — perder o `participanteId` desvincularia o
+         * desejo do seu participante.
+         */
+        @VisibleForTesting
+        internal fun montarDesejoAtualizado(
+            base: Desejo,
+            produto: String,
+            categoria: String,
+            precoMinimo: String,
+            precoMaximo: String,
+            lojas: String,
+        ): Desejo = Desejo().apply {
+            id = base.id
+            participanteId = base.participanteId
+            this.produto = produto.trim()
+            this.categoria = categoria.trim()
+            this.lojas = lojas.trim()
+            this.precoMinimo = parsePreco(precoMinimo)
+            this.precoMaximo = parsePreco(precoMaximo)
+        }
+
+        private fun parsePreco(bruto: String): Double {
+            val normalizado = bruto.trim().replace(",", ".")
+            return if (normalizado.isEmpty()) 0.0 else normalizado.toDouble()
+        }
+    }
+
     /** @return `true` se a remoção foi persistida; `false` mantém a tela aberta. */
     private suspend fun remover(): Boolean {
         try {
@@ -167,22 +202,14 @@ class AlterarDesejoActivity : AppCompatActivity() {
     /** @return `true` se a alteração foi persistida; `false` mantém a tela aberta. */
     private suspend fun alterar(): Boolean {
         try {
-            val newDesejo = Desejo()
-            newDesejo.id = oldDesejo.id
-            newDesejo.produto = etProduto.text.toString().trim()
-            newDesejo.categoria = etCategoria.text.toString().trim()
-
-            val pMin = etPrecoMinimo.text.toString().trim().replace(",", ".")
-            newDesejo.precoMinimo = if (pMin.isEmpty()) 0.0 else pMin.toDouble()
-
-            val pMax = etPrecoMaximo.text.toString().trim().replace(",", ".")
-            newDesejo.precoMaximo = if (pMax.isEmpty()) 0.0 else pMax.toDouble()
-
-            newDesejo.lojas = etLojas.text.toString().trim()
-
-            // Importante: preservar o participanteId do desejo original
-            newDesejo.participanteId = oldDesejo.participanteId
-
+            val newDesejo = montarDesejoAtualizado(
+                base = oldDesejo,
+                produto = etProduto.text.toString(),
+                categoria = etCategoria.text.toString(),
+                precoMinimo = etPrecoMinimo.text.toString(),
+                precoMaximo = etPrecoMaximo.text.toString(),
+                lojas = etLojas.text.toString(),
+            )
             desejoRepository.alterar(oldDesejo, newDesejo)
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
             return true
