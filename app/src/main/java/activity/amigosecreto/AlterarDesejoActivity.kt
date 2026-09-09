@@ -187,6 +187,7 @@ class AlterarDesejoActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.toast_wish_updated, Toast.LENGTH_SHORT).show()
             return true
         } catch (e: NumberFormatException) {
+            Timber.e(e, "alterar: preço malformado para desejo id=${oldDesejo.id}")
             Toast.makeText(this, R.string.error_invalid_price, Toast.LENGTH_SHORT).show()
         } catch (e: CancellationException) {
             throw e

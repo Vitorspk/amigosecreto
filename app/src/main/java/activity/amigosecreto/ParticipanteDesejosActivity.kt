@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import timber.log.Timber
 import activity.amigosecreto.db.Desejo
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.repository.DesejoRepository
@@ -206,9 +207,20 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                 .setMessage(getString(R.string.dialog_remove_wish_message_format, desejo.produto))
                 .setPositiveButton(R.string.button_remove_yes) { _, _ ->
                     lifecycleScope.launch {
-                        desejoRepository.remover(desejo)
-                        Toast.makeText(this@ParticipanteDesejosActivity, R.string.toast_wish_removed, Toast.LENGTH_SHORT).show()
-                        carregarDesejos()
+                        // Sem try/catch, uma exceção aqui seria não capturada: o lifecycleScope
+                        // não tem CoroutineExceptionHandler, então o app quebraria. Mesmo
+                        // tratamento do fluxo de inserção acima.
+                        try {
+                            desejoRepository.remover(desejo)
+                            Toast.makeText(this@ParticipanteDesejosActivity, R.string.toast_wish_removed, Toast.LENGTH_SHORT).show()
+                            carregarDesejos()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.e(e, "remover: failed for desejo id=${desejo.id}")
+                            val msg = e.message ?: getString(R.string.error_unknown)
+                            Toast.makeText(this@ParticipanteDesejosActivity, getString(R.string.error_generic_format, msg), Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
                 .setNegativeButton(R.string.button_cancel, null)
