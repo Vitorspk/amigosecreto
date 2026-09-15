@@ -100,7 +100,7 @@ app/build/outputs/apk/release/app-release.apk
       Aconteceu na preparação da v3.2, quando ainda diziam "Versão 3.1 — Suporte a múltiplos
       idiomas". **Esta etapa precede a criação da tag abaixo** — não reordene sem considerar
       essa dependência.
-- [ ] Tag de release criada com o formato correto (ex: `v3.1`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7). Só depois de as release notes estarem prontas
+- [ ] Tag de release criada com o formato correto (`vX.Y` ou `vX.Y.Z`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7). Só depois de as release notes estarem prontas
 - [ ] Testado em diferentes dispositivos e versões do Android
 - [ ] Ícone do app configurado
 - [ ] Screenshots preparados (mínimo 2, máximo 8)
