@@ -26,7 +26,11 @@ android {
 
     defaultConfig {
         applicationId "com.amigosecreto.sorteio"
-        minSdkVersion 23
+        // 24 (Android 7.0), e não menos: a proteção automática do Play exige minSdk >= 24 e
+        // recusa o upload do bundle abaixo disso ("Play automatic protection requires a
+        // minimum SDK version of 24 or higher"). Descoberto ao publicar a v3.2, que falhou
+        // com minSdk 23. Baixar daqui volta a quebrar a publicação em produção.
+        minSdkVersion 24
         targetSdkVersion 36
         // CI passes version info via -P flags; fallback to defaults for local dev
         versionCode project.hasProperty('ciVersionCode')
@@ -161,7 +165,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     // Explicit activity dep — EdgeToEdge is in activity:1.8.0 but was only a transitive
     // dep via appcompat in the Java build. Kotlin requires an explicit declaration.
-    // 1.13.0: requer minSdk 23. Atualizado junto com a elevação do minSdk (Fase 4C1).
+    // 1.13.0: requer minSdk 23, satisfeito pelo minSdk 24 atual (ver defaultConfig).
     implementation 'androidx.activity:activity-ktx:1.13.0'
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

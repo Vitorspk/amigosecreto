@@ -9,7 +9,7 @@
 | Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~370) |
 | Application ID | `com.amigosecreto.sorteio` |
 | Package Java | `activity.amigosecreto` |
-| Min SDK | 23 (Android 6.0) |
+| Min SDK | 24 (Android 7.0) — exigido pela proteção automática do Play |
 | Target / Compile SDK | 36 (Android 15) |
 | Linguagem | Kotlin (migração completa — Fase 10f, PR #43) |
 | Branch principal | `master` |
@@ -546,6 +546,30 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 
 ---
 
+## minSdk — não baixar de 24
+
+A **proteção automática do Play** exige `minSdk >= 24` e **recusa o upload do bundle** abaixo
+disso:
+
+```
+Play automatic protection requires a minimum SDK version of 24 or higher.
+The uploaded App Bundle has a minimum SDK version of 23.
+```
+
+Descoberto ao publicar a v3.2: build, testes e lint passaram, e o workflow quebrou no passo
+`Publish to Google Play (production)`. Não era regressão — a v3.1 publicou com minSdk 23 em abril,
+e o requisito do Google mudou depois.
+
+Ao subir de 23 para 24, nada no código precisou mudar: não há nenhuma referência a API 23 ou 24,
+a checagem de `SDK_INT` mais baixa é `O` (26), e o projeto não usa `java.time` (que exigiria
+desugaring). Verificado com a suíte completa, `lintRelease` e `bundleRelease`.
+
+Alternativa, caso algum dia seja necessário voltar a suportar Android 6: a proteção automática
+pode ser desativada nas configurações de integridade do app, no Play Console. Abre mão de uma
+camada antifraude aplicada ao bundle.
+
+---
+
 ## Segurança
 
 - **HTTPS only:** `usesCleartextTraffic="false"` no Manifest
@@ -872,7 +896,7 @@ Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro d
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15 | ✅ Concluído |
+| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15. *Registro histórico: o valor atual é **24**, elevado depois por exigência da proteção automática do Play — ver "minSdk — não baixar de 24"* | ✅ Concluído |
 | C2 | **MVVM completo em `GruposActivity`** — extrair lógica para `GruposViewModel` + `GruposRepository`; hoje toda a lógica está na Activity | ✅ Concluído |
 | C3 | **DiffUtil nos adapters** — substituir `notifyDataSetChanged()` por `DiffUtil.calculateDiff()` em `ParticipantesAdapter` e `GruposRecyclerAdapter` para evitar re-render completo | ✅ Concluído |
 | C4 | **Extrair `GruposRecyclerAdapter`** — mover inner class para `adapter/GruposRecyclerAdapter.kt` (atualmente acoplada à Activity, ~560 linhas) | ✅ Concluído |
