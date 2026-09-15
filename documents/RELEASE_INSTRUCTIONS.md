@@ -93,12 +93,14 @@ app/build/outputs/apk/release/app-release.apk
 
 ## 5. Checklist antes de publicar
 
-- [ ] **Release notes atualizadas em `distribution/whatsnew/`** — um arquivo por locale
-      (`pt-BR`, `en-US`, `es-ES`, `lv`), máximo 500 caracteres cada. O CI publica esses
-      arquivos como as notas da versão; se ficarem da release anterior, o Play anuncia o
-      recurso errado. Aconteceu na preparação da v3.2, quando ainda diziam "Versão 3.1 —
-      Suporte a múltiplos idiomas"
-- [ ] Tag de release criada com o formato correto (ex: `v3.1`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7)
+- [ ] **Release notes atualizadas em `distribution/whatsnew/` — antes de criar a tag.**
+      Um arquivo por locale (`pt-BR`, `en-US`, `es-ES`, `lv`), máximo 500 caracteres cada.
+      O `release.yml` lê esse diretório no momento do push da tag e publica o conteúdo como
+      as notas da versão: se ficarem da release anterior, o Play anuncia o recurso errado.
+      Aconteceu na preparação da v3.2, quando ainda diziam "Versão 3.1 — Suporte a múltiplos
+      idiomas". **Esta etapa precede a criação da tag abaixo** — não reordene sem considerar
+      essa dependência.
+- [ ] Tag de release criada com o formato correto (ex: `v3.1`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7). Só depois de as release notes estarem prontas
 - [ ] Testado em diferentes dispositivos e versões do Android
 - [ ] Ícone do app configurado
 - [ ] Screenshots preparados (mínimo 2, máximo 8)
