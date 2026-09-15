@@ -78,12 +78,28 @@ abstract class AppDatabase : RoomDatabase() {
          * Room validates the schema strictly — divergences cause IllegalStateException.
          * Strategy: rename → recreate with correct schema → copy → drop old → create indexes.
          *
-         * Affected tables:
-         * - participante: grupo_id and enviado need NOT NULL DEFAULT 0
-         * - desejo:        preco_minimo, preco_maximo, participante_id need NOT NULL DEFAULT 0
-         * - exclusao:      needs index index_exclusao_excluido_id
+         * Duas origens chegam aqui carimbadas como v10, distinguidas por [grupoNoFormatoLegado]:
          *
-         * grupo, sorteio and sorteio_par are already correct or are new — no changes.
+         * 1. **Banco legado** — criado pelo MySQLiteOpenHelper, anterior ao Room. Todas as
+         *    tabelas divergem do que o Room espera, e por isso `grupo`, `exclusao`, `sorteio`
+         *    e `sorteio_par` também são recriadas, além de `participante` e `desejo`.
+         * 2. **Banco rebaixado** — já passou pelo Room e tem o schema correto, mas teve o
+         *    `user_version` rebaixado para 10 pelo helper legado (ver "DAOs legados" no
+         *    CLAUDE.md). Aqui só `participante`/`desejo` são recriadas, preservando as colunas
+         *    de rastreamento da v12 que já existem com dados.
+         *
+         * Tabelas sempre recriadas:
+         * - participante: grupo_id e enviado precisam de NOT NULL DEFAULT 0; as colunas de
+         *                 rastreamento da v12 são carregadas junto quando existem
+         * - desejo:       preco_minimo, preco_maximo, participante_id precisam de NOT NULL DEFAULT 0
+         *
+         * Recriadas apenas em banco legado:
+         * - grupo:        `id` sem NOT NULL e `nome` NOT NULL — invertido em relação ao Room
+         * - exclusao:     ambas as colunas nullable; o Room as exige NOT NULL
+         * - sorteio:      `id` sem NOT NULL
+         * - sorteio_par:  nomes e `enviado` nullable
+         *
+         * `exclusao` também recebe o índice index_exclusao_excluido_id em ambos os casos.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
             /** Retorna true se [table] possui a coluna [column]. */

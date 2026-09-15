@@ -236,4 +236,51 @@ class MigracaoAposDowngradeTest {
         db.close()
         ctx.deleteDatabase(nomeLegado)
     }
+
+    @Test
+    fun estado_parcial_preserva_as_colunas_de_rastreamento_que_existem() {
+        // Cenário que motivou filtrar coluna a coluna em vez de exigir as três: o comentário
+        // da MIGRATION_11_12 registra dispositivos que ficaram com estado parcial. Aqui
+        // `foi_notificado` é removida, deixando só confirmou_presente e observacoes.
+        var db = abrirComMigrations()
+        val grupoId = runBlocking {
+            val gid = db.grupoDao().inserir(Grupo(nome = "Família", data = "17/03/2026")).toInt()
+            db.participanteDao().inserir(
+                Participante(
+                    nome = "Ana", grupoId = gid,
+                    confirmouPresente = true, foiNotificado = true,
+                    observacoes = "Alergia a nozes",
+                )
+            )
+            gid
+        }
+        db.close()
+
+        // Reconstrói `participante` sem `foi_notificado`, mantendo as outras duas.
+        val caminho = ctx.getDatabasePath(dbName).absolutePath
+        SQLiteDatabase.openDatabase(caminho, null, SQLiteDatabase.OPEN_READWRITE).use { raw ->
+            raw.execSQL("ALTER TABLE participante RENAME TO p_tmp")
+            raw.execSQL(
+                "CREATE TABLE participante (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`nome` TEXT, `email` TEXT, `telefone` TEXT, `amigo_sorteado_id` INTEGER, " +
+                    "`enviado` INTEGER NOT NULL DEFAULT 0, `grupo_id` INTEGER NOT NULL DEFAULT 0, " +
+                    "`confirmou_presente` INTEGER NOT NULL DEFAULT 0, `observacoes` TEXT)"
+            )
+            raw.execSQL(
+                "INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, " +
+                    "enviado, grupo_id, confirmou_presente, observacoes) " +
+                    "SELECT id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id, " +
+                    "confirmou_presente, observacoes FROM p_tmp"
+            )
+            raw.execSQL("DROP TABLE p_tmp")
+            raw.version = 10
+        }
+
+        db = abrirComMigrations()
+        val p = runBlocking { db.participanteDao().listarPorGrupoSemExclusoes(grupoId).single() }
+        assertTrue("confirmou_presente existia e deveria ter sido preservada", p.confirmouPresente)
+        assertEquals("observacoes existia e deveria ter sido preservada", "Alergia a nozes", p.observacoes)
+        assertFalse("foi_notificado não existia; assume o default", p.foiNotificado)
+        db.close()
+    }
 }
