@@ -67,6 +67,23 @@ abstract class AppDatabase : RoomDatabase() {
          */
         const val SCHEMA_VERSION = 13
 
+        /**
+         * Retorna true se [table] possui a coluna [column].
+         *
+         * Compartilhado por MIGRATION_10_11 e MIGRATION_11_12: as duas precisam inspecionar o
+         * schema em disco porque bancos reais chegam em estados diferentes do que o
+         * `user_version` carimbado sugere.
+         */
+        private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
+            db.query("PRAGMA table_info(`$table`)").use { cursor ->
+                val nameIdx = cursor.getColumnIndex("name")
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameIdx) == column) return true
+                }
+            }
+            return false
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -102,17 +119,6 @@ abstract class AppDatabase : RoomDatabase() {
          * `exclusao` também recebe o índice index_exclusao_excluido_id em ambos os casos.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
-            /** Retorna true se [table] possui a coluna [column]. */
-            private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
-                db.query("PRAGMA table_info(`$table`)").use { cursor ->
-                    val nameIdx = cursor.getColumnIndex("name")
-                    while (cursor.moveToNext()) {
-                        if (cursor.getString(nameIdx) == column) return true
-                    }
-                }
-                return false
-            }
-
             private fun sqlCreateSorteio(seNaoExistir: Boolean = false): String {
                 val ifNot = if (seNaoExistir) "IF NOT EXISTS " else ""
                 return """
@@ -298,6 +304,10 @@ abstract class AppDatabase : RoomDatabase() {
                         FROM sorteio_par_old
                         WHERE sorteio_id IS NOT NULL AND participante_id IS NOT NULL
                           AND sorteado_id IS NOT NULL
+                          -- Pares cujo sorteio foi descartado acima (grupo_id ou data_hora
+                          -- nulos) ficariam com FK pendente; com foreign_keys habilitada o
+                          -- INSERT falharia e abortaria a migração inteira.
+                          AND sorteio_id IN (SELECT id FROM sorteio)
                     """.trimIndent())
                     db.execSQL("DROP TABLE sorteio_par_old")
                 }
@@ -328,16 +338,6 @@ abstract class AppDatabase : RoomDatabase() {
          * This migration only alters grupo and participante via ALTER TABLE ADD COLUMN.
          */
         val MIGRATION_11_12 = object : Migration(11, 12) {
-            private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
-                db.query("PRAGMA table_info(`$table`)").use { cursor ->
-                    val nameIdx = cursor.getColumnIndex("name")
-                    while (cursor.moveToNext()) {
-                        if (cursor.getString(nameIdx) == column) return true
-                    }
-                }
-                return false
-            }
-
             private fun addColumnIfMissing(db: SupportSQLiteDatabase, table: String, column: String, definition: String) {
                 if (!columnExists(db, table, column)) {
                     db.execSQL("ALTER TABLE `$table` ADD COLUMN `$column` $definition")

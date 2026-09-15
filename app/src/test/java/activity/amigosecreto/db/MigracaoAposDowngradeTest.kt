@@ -283,4 +283,40 @@ class MigracaoAposDowngradeTest {
         assertFalse("foi_notificado não existia; assume o default", p.foiNotificado)
         db.close()
     }
+
+    @Test
+    fun banco_rebaixado_preserva_exclusoes_e_sorteios() {
+        // Simetria com banco_legado_preserva_exclusoes_e_sorteios_na_migracao: no caminho
+        // rebaixado essas tabelas não são recriadas, então o teste garante que continuam
+        // intocadas — e pegaria uma recriação indevida introduzida por engano no futuro.
+        var db = abrirComMigrations()
+        val grupoId = runBlocking {
+            val gid = db.grupoDao().inserir(Grupo(nome = "Família", data = "17/03/2026")).toInt()
+            val ana = db.participanteDao().inserir(Participante(nome = "Ana", grupoId = gid)).toInt()
+            val bob = db.participanteDao().inserir(Participante(nome = "Bob", grupoId = gid)).toInt()
+            db.participanteDao().inserirExclusao(Exclusao(ana, bob))
+            val sid = db.sorteioDao().inserirSorteio(
+                Sorteio(grupoId = gid, dataHora = "2026-03-17T19:00:00")
+            ).toInt()
+            db.sorteioDao().inserirPar(SorteioPar(sid, ana, bob, "Ana", "Bob", true))
+            gid
+        }
+        db.close()
+
+        rebaixarUserVersionPara10()
+
+        db = abrirComMigrations()
+        val participantes = runBlocking { db.participanteDao().listarPorGrupo(grupoId) }
+        val ana = participantes.first { it.nome == "Ana" }
+        val bob = participantes.first { it.nome == "Bob" }
+        assertTrue("exclusão não sobreviveu ao caminho rebaixado", ana.idsExcluidos.contains(bob.id))
+
+        val sorteios = runBlocking { db.sorteioDao().listarPorGrupo(grupoId) }
+        assertEquals(1, sorteios.size)
+        val par = sorteios[0].pares.single()
+        assertEquals("Ana", par.nomeParticipante)
+        assertEquals("Bob", par.nomeSorteado)
+        assertTrue(par.enviado)
+        db.close()
+    }
 }
