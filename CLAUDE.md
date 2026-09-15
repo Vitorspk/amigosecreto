@@ -8,7 +8,7 @@
 |-------|-------|
 | Versão atual | 3.0 (versionCode: `100 + git rev-list --count HEAD`, produção ~370) |
 | Application ID | `com.amigosecreto.sorteio` |
-| Package Java | `activity.amigosecreto` |
+| Package Java (namespace) | `activity.amigosecreto` — **não** é o Application ID; ver "Duas listagens no Play" |
 | Min SDK | 24 (Android 7.0) — exigido pela proteção automática do Play |
 | Target / Compile SDK | 36 (Android 15) |
 | Linguagem | Kotlin (migração completa — Fase 10f, PR #43) |
@@ -925,8 +925,62 @@ Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro d
 
 ---
 
+## Duas listagens no Play — `activity.amigosecreto` e `com.amigosecreto.sorteio`
+
+O Play Console tem **dois** nomes de pacote registrados para este app, e é fácil confundi-los com
+o namespace do código.
+
+| Nome de pacote | O que é |
+|----------------|---------|
+| `com.amigosecreto.sorteio` | **Application ID atual.** É a listagem viva, onde a v3.2 foi publicada |
+| `activity.amigosecreto` | **Listagem legada.** Foi o Application ID de 2017 até 2026-03-03 |
+
+O que confunde: `activity.amigosecreto` **também** é o `namespace` Kotlin, que nunca mudou — as
+classes continuam em `activity/amigosecreto/`. Namespace é onde o código vive; Application ID é a
+identidade do app no Play. São coisas diferentes que aqui têm o mesmo valor por acidente histórico.
+
+### Histórico
+
+| Quando | Application ID |
+|--------|----------------|
+| 2017-06-04 (primeiro commit) | `activity.amigosecreto` |
+| 2026-02-26 (v2.0) | `activity.amigosecreto` |
+| **2026-03-03** (`1f120d7`, "add CI/CD pipeline") | **`com.amigosecreto.sorteio`** |
+
+O Application ID foi trocado no mesmo commit que montou o pipeline de CI/CD. Como o Application ID
+é a identidade do app no Play, isso criou uma **listagem nova** em vez de atualizar a antiga — as
+duas são apps distintos para o Google.
+
+### Consequência
+
+Quem instalou o app sob `activity.amigosecreto` **nunca recebeu atualização** desde março de 2026.
+O último código publicável sob aquele ID (`e03d23d`, 27/02/2026) tinha:
+
+- versionName 2.0, versionCode 8, minSdk 21, targetSdk 35
+- permissões: `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` e **`READ_CONTACTS`**
+
+O `READ_CONTACTS` é justamente a permissão ampla removida no PR #101 por conta da política de
+Contacts do Play de abril/2026. A listagem legada, se ainda publicada, carrega essa permissão sem
+manutenção.
+
+> **Nota:** `SEND_SMS` **não** está nesse conjunto. A permissão existiu no manifest até `e81ff02`
+> (26/02/2026); depois disso restou apenas um comentário explicando que ela *não* é necessária
+> (o envio usa `ACTION_SENDTO`). Vale registrar porque a leitura apressada do comentário já
+> produziu a conclusão errada mais de uma vez.
+
+### Pendente — ação no Play Console
+
+Verificar em **Todos os apps** se `activity.amigosecreto` ainda está publicada e, em caso
+afirmativo, avaliar despublicá-la: o app foi substituído e não recebe manutenção. Despublicar não
+remove o app de quem já o tem instalado — apenas impede novas instalações.
+
+Ambos os nomes de pacote **já estão registrados** para a verificação de desenvolvedor Android
+(prazo de 30/09/2026), então esse requisito não depende dessa decisão.
+
+---
+
 ## Repositório
 
 **URL:** https://github.com/Vitorspk/amigosecreto
 **Branch Principal:** `master`
-**Package Play Store:** `com.amigosecreto.sorteio`
+**Package Play Store:** `com.amigosecreto.sorteio` (atual) · `activity.amigosecreto` (legada)
