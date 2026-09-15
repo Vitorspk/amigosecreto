@@ -896,7 +896,7 @@ Organizado em 3 categorias por impacto e esforço. Implementar em ordem dentro d
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15 | ✅ Concluído |
+| C1 | **Elevar `minSdk` para 23** — desbloqueia `activity-ktx:1.13.0` + `material:1.13.0` e resolve completamente o aviso do Play Console sobre APIs depreciadas no Android 15. *Registro histórico: o valor atual é **24**, elevado depois por exigência da proteção automática do Play — ver "minSdk — não baixar de 24"* | ✅ Concluído |
 | C2 | **MVVM completo em `GruposActivity`** — extrair lógica para `GruposViewModel` + `GruposRepository`; hoje toda a lógica está na Activity | ✅ Concluído |
 | C3 | **DiffUtil nos adapters** — substituir `notifyDataSetChanged()` por `DiffUtil.calculateDiff()` em `ParticipantesAdapter` e `GruposRecyclerAdapter` para evitar re-render completo | ✅ Concluído |
 | C4 | **Extrair `GruposRecyclerAdapter`** — mover inner class para `adapter/GruposRecyclerAdapter.kt` (atualmente acoplada à Activity, ~560 linhas) | ✅ Concluído |
