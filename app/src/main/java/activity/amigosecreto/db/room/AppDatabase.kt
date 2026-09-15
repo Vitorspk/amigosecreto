@@ -67,6 +67,23 @@ abstract class AppDatabase : RoomDatabase() {
          */
         const val SCHEMA_VERSION = 13
 
+        /**
+         * Retorna true se [table] possui a coluna [column].
+         *
+         * Compartilhado por MIGRATION_10_11 e MIGRATION_11_12: as duas precisam inspecionar o
+         * schema em disco porque bancos reais chegam em estados diferentes do que o
+         * `user_version` carimbado sugere.
+         */
+        private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
+            db.query("PRAGMA table_info(`$table`)").use { cursor ->
+                val nameIdx = cursor.getColumnIndex("name")
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameIdx) == column) return true
+                }
+            }
+            return false
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -78,17 +95,127 @@ abstract class AppDatabase : RoomDatabase() {
          * Room validates the schema strictly — divergences cause IllegalStateException.
          * Strategy: rename → recreate with correct schema → copy → drop old → create indexes.
          *
-         * Affected tables:
-         * - participante: grupo_id and enviado need NOT NULL DEFAULT 0
-         * - desejo:        preco_minimo, preco_maximo, participante_id need NOT NULL DEFAULT 0
-         * - exclusao:      needs index index_exclusao_excluido_id
+         * Duas origens chegam aqui carimbadas como v10, distinguidas por [grupoNoFormatoLegado]:
          *
-         * grupo, sorteio and sorteio_par are already correct or are new — no changes.
+         * 1. **Banco legado** — criado pelo MySQLiteOpenHelper, anterior ao Room. Todas as
+         *    tabelas divergem do que o Room espera, e por isso `grupo`, `exclusao`, `sorteio`
+         *    e `sorteio_par` também são recriadas, além de `participante` e `desejo`.
+         * 2. **Banco rebaixado** — já passou pelo Room e tem o schema correto, mas teve o
+         *    `user_version` rebaixado para 10 pelo helper legado (ver "DAOs legados" no
+         *    CLAUDE.md). Aqui só `participante`/`desejo` são recriadas, preservando as colunas
+         *    de rastreamento da v12 que já existem com dados.
+         *
+         * Tabelas sempre recriadas:
+         * - participante: grupo_id e enviado precisam de NOT NULL DEFAULT 0; as colunas de
+         *                 rastreamento da v12 são carregadas junto quando existem
+         * - desejo:       preco_minimo, preco_maximo, participante_id precisam de NOT NULL DEFAULT 0
+         *
+         * Recriadas apenas em banco legado:
+         * - grupo:        `id` sem NOT NULL e `nome` NOT NULL — invertido em relação ao Room
+         * - exclusao:     ambas as colunas nullable; o Room as exige NOT NULL
+         * - sorteio:      `id` sem NOT NULL
+         * - sorteio_par:  nomes e `enviado` nullable
+         *
+         * `exclusao` também recebe o índice index_exclusao_excluido_id em ambos os casos.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
+            private fun sqlCreateSorteio(seNaoExistir: Boolean = false): String {
+                val ifNot = if (seNaoExistir) "IF NOT EXISTS " else ""
+                return """
+                    CREATE TABLE ${ifNot}sorteio (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `grupo_id` INTEGER NOT NULL,
+                        `data_hora` TEXT NOT NULL,
+                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent()
+            }
+
+            private fun sqlCreateSorteioPar(seNaoExistir: Boolean = false): String {
+                val ifNot = if (seNaoExistir) "IF NOT EXISTS " else ""
+                return """
+                    CREATE TABLE ${ifNot}sorteio_par (
+                        `sorteio_id` INTEGER NOT NULL,
+                        `participante_id` INTEGER NOT NULL,
+                        `sorteado_id` INTEGER NOT NULL,
+                        `nome_participante` TEXT NOT NULL,
+                        `nome_sorteado` TEXT NOT NULL,
+                        `enviado` INTEGER NOT NULL,
+                        PRIMARY KEY(`sorteio_id`, `participante_id`),
+                        FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent()
+            }
+
+            /** true se `grupo` está no formato do helper legado (`nome` NOT NULL). */
+            private fun grupoNoFormatoLegado(db: SupportSQLiteDatabase): Boolean {
+                db.query("PRAGMA table_info(`grupo`)").use { cursor ->
+                    val nameIdx = cursor.getColumnIndex("name")
+                    val notNullIdx = cursor.getColumnIndex("notnull")
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(nameIdx) == "nome") return cursor.getInt(notNullIdx) == 1
+                    }
+                }
+                return false
+            }
+
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Um banco criado pelo MySQLiteOpenHelper tem TODAS as tabelas no formato
+                // legado, que diverge do que o Room espera em nullability. Um banco que já
+                // passou pelo Room tem todas corretas — o bug do user_version só corrompia o
+                // carimbo, nunca o schema. Por isso uma detecção só, em `grupo`, decide pelo
+                // conjunto: `participante` e `desejo` são recriados de qualquer forma abaixo,
+                // e as demais só quando o banco é legado.
+                val bancoLegado = grupoNoFormatoLegado(db)
+
+                // --- grupo ---
+                // Esta migration nunca corrigiu `grupo`. O helper legado cria
+                // `id INTEGER PRIMARY KEY AUTOINCREMENT` (sem NOT NULL) e `nome TEXT NOT NULL`;
+                // o Room espera exatamente o inverso desde a v11. Bancos genuinamente v10 —
+                // instalações anteriores ao Room — falhavam na validação de schema, o Room
+                // revertia a migration e o app ficava sem carregar dados (o try/catch de
+                // AmigoSecretoApplication engole a exceção, então nem havia crash visível).
+                //
+                // Recriamos só quando a tabela está no formato legado: bancos que já passaram
+                // pelo Room têm `grupo` correto e não são tocados. Vem antes de `participante`
+                // porque este a referencia por FK.
+                if (bancoLegado) {
+                    db.execSQL("ALTER TABLE grupo RENAME TO grupo_old")
+                    db.execSQL("""
+                        CREATE TABLE grupo (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `nome` TEXT,
+                            `data` TEXT
+                        )
+                    """.trimIndent())
+                    db.execSQL("INSERT INTO grupo (id, nome, data) SELECT id, nome, data FROM grupo_old")
+                    db.execSQL("DROP TABLE grupo_old")
+                }
+
                 // --- participante ---
                 db.execSQL("ALTER TABLE participante RENAME TO participante_old")
+
+                // Bancos rebaixados pelo bug do user_version chegam aqui carimbados como v10
+                // mas com o schema da v12/v13 completo — inclusive as colunas de rastreamento,
+                // com dados. Até a v3.1 esta migration copiava só as colunas da v10 e as
+                // descartava justamente na atualização que corrige o bug.
+                //
+                // Quando elas existem em participante_old, são carregadas junto; a
+                // MIGRATION_11_12 usa addColumnIfMissing e simplesmente as pula depois.
+                // Em bancos genuinamente v10 as colunas não existem e nada muda.
+                // Avaliadas uma a uma, e não em bloco: o comentário da MIGRATION_11_12 registra
+                // dispositivos que ficaram com estado parcial ("duplicate column name"), então
+                // um subconjunto presente é possível. Exigir as três descartaria as existentes.
+                val rastreamento = listOf(
+                    Triple("confirmou_presente", "INTEGER NOT NULL DEFAULT 0", "COALESCE(confirmou_presente, 0)"),
+                    Triple("foi_notificado", "INTEGER NOT NULL DEFAULT 0", "COALESCE(foi_notificado, 0)"),
+                    Triple("observacoes", "TEXT", "observacoes"),
+                ).filter { (coluna, _, _) -> columnExists(db, "participante_old", coluna) }
+
+                val colunasRastreamento = rastreamento.joinToString("") { (coluna, tipo, _) ->
+                    ",\n                        `$coluna` $tipo"
+                }
+
                 db.execSQL("""
                     CREATE TABLE participante (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -97,16 +224,17 @@ abstract class AppDatabase : RoomDatabase() {
                         `telefone` TEXT,
                         `amigo_sorteado_id` INTEGER,
                         `enviado` INTEGER NOT NULL DEFAULT 0,
-                        `grupo_id` INTEGER NOT NULL DEFAULT 0,
+                        `grupo_id` INTEGER NOT NULL DEFAULT 0$colunasRastreamento,
                         FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
                     )
                 """.trimIndent())
-                db.execSQL("""
-                    INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id)
-                    SELECT id, nome, email, telefone, amigo_sorteado_id,
-                           COALESCE(enviado, 0), COALESCE(grupo_id, 0)
-                    FROM participante_old
-                """.trimIndent())
+
+                val destino = (listOf("id", "nome", "email", "telefone", "amigo_sorteado_id", "enviado", "grupo_id") +
+                    rastreamento.map { (coluna, _, _) -> coluna }).joinToString(", ")
+                val origem = (listOf("id", "nome", "email", "telefone", "amigo_sorteado_id",
+                    "COALESCE(enviado, 0)", "COALESCE(grupo_id, 0)") +
+                    rastreamento.map { (_, _, select) -> select }).joinToString(", ")
+                db.execSQL("INSERT INTO participante ($destino) SELECT $origem FROM participante_old")
                 db.execSQL("DROP TABLE participante_old")
 
                 // --- desejo ---
@@ -132,31 +260,66 @@ abstract class AppDatabase : RoomDatabase() {
                 """.trimIndent())
                 db.execSQL("DROP TABLE desejo_old")
 
+                // --- exclusao, sorteio e sorteio_par ---
+                // Também nunca foram corrigidas. No formato legado `exclusao` tem as duas
+                // colunas nullable (o Room as exige NOT NULL), `sorteio.id` não é NOT NULL e
+                // `sorteio_par` tem nomes e `enviado` nullable. Os CREATE TABLE IF NOT EXISTS
+                // abaixo eram no-op justamente nos bancos legados, que já tinham as tabelas.
+                if (bancoLegado) {
+                    db.execSQL("ALTER TABLE exclusao RENAME TO exclusao_old")
+                    db.execSQL("""
+                        CREATE TABLE exclusao (
+                            `participante_id` INTEGER NOT NULL,
+                            `excluido_id` INTEGER NOT NULL,
+                            PRIMARY KEY(`participante_id`, `excluido_id`),
+                            FOREIGN KEY(`participante_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                            FOREIGN KEY(`excluido_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        )
+                    """.trimIndent())
+                    // Linhas com NULL não cabem no schema novo e não têm significado útil.
+                    db.execSQL("""
+                        INSERT INTO exclusao (participante_id, excluido_id)
+                        SELECT participante_id, excluido_id FROM exclusao_old
+                        WHERE participante_id IS NOT NULL AND excluido_id IS NOT NULL
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE exclusao_old")
+
+                    db.execSQL("ALTER TABLE sorteio RENAME TO sorteio_old")
+                    db.execSQL(sqlCreateSorteio())
+                    db.execSQL("""
+                        INSERT INTO sorteio (id, grupo_id, data_hora)
+                        SELECT id, grupo_id, data_hora FROM sorteio_old
+                        WHERE grupo_id IS NOT NULL AND data_hora IS NOT NULL
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE sorteio_old")
+
+                    db.execSQL("ALTER TABLE sorteio_par RENAME TO sorteio_par_old")
+                    db.execSQL(sqlCreateSorteioPar())
+                    db.execSQL("""
+                        INSERT INTO sorteio_par (sorteio_id, participante_id, sorteado_id,
+                                                 nome_participante, nome_sorteado, enviado)
+                        SELECT sorteio_id, participante_id, sorteado_id,
+                               COALESCE(nome_participante, ''), COALESCE(nome_sorteado, ''),
+                               COALESCE(enviado, 0)
+                        FROM sorteio_par_old
+                        WHERE sorteio_id IS NOT NULL AND participante_id IS NOT NULL
+                          AND sorteado_id IS NOT NULL
+                          -- Pares cujo sorteio foi descartado acima (grupo_id ou data_hora
+                          -- nulos) ficariam com FK pendente; com foreign_keys habilitada o
+                          -- INSERT falharia e abortaria a migração inteira.
+                          AND sorteio_id IN (SELECT id FROM sorteio)
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE sorteio_par_old")
+                }
+
                 // --- exclusao: index required by Room ---
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `exclusao` (`excluido_id`)")
 
-                // --- sorteio and sorteio_par: created by MySQLiteOpenHelper v10 via SorteioDAO ---
-                // Ensure they exist (database may have been created before v10 was complete)
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sorteio (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `grupo_id` INTEGER NOT NULL,
-                        `data_hora` TEXT NOT NULL,
-                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                    )
-                """.trimIndent())
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sorteio_par (
-                        `sorteio_id` INTEGER NOT NULL,
-                        `participante_id` INTEGER NOT NULL,
-                        `sorteado_id` INTEGER NOT NULL,
-                        `nome_participante` TEXT NOT NULL,
-                        `nome_sorteado` TEXT NOT NULL,
-                        `enviado` INTEGER NOT NULL,
-                        PRIMARY KEY(`sorteio_id`, `participante_id`),
-                        FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                    )
-                """.trimIndent())
+                // --- sorteio e sorteio_par ---
+                // Bancos criados antes de a v10 estar completa podem não ter estas tabelas.
+                // Mesmo DDL usado na recriação acima, para as duas cópias não divergirem.
+                db.execSQL(sqlCreateSorteio(seNaoExistir = true))
+                db.execSQL(sqlCreateSorteioPar(seNaoExistir = true))
             }
         }
 
@@ -175,16 +338,6 @@ abstract class AppDatabase : RoomDatabase() {
          * This migration only alters grupo and participante via ALTER TABLE ADD COLUMN.
          */
         val MIGRATION_11_12 = object : Migration(11, 12) {
-            private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
-                db.query("PRAGMA table_info(`$table`)").use { cursor ->
-                    val nameIdx = cursor.getColumnIndex("name")
-                    while (cursor.moveToNext()) {
-                        if (cursor.getString(nameIdx) == column) return true
-                    }
-                }
-                return false
-            }
-
             private fun addColumnIfMissing(db: SupportSQLiteDatabase, table: String, column: String, definition: String) {
                 if (!columnExists(db, table, column)) {
                     db.execSQL("ALTER TABLE `$table` ADD COLUMN `$column` $definition")
