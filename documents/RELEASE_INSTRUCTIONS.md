@@ -93,6 +93,11 @@ app/build/outputs/apk/release/app-release.apk
 
 ## 5. Checklist antes de publicar
 
+- [ ] **Release notes atualizadas em `distribution/whatsnew/`** — um arquivo por locale
+      (`pt-BR`, `en-US`, `es-ES`, `lv`), máximo 500 caracteres cada. O CI publica esses
+      arquivos como as notas da versão; se ficarem da release anterior, o Play anuncia o
+      recurso errado. Aconteceu na preparação da v3.2, quando ainda diziam "Versão 3.1 —
+      Suporte a múltiplos idiomas"
 - [ ] Tag de release criada com o formato correto (ex: `v3.1`) — versionCode e versionName são calculados automaticamente pelo CI (ver seção 7)
 - [ ] Testado em diferentes dispositivos e versões do Android
 - [ ] Ícone do app configurado
@@ -108,7 +113,7 @@ app/build/outputs/apk/release/app-release.apk
 2. Selecione seu app ou crie um novo
 3. Vá em "Release" > "Production"
 4. Faça upload do arquivo .aab
-5. Preencha as notas de versão
+5. Preencha as notas de versão (no fluxo automatizado isso vem de `distribution/whatsnew/`)
 6. Revise e publique
 
 ## 7. Versioning

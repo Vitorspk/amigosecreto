@@ -1,4 +1,6 @@
-Versión 3.1 - Soporte multiidioma
+Versión 3.2 - Correcciones de fiabilidad
 
-El app ahora está disponible en inglés y español.
-El idioma se selecciona automáticamente según la configuración del dispositivo.
+• La copia de seguridad ahora conserva la configuración del grupo (fecha, lugar, rango de precio, reglas y privacidad de la lista de deseos)
+• Corregida la pérdida de confirmaciones de compra y notas de los participantes
+• Corregida la carga de datos en dispositivos que vienen de versiones antiguas
+• Ya no se solicita el permiso de contactos
