@@ -86,9 +86,84 @@ abstract class AppDatabase : RoomDatabase() {
          * grupo, sorteio and sorteio_par are already correct or are new — no changes.
          */
         val MIGRATION_10_11 = object : Migration(10, 11) {
+            /** Retorna true se [table] possui a coluna [column]. */
+            private fun columnExists(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
+                db.query("PRAGMA table_info(`$table`)").use { cursor ->
+                    val nameIdx = cursor.getColumnIndex("name")
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(nameIdx) == column) return true
+                    }
+                }
+                return false
+            }
+
+            /** true se `grupo` está no formato do helper legado (`nome` NOT NULL). */
+            private fun grupoNoFormatoLegado(db: SupportSQLiteDatabase): Boolean {
+                db.query("PRAGMA table_info(`grupo`)").use { cursor ->
+                    val nameIdx = cursor.getColumnIndex("name")
+                    val notNullIdx = cursor.getColumnIndex("notnull")
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(nameIdx) == "nome") return cursor.getInt(notNullIdx) == 1
+                    }
+                }
+                return false
+            }
+
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Um banco criado pelo MySQLiteOpenHelper tem TODAS as tabelas no formato
+                // legado, que diverge do que o Room espera em nullability. Um banco que já
+                // passou pelo Room tem todas corretas — o bug do user_version só corrompia o
+                // carimbo, nunca o schema. Por isso uma detecção só, em `grupo`, decide pelo
+                // conjunto: `participante` e `desejo` são recriados de qualquer forma abaixo,
+                // e as demais só quando o banco é legado.
+                val bancoLegado = grupoNoFormatoLegado(db)
+
+                // --- grupo ---
+                // Esta migration nunca corrigiu `grupo`. O helper legado cria
+                // `id INTEGER PRIMARY KEY AUTOINCREMENT` (sem NOT NULL) e `nome TEXT NOT NULL`;
+                // o Room espera exatamente o inverso desde a v11. Bancos genuinamente v10 —
+                // instalações anteriores ao Room — falhavam na validação de schema, o Room
+                // revertia a migration e o app ficava sem carregar dados (o try/catch de
+                // AmigoSecretoApplication engole a exceção, então nem havia crash visível).
+                //
+                // Recriamos só quando a tabela está no formato legado: bancos que já passaram
+                // pelo Room têm `grupo` correto e não são tocados. Vem antes de `participante`
+                // porque este a referencia por FK.
+                if (bancoLegado) {
+                    db.execSQL("ALTER TABLE grupo RENAME TO grupo_old")
+                    db.execSQL("""
+                        CREATE TABLE grupo (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `nome` TEXT,
+                            `data` TEXT
+                        )
+                    """.trimIndent())
+                    db.execSQL("INSERT INTO grupo (id, nome, data) SELECT id, nome, data FROM grupo_old")
+                    db.execSQL("DROP TABLE grupo_old")
+                }
+
                 // --- participante ---
                 db.execSQL("ALTER TABLE participante RENAME TO participante_old")
+
+                // Bancos rebaixados pelo bug do user_version chegam aqui carimbados como v10
+                // mas com o schema da v12/v13 completo — inclusive as colunas de rastreamento,
+                // com dados. Até a v3.1 esta migration copiava só as colunas da v10 e as
+                // descartava justamente na atualização que corrige o bug.
+                //
+                // Quando elas existem em participante_old, são carregadas junto; a
+                // MIGRATION_11_12 usa addColumnIfMissing e simplesmente as pula depois.
+                // Em bancos genuinamente v10 as colunas não existem e nada muda.
+                val temRastreamento = columnExists(db, "participante_old", "confirmou_presente") &&
+                    columnExists(db, "participante_old", "foi_notificado") &&
+                    columnExists(db, "participante_old", "observacoes")
+
+                val colunasRastreamento = if (temRastreamento) {
+                    """,
+                        `confirmou_presente` INTEGER NOT NULL DEFAULT 0,
+                        `foi_notificado` INTEGER NOT NULL DEFAULT 0,
+                        `observacoes` TEXT"""
+                } else ""
+
                 db.execSQL("""
                     CREATE TABLE participante (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -97,16 +172,30 @@ abstract class AppDatabase : RoomDatabase() {
                         `telefone` TEXT,
                         `amigo_sorteado_id` INTEGER,
                         `enviado` INTEGER NOT NULL DEFAULT 0,
-                        `grupo_id` INTEGER NOT NULL DEFAULT 0,
+                        `grupo_id` INTEGER NOT NULL DEFAULT 0$colunasRastreamento,
                         FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
                     )
                 """.trimIndent())
-                db.execSQL("""
-                    INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id)
-                    SELECT id, nome, email, telefone, amigo_sorteado_id,
-                           COALESCE(enviado, 0), COALESCE(grupo_id, 0)
-                    FROM participante_old
-                """.trimIndent())
+
+                if (temRastreamento) {
+                    db.execSQL("""
+                        INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id,
+                                                  enviado, grupo_id,
+                                                  confirmou_presente, foi_notificado, observacoes)
+                        SELECT id, nome, email, telefone, amigo_sorteado_id,
+                               COALESCE(enviado, 0), COALESCE(grupo_id, 0),
+                               COALESCE(confirmou_presente, 0), COALESCE(foi_notificado, 0),
+                               observacoes
+                        FROM participante_old
+                    """.trimIndent())
+                } else {
+                    db.execSQL("""
+                        INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id)
+                        SELECT id, nome, email, telefone, amigo_sorteado_id,
+                               COALESCE(enviado, 0), COALESCE(grupo_id, 0)
+                        FROM participante_old
+                    """.trimIndent())
+                }
                 db.execSQL("DROP TABLE participante_old")
 
                 // --- desejo ---
@@ -131,6 +220,72 @@ abstract class AppDatabase : RoomDatabase() {
                     FROM desejo_old
                 """.trimIndent())
                 db.execSQL("DROP TABLE desejo_old")
+
+                // --- exclusao, sorteio e sorteio_par ---
+                // Também nunca foram corrigidas. No formato legado `exclusao` tem as duas
+                // colunas nullable (o Room as exige NOT NULL), `sorteio.id` não é NOT NULL e
+                // `sorteio_par` tem nomes e `enviado` nullable. Os CREATE TABLE IF NOT EXISTS
+                // abaixo eram no-op justamente nos bancos legados, que já tinham as tabelas.
+                if (bancoLegado) {
+                    db.execSQL("ALTER TABLE exclusao RENAME TO exclusao_old")
+                    db.execSQL("""
+                        CREATE TABLE exclusao (
+                            `participante_id` INTEGER NOT NULL,
+                            `excluido_id` INTEGER NOT NULL,
+                            PRIMARY KEY(`participante_id`, `excluido_id`),
+                            FOREIGN KEY(`participante_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                            FOREIGN KEY(`excluido_id`) REFERENCES `participante`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        )
+                    """.trimIndent())
+                    // Linhas com NULL não cabem no schema novo e não têm significado útil.
+                    db.execSQL("""
+                        INSERT INTO exclusao (participante_id, excluido_id)
+                        SELECT participante_id, excluido_id FROM exclusao_old
+                        WHERE participante_id IS NOT NULL AND excluido_id IS NOT NULL
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE exclusao_old")
+
+                    db.execSQL("ALTER TABLE sorteio RENAME TO sorteio_old")
+                    db.execSQL("""
+                        CREATE TABLE sorteio (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `grupo_id` INTEGER NOT NULL,
+                            `data_hora` TEXT NOT NULL,
+                            FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        )
+                    """.trimIndent())
+                    db.execSQL("""
+                        INSERT INTO sorteio (id, grupo_id, data_hora)
+                        SELECT id, grupo_id, data_hora FROM sorteio_old
+                        WHERE grupo_id IS NOT NULL AND data_hora IS NOT NULL
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE sorteio_old")
+
+                    db.execSQL("ALTER TABLE sorteio_par RENAME TO sorteio_par_old")
+                    db.execSQL("""
+                        CREATE TABLE sorteio_par (
+                            `sorteio_id` INTEGER NOT NULL,
+                            `participante_id` INTEGER NOT NULL,
+                            `sorteado_id` INTEGER NOT NULL,
+                            `nome_participante` TEXT NOT NULL,
+                            `nome_sorteado` TEXT NOT NULL,
+                            `enviado` INTEGER NOT NULL,
+                            PRIMARY KEY(`sorteio_id`, `participante_id`),
+                            FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        )
+                    """.trimIndent())
+                    db.execSQL("""
+                        INSERT INTO sorteio_par (sorteio_id, participante_id, sorteado_id,
+                                                 nome_participante, nome_sorteado, enviado)
+                        SELECT sorteio_id, participante_id, sorteado_id,
+                               COALESCE(nome_participante, ''), COALESCE(nome_sorteado, ''),
+                               COALESCE(enviado, 0)
+                        FROM sorteio_par_old
+                        WHERE sorteio_id IS NOT NULL AND participante_id IS NOT NULL
+                          AND sorteado_id IS NOT NULL
+                    """.trimIndent())
+                    db.execSQL("DROP TABLE sorteio_par_old")
+                }
 
                 // --- exclusao: index required by Room ---
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `exclusao` (`excluido_id`)")

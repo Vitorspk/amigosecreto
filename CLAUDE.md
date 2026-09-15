@@ -199,6 +199,31 @@ CREATE TABLE desejo (
 
 ---
 
+## MIGRATION_10_11 — dois cenários de entrada
+
+A migration trata dois tipos de banco carimbados como v10, distinguidos por uma detecção em
+`grupo` (`nome` NOT NULL ⇒ formato legado):
+
+| Origem | Schema em disco | O que a migration faz |
+|--------|-----------------|------------------------|
+| **Criado pelo `MySQLiteOpenHelper`** (instalação anterior ao Room) | formato legado em todas as tabelas | recria `grupo`, `exclusao`, `sorteio` e `sorteio_par` no formato do Room, além de `participante` e `desejo` |
+| **Rebaixado pelo bug do `user_version`** (v3.1 e anteriores) | já no formato do Room, com as colunas v12 e dados | só `participante`/`desejo` são recriados, preservando as colunas de rastreamento |
+
+Por que cada parte existe:
+
+- **Bancos legados falhavam a validação de schema** e o Room revertia a migration, deixando o app
+  sem carregar dados — sem crash visível, porque `AmigoSecretoApplication` engole a exceção. As
+  divergências eram em `grupo` (`id`/`nome` com nullability invertida), `exclusao` (colunas
+  nullable), `sorteio` (`id`) e `sorteio_par` (nomes e `enviado`). Os `CREATE TABLE IF NOT EXISTS`
+  de `sorteio`/`sorteio_par` eram no-op justamente nesses bancos, que já tinham as tabelas.
+- **Bancos rebaixados** chegam com as colunas da v12 preenchidas. Copiar só as colunas da v10
+  descartaria `confirmou_presente`, `foi_notificado` e `observacoes` na própria atualização que
+  corrige o bug.
+
+Coberto por `MigracaoAposDowngradeTest`, que exercita os dois caminhos.
+
+---
+
 ## Formato do Backup (JSON)
 
 `BackupManager` exporta/importa todos os dados em JSON. O campo `version` identifica o formato:
@@ -586,7 +611,7 @@ app/src/androidTest/java/activity/amigosecreto/
 └── ParticipantesActivityTest.kt       # Espresso — fluxos críticos de ParticipantesActivity (PR #51)
 ```
 
-### Cobertura Atual (619 testes unitários — BUILD SUCCESSFUL)
+### Cobertura Atual (622 testes unitários — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -611,6 +636,7 @@ app/src/androidTest/java/activity/amigosecreto/
 | ViewModel | `ParticipantesViewModelTest` | 33 |
 | Arquitetura | `DaosLegadosGuardTest` | 2 |
 | Activity | `AlterarDesejoMapeamentoTest` | 7 |
+| Migração | `MigracaoAposDowngradeTest` | 3 |
 
 **Espresso (androidTest):** `ParticipantesActivityTest` — testes instrumentados (PR #51)
 
