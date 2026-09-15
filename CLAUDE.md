@@ -611,7 +611,7 @@ app/src/androidTest/java/activity/amigosecreto/
 └── ParticipantesActivityTest.kt       # Espresso — fluxos críticos de ParticipantesActivity (PR #51)
 ```
 
-### Cobertura Atual (622 testes unitários — BUILD SUCCESSFUL)
+### Cobertura Atual (623 testes unitários — BUILD SUCCESSFUL)
 
 | Camada | Arquivo | Casos |
 |--------|---------|------:|
@@ -636,7 +636,7 @@ app/src/androidTest/java/activity/amigosecreto/
 | ViewModel | `ParticipantesViewModelTest` | 33 |
 | Arquitetura | `DaosLegadosGuardTest` | 2 |
 | Activity | `AlterarDesejoMapeamentoTest` | 7 |
-| Migração | `MigracaoAposDowngradeTest` | 3 |
+| Migração | `MigracaoAposDowngradeTest` | 4 |
 
 **Espresso (androidTest):** `ParticipantesActivityTest` — testes instrumentados (PR #51)
 

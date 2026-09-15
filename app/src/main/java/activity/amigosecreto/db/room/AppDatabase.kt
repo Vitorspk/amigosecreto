@@ -97,6 +97,34 @@ abstract class AppDatabase : RoomDatabase() {
                 return false
             }
 
+            private fun sqlCreateSorteio(seNaoExistir: Boolean = false): String {
+                val ifNot = if (seNaoExistir) "IF NOT EXISTS " else ""
+                return """
+                    CREATE TABLE ${ifNot}sorteio (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `grupo_id` INTEGER NOT NULL,
+                        `data_hora` TEXT NOT NULL,
+                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent()
+            }
+
+            private fun sqlCreateSorteioPar(seNaoExistir: Boolean = false): String {
+                val ifNot = if (seNaoExistir) "IF NOT EXISTS " else ""
+                return """
+                    CREATE TABLE ${ifNot}sorteio_par (
+                        `sorteio_id` INTEGER NOT NULL,
+                        `participante_id` INTEGER NOT NULL,
+                        `sorteado_id` INTEGER NOT NULL,
+                        `nome_participante` TEXT NOT NULL,
+                        `nome_sorteado` TEXT NOT NULL,
+                        `enviado` INTEGER NOT NULL,
+                        PRIMARY KEY(`sorteio_id`, `participante_id`),
+                        FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent()
+            }
+
             /** true se `grupo` está no formato do helper legado (`nome` NOT NULL). */
             private fun grupoNoFormatoLegado(db: SupportSQLiteDatabase): Boolean {
                 db.query("PRAGMA table_info(`grupo`)").use { cursor ->
@@ -153,16 +181,18 @@ abstract class AppDatabase : RoomDatabase() {
                 // Quando elas existem em participante_old, são carregadas junto; a
                 // MIGRATION_11_12 usa addColumnIfMissing e simplesmente as pula depois.
                 // Em bancos genuinamente v10 as colunas não existem e nada muda.
-                val temRastreamento = columnExists(db, "participante_old", "confirmou_presente") &&
-                    columnExists(db, "participante_old", "foi_notificado") &&
-                    columnExists(db, "participante_old", "observacoes")
+                // Avaliadas uma a uma, e não em bloco: o comentário da MIGRATION_11_12 registra
+                // dispositivos que ficaram com estado parcial ("duplicate column name"), então
+                // um subconjunto presente é possível. Exigir as três descartaria as existentes.
+                val rastreamento = listOf(
+                    Triple("confirmou_presente", "INTEGER NOT NULL DEFAULT 0", "COALESCE(confirmou_presente, 0)"),
+                    Triple("foi_notificado", "INTEGER NOT NULL DEFAULT 0", "COALESCE(foi_notificado, 0)"),
+                    Triple("observacoes", "TEXT", "observacoes"),
+                ).filter { (coluna, _, _) -> columnExists(db, "participante_old", coluna) }
 
-                val colunasRastreamento = if (temRastreamento) {
-                    """,
-                        `confirmou_presente` INTEGER NOT NULL DEFAULT 0,
-                        `foi_notificado` INTEGER NOT NULL DEFAULT 0,
-                        `observacoes` TEXT"""
-                } else ""
+                val colunasRastreamento = rastreamento.joinToString("") { (coluna, tipo, _) ->
+                    ",\n                        `$coluna` $tipo"
+                }
 
                 db.execSQL("""
                     CREATE TABLE participante (
@@ -177,25 +207,12 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """.trimIndent())
 
-                if (temRastreamento) {
-                    db.execSQL("""
-                        INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id,
-                                                  enviado, grupo_id,
-                                                  confirmou_presente, foi_notificado, observacoes)
-                        SELECT id, nome, email, telefone, amigo_sorteado_id,
-                               COALESCE(enviado, 0), COALESCE(grupo_id, 0),
-                               COALESCE(confirmou_presente, 0), COALESCE(foi_notificado, 0),
-                               observacoes
-                        FROM participante_old
-                    """.trimIndent())
-                } else {
-                    db.execSQL("""
-                        INSERT INTO participante (id, nome, email, telefone, amigo_sorteado_id, enviado, grupo_id)
-                        SELECT id, nome, email, telefone, amigo_sorteado_id,
-                               COALESCE(enviado, 0), COALESCE(grupo_id, 0)
-                        FROM participante_old
-                    """.trimIndent())
-                }
+                val destino = (listOf("id", "nome", "email", "telefone", "amigo_sorteado_id", "enviado", "grupo_id") +
+                    rastreamento.map { (coluna, _, _) -> coluna }).joinToString(", ")
+                val origem = (listOf("id", "nome", "email", "telefone", "amigo_sorteado_id",
+                    "COALESCE(enviado, 0)", "COALESCE(grupo_id, 0)") +
+                    rastreamento.map { (_, _, select) -> select }).joinToString(", ")
+                db.execSQL("INSERT INTO participante ($destino) SELECT $origem FROM participante_old")
                 db.execSQL("DROP TABLE participante_old")
 
                 // --- desejo ---
@@ -246,14 +263,7 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("DROP TABLE exclusao_old")
 
                     db.execSQL("ALTER TABLE sorteio RENAME TO sorteio_old")
-                    db.execSQL("""
-                        CREATE TABLE sorteio (
-                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                            `grupo_id` INTEGER NOT NULL,
-                            `data_hora` TEXT NOT NULL,
-                            FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                        )
-                    """.trimIndent())
+                    db.execSQL(sqlCreateSorteio())
                     db.execSQL("""
                         INSERT INTO sorteio (id, grupo_id, data_hora)
                         SELECT id, grupo_id, data_hora FROM sorteio_old
@@ -262,18 +272,7 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("DROP TABLE sorteio_old")
 
                     db.execSQL("ALTER TABLE sorteio_par RENAME TO sorteio_par_old")
-                    db.execSQL("""
-                        CREATE TABLE sorteio_par (
-                            `sorteio_id` INTEGER NOT NULL,
-                            `participante_id` INTEGER NOT NULL,
-                            `sorteado_id` INTEGER NOT NULL,
-                            `nome_participante` TEXT NOT NULL,
-                            `nome_sorteado` TEXT NOT NULL,
-                            `enviado` INTEGER NOT NULL,
-                            PRIMARY KEY(`sorteio_id`, `participante_id`),
-                            FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                        )
-                    """.trimIndent())
+                    db.execSQL(sqlCreateSorteioPar())
                     db.execSQL("""
                         INSERT INTO sorteio_par (sorteio_id, participante_id, sorteado_id,
                                                  nome_participante, nome_sorteado, enviado)
@@ -290,28 +289,11 @@ abstract class AppDatabase : RoomDatabase() {
                 // --- exclusao: index required by Room ---
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_exclusao_excluido_id` ON `exclusao` (`excluido_id`)")
 
-                // --- sorteio and sorteio_par: created by MySQLiteOpenHelper v10 via SorteioDAO ---
-                // Ensure they exist (database may have been created before v10 was complete)
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sorteio (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `grupo_id` INTEGER NOT NULL,
-                        `data_hora` TEXT NOT NULL,
-                        FOREIGN KEY(`grupo_id`) REFERENCES `grupo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                    )
-                """.trimIndent())
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sorteio_par (
-                        `sorteio_id` INTEGER NOT NULL,
-                        `participante_id` INTEGER NOT NULL,
-                        `sorteado_id` INTEGER NOT NULL,
-                        `nome_participante` TEXT NOT NULL,
-                        `nome_sorteado` TEXT NOT NULL,
-                        `enviado` INTEGER NOT NULL,
-                        PRIMARY KEY(`sorteio_id`, `participante_id`),
-                        FOREIGN KEY(`sorteio_id`) REFERENCES `sorteio`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
-                    )
-                """.trimIndent())
+                // --- sorteio e sorteio_par ---
+                // Bancos criados antes de a v10 estar completa podem não ter estas tabelas.
+                // Mesmo DDL usado na recriação acima, para as duas cópias não divergirem.
+                db.execSQL(sqlCreateSorteio(seNaoExistir = true))
+                db.execSQL(sqlCreateSorteioPar(seNaoExistir = true))
             }
         }
 

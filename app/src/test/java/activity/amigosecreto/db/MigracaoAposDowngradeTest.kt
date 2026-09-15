@@ -189,4 +189,51 @@ class MigracaoAposDowngradeTest {
             while (c.moveToNext()) if (c.getString(idx) == coluna) return true
             false
         }
+
+    @Test
+    fun banco_legado_preserva_exclusoes_e_sorteios_na_migracao() {
+        // Cobre a parte mais arriscada da migration: renomear e recriar `exclusao`, `sorteio`
+        // e `sorteio_par`, incluindo os filtros WHERE ... IS NOT NULL e os COALESCE.
+        MySQLiteOpenHelper.resetInstanceForTesting()
+        ctx.deleteDatabase("amigosecreto_v10.db")
+        val legado = MySQLiteOpenHelper.getInstance(ctx).writableDatabase
+        val nomeLegado = java.io.File(legado.path).name
+
+        legado.execSQL("INSERT INTO grupo (nome, data) VALUES ('Família', '01/01/2026')")
+        legado.execSQL("INSERT INTO participante (nome, enviado, grupo_id) VALUES ('Ana', 0, 1)")
+        legado.execSQL("INSERT INTO participante (nome, enviado, grupo_id) VALUES ('Bob', 0, 1)")
+        legado.execSQL("INSERT INTO exclusao (participante_id, excluido_id) VALUES (1, 2)")
+        legado.execSQL("INSERT INTO sorteio (grupo_id, data_hora) VALUES (1, '2026-03-17T19:00:00')")
+        // nome_sorteado e enviado nulos no schema legado — o COALESCE precisa dar conta,
+        // já que o schema do Room os exige NOT NULL.
+        legado.execSQL(
+            "INSERT INTO sorteio_par (sorteio_id, participante_id, sorteado_id, " +
+                "nome_participante, nome_sorteado, enviado) VALUES (1, 1, 2, 'Ana', NULL, NULL)"
+        )
+        MySQLiteOpenHelper.resetInstanceForTesting()
+
+        val db = Room.databaseBuilder(ctx, AppDatabase::class.java, nomeLegado)
+            .addMigrations(
+                AppDatabase.MIGRATION_10_11,
+                AppDatabase.MIGRATION_11_12,
+                AppDatabase.MIGRATION_12_13,
+            )
+            .allowMainThreadQueries()
+            .build()
+
+        val participantes = runBlocking { db.participanteDao().listarPorGrupo(1) }
+        val ana = participantes.first { it.nome == "Ana" }
+        val bob = participantes.first { it.nome == "Bob" }
+        assertTrue("a exclusão de Ana→Bob não sobreviveu", ana.idsExcluidos.contains(bob.id))
+
+        val sorteios = runBlocking { db.sorteioDao().listarPorGrupo(1) }
+        assertEquals(1, sorteios.size)
+        assertEquals("2026-03-17T19:00:00", sorteios[0].dataHora)
+        val par = sorteios[0].pares.single()
+        assertEquals("Ana", par.nomeParticipante)
+        assertEquals("", par.nomeSorteado)   // NULL → "" via COALESCE
+        assertFalse(par.enviado)             // NULL → 0 via COALESCE
+        db.close()
+        ctx.deleteDatabase(nomeLegado)
+    }
 }
