@@ -16,6 +16,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -35,6 +36,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import activity.amigosecreto.db.Grupo
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.util.CompartilharHelper
+import activity.amigosecreto.util.ParticipanteAcoesLayout
 import activity.amigosecreto.util.StateViewHelper
 import activity.amigosecreto.util.ValidationUtils
 import activity.amigosecreto.util.WindowInsetsUtils
@@ -998,6 +1000,9 @@ class ParticipantesActivity : AppCompatActivity() {
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = convertView ?: LayoutInflater.from(ctx).inflate(R.layout.item_participante, parent, false)
+
+            view.findViewById<GridLayout>(R.id.grid_acoes_participante).columnCount =
+                ParticipanteAcoesLayout.colunas(ctx.resources.configuration.screenWidthDp)
 
             val p = itens[position]
             val tvNumero = view.findViewById<TextView>(R.id.tv_numero)
