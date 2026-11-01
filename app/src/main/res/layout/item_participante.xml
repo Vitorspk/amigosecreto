@@ -85,11 +85,11 @@
             </LinearLayout>
         </LinearLayout>
         <GridLayout
+            android:id="@+id/grid_acoes_participante"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="8dp"
             android:paddingBottom="0dp"
-            android:columnCount="@integer/participant_actions_columns"
             android:alignmentMode="alignMargins"
             android:layout_gravity="end"
             android:background="@drawable/bg_action_strip"

@@ -23,6 +23,7 @@ import org.hamcrest.Matchers.not
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.Grupo
+import activity.amigosecreto.util.ParticipanteAcoesLayout
 import activity.amigosecreto.db.room.AppDatabase
 import activity.amigosecreto.util.AsyncDatabaseHelper
 import kotlinx.coroutines.runBlocking
@@ -146,6 +147,18 @@ class ParticipantesActivityTest {
         onView(withId(R.id.btn_ver_desejos)).check(matches(withEffectiveVisibility(Visibility.GONE)))
         pressBack()
         org.junit.Assert.assertEquals(AppDatabase.SCHEMA_VERSION, db.openHelper.writableDatabase.version)
+    }
+
+    @Test
+    fun grade_de_acoes_usa_colunas_conforme_a_largura_da_tela() {
+        adicionarParticipante("Ana")
+        onView(withText("Ana")).check(matches(isDisplayed()))
+        scenario.onActivity {
+            val lista = it.findViewById<android.widget.ListView>(R.id.lv_participantes)
+            val grade = lista.getChildAt(0).findViewById<android.widget.GridLayout>(R.id.grid_acoes_participante)
+            val esperado = ParticipanteAcoesLayout.colunas(it.resources.configuration.screenWidthDp)
+            org.junit.Assert.assertEquals(esperado, grade.columnCount)
+        }
     }
 
     @Test
