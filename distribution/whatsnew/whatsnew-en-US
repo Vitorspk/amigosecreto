@@ -1,6 +1,6 @@
-Version 3.2 - Reliability fixes
+Version 3.3 - New look
 
-• Backup and restore now keep group settings (date, location, price range, rules and wishlist privacy)
-• Fixed loss of participants' purchase confirmations and notes
-• Fixed data loading on devices upgrading from older app versions
-• The contacts permission is no longer requested
+• A new look across every screen: blue, violet and gold, with illustrations and a refined dark mode
+• After the draw, tap a participant to open the reveal: the result stays hidden until you tap
+• "Clear participants" now lives in the group screen menu
+• Forms and dialogs are easier to use with the keyboard open and with larger fonts

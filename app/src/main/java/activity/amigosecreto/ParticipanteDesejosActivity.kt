@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import timber.log.Timber
@@ -22,6 +23,7 @@ import activity.amigosecreto.db.Participante
 import activity.amigosecreto.repository.DesejoRepository
 import activity.amigosecreto.util.GeminiClient
 import activity.amigosecreto.util.WindowInsetsUtils
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -76,11 +78,12 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         participante = p
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.title = "${participante.nome} 🎁"
+        toolbar.title = participante.nome
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setOnMenuItemClickListener { item -> onMenuItemSelected(item) }
 
         lvDesejos = findViewById(R.id.lv_desejos)
+        WindowInsetsUtils.applyImeBottomPadding(lvDesejos)
         tvPresentesCount = findViewById(R.id.tv_presentes_count)
         layoutEmpty = findViewById(R.id.layout_empty)
         val btnAddDesejo = findViewById<MaterialButton>(R.id.btn_add_desejo)
@@ -98,16 +101,21 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
     }
 
     private fun carregarDesejos() = lifecycleScope.launch {
-        val desejos = desejoRepository.listarPorParticipante(participante.id)
-        listaDesejos.clear()
-        listaDesejos.addAll(desejos)
-        adapter.notifyDataSetChanged()
+        AsyncDatabaseHelper.idlingResource.increment()
+        try {
+            val desejos = desejoRepository.listarPorParticipante(participante.id)
+            listaDesejos.clear()
+            listaDesejos.addAll(desejos)
+            adapter.notifyDataSetChanged()
 
-        tvPresentesCount.text = getString(R.string.label_wishes_count_format, listaDesejos.size)
+            tvPresentesCount.text = getString(R.string.label_wishes_count_format, listaDesejos.size)
 
-        val isEmpty = listaDesejos.isEmpty()
-        layoutEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        lvDesejos.visibility = if (isEmpty) View.GONE else View.VISIBLE
+            val isEmpty = listaDesejos.isEmpty()
+            layoutEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            lvDesejos.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        } finally {
+            AsyncDatabaseHelper.idlingResource.decrement()
+        }
     }
 
     private fun mostrarDialogAdicionarDesejo() {
@@ -118,7 +126,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
         val etPrecoMax = view.findViewById<TextInputEditText>(R.id.et_preco_maximo)
         val etLojas = view.findViewById<TextInputEditText>(R.id.et_lojas)
 
-        val dialog = AlertDialog.Builder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(view)
             .setTitle(R.string.dialog_add_wish_title)
             .setPositiveButton(R.string.button_save, null)
@@ -193,7 +201,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
 
         tvProdutoNome.text = desejo.produto
 
-        val dialog = AlertDialog.Builder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .create()
 
@@ -210,7 +218,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
 
         cardRemover.setOnClickListener {
             dialog.dismiss()
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.dialog_remove_wish_title)
                 .setMessage(getString(R.string.dialog_remove_wish_message_format, desejo.produto))
                 // Sem trava de double-tap aqui, ao contrário dos outros fluxos de escrita:
@@ -293,7 +301,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
             return
         }
 
-        val progressDialog = AlertDialog.Builder(this)
+        val progressDialog = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialog_sugestoes_titulo)
             .setMessage(R.string.dialog_sugestoes_carregando)
             .setCancelable(false)
@@ -314,7 +322,7 @@ class ParticipanteDesejosActivity : AppCompatActivity() {
                 return@launch
             }
 
-            AlertDialog.Builder(this@ParticipanteDesejosActivity)
+            MaterialAlertDialogBuilder(this@ParticipanteDesejosActivity)
                 .setTitle(R.string.dialog_sugestoes_titulo)
                 .setMessage(sugestoes)
                 .setPositiveButton(android.R.string.ok, null)

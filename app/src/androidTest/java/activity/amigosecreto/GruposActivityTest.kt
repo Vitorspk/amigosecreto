@@ -3,6 +3,7 @@ package activity.amigosecreto
 import android.Manifest
 import android.os.Build
 import androidx.test.core.app.ActivityScenario
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
@@ -61,6 +62,9 @@ class GruposActivityTest {
         OnboardingActivity.marcarOnboardingConcluido(ctx)
         // Activity lancada APOS limpar o banco para evitar race condition
         scenario = ActivityScenario.launch(GruposActivity::class.java)
+        // O Espresso nao rastreia a animacao de troca de item: em aparelho lento a view antiga
+        // ainda esta na hierarquia quando doesNotExist() roda. Producao mantem as animacoes.
+        scenario.onActivity { it.findViewById<RecyclerView>(R.id.rv_grupos).itemAnimator = null }
     }
 
     @After

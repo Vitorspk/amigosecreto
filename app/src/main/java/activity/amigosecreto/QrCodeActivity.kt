@@ -65,7 +65,7 @@ class QrCodeActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar_qrcode)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
+        supportActionBar?.title = getString(R.string.qr_menu_item)
 
         val rootView = findViewById<View>(R.id.root_qrcode)
         val padTop = rootView.paddingTop

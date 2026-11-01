@@ -1,63 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_purple">
-
-    <!-- Purple AppBar -->
+    android:background="@color/background">
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_primary"
+        android:background="@color/background"
         android:fitsSystemWindows="true"
-        app:elevation="4dp">
-
+        app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_grupos"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:menu="@menu/menu_grupos">
-
-            <!-- Custom Title with Icon -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_gravity="start">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/emoji_gift"
-                    android:importantForAccessibility="no"
-                    android:textSize="28sp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/app_name"
-                    android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.appbar.MaterialToolbar>
-
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize"
+            app:menu="@menu/menu_grupos"
+            android:background="@color/background"
+            app:titleTextColor="@color/text_primary"
+            app:navigationIconTint="@color/text_primary"
+            app:titleTextAppearance="@style/TextAppearance.Amigo.Title"
+            app:titleCentered="false"
+            app:titleMarginTop="2dp"
+            app:titleMarginBottom="4dp"
+            app:title="@string/app_name"
+            app:logo="@drawable/ic_brand_gift_toolbar"
+            app:logoDescription="@string/app_name"
+            app:subtitle="@string/v2_brand_subtitle"
+            app:subtitleTextColor="@color/text_secondary">
+            </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -65,105 +45,116 @@
             android:paddingHorizontal="@dimen/activity_horizontal_margin"
             android:paddingTop="20dp"
             android:paddingBottom="20dp">
-
-            <!-- Welcome Section -->
-            <LinearLayout
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="16dp">
-
+                android:background="@drawable/bg_hero"
+                android:layout_marginBottom="16dp"
+                android:minHeight="128dp">
+                <ImageView
+                    android:layout_width="112dp"
+                    android:layout_height="128dp"
+                    android:src="@drawable/bg_gift_scene"
+                    android:importantForAccessibility="no"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="4dp" />
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="108dp"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp">
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/emoji_diamond"
-                        android:importantForAccessibility="no"
-                        android:textSize="16sp"
-                        android:layout_marginEnd="8dp" />
-
+                        android:text="@string/v2_hero_eyebrow"
+                        android:textSize="10sp"
+                        android:textColor="@color/brand_gold"
+                        android:letterSpacing="0.12"
+                        android:textStyle="bold" />
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/greeting_welcome"
-                        android:textColor="@color/purple_dark"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-
+                        android:textSize="25sp"
+                        android:textColor="@color/hero_text"
+                        android:textStyle="bold"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="-0.025" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/description_organize_groups"
+                        android:textSize="13sp"
+                        android:textColor="@color/hero_muted"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:id="@+id/v2_hero_description" />
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/description_organize_groups"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
-
-            </LinearLayout>
-
-            <!-- Main Action Buttons -->
+            </FrameLayout>
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_criar_grupo"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginBottom="24dp"
-                android:background="@drawable/btn_gradient_purple"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="18dp"
                 android:text="@string/button_create_new_group"
-                android:textColor="@color/white"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textAllCaps="false"
-                android:gravity="start|center_vertical"
+                android:gravity="center"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                app:icon="@android:drawable/ic_input_add"
-                app:iconTint="@color/white"
-                app:iconSize="28dp"
-                app:iconGravity="start"
-                app:cornerRadius="28dp"
-                app:elevation="6dp" />
-
-            <!-- Grupos Section -->
+                app:icon="@drawable/ic_add"
+                app:iconSize="24dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="@dimen/radius_button"
+                style="@style/Widget.Amigo.Button"
+                android:stateListAnimator="@null"
+                android:minHeight="50dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:id="@+id/tv_home_summary"
+                android:background="@drawable/bg_surface_soft"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:drawablePadding="8dp"
+                app:drawableStartCompat="@drawable/ic_chart"
+                app:drawableTint="@color/md_theme_primary" />
             <TextView
                 android:id="@+id/tv_grupos_header"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/label_my_groups"
-                android:textColor="@color/purple_dark"
+                android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
-
             <ViewStub
                 android:id="@+id/stub_loading"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout="@layout/loading_state"
                 android:visibility="gone" />
-
             <ViewStub
                 android:id="@+id/stub_empty"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout="@layout/empty_state"
                 android:visibility="gone" />
-
-            <!-- Lista de Grupos -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_grupos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_grupo" />
-
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

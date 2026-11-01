@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="3" failures="0" errors="0" skipped="0" time="14.548" timestamp="2026-10-31T22:02:13" hostname="localhost">
+  <testsuite name="activity.amigosecreto.DesejosNavigationTest" tests="3" failures="0" errors="0" skipped="0" time="11.684" timestamp="2026-10-31T22:02:13" hostname="localhost">
+    <properties>
+      <property name="device" value="Small_Phone(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="desejos_editaveis_permitem_rolar_ate_o_ultimo_item" classname="activity.amigosecreto.DesejosNavigationTest" time="3.645" />
+    <testcase name="desejos_revelados_permitem_rolar_sem_rebaixar_o_banco" classname="activity.amigosecreto.DesejosNavigationTest" time="2.634" />
+    <testcase name="lista_global_abre_detalhe_com_dados_e_acao_acessiveis" classname="activity.amigosecreto.DesejosNavigationTest" time="5.405" />
+  </testsuite>
+</testsuites>

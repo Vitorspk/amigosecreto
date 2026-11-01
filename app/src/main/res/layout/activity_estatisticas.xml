@@ -1,206 +1,272 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <com.google.android.material.appbar.AppBarLayout
         android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_primary"
-        app:elevation="8dp">
-
+        android:background="@color/background"
+        app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_estatisticas"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="@color/white"
-            app:titleTextColor="@color/white"
-            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
-
+            app:navigationIconTint="@color/text_primary"
+            app:titleTextColor="@color/text_primary"
+            app:titleTextAppearance="@style/TextAppearance.Amigo.Title"
+            android:background="@color/background"
+            app:titleCentered="false" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_estatisticas"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
-
+            android:padding="@dimen/space_screen">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/v2_statistics_eyebrow"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="bold"
+                android:letterSpacing="0.10"
+                android:layout_marginBottom="16dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp"
+                android:baselineAligned="false">
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="0dp"
+                    app:cardElevation="1dp"
+                    app:cardCornerRadius="18dp"
+                    style="@style/Widget.Amigo.Card"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="0dp"
+                    app:cardBackgroundColor="@color/reveal_start"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:minHeight="144dp">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_group"
+                            android:importantForAccessibility="no"
+                            app:tint="@color/brand_gold" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/estatisticas_label_total_grupos"
+                            android:textSize="12sp"
+                            android:textColor="@color/hero_muted"
+                            android:layout_marginTop="12dp" />
+                        <TextView
+                            android:id="@+id/tv_estat_total_grupos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/hero_text"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.Amigo.Display"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="0dp"
+                    app:cardElevation="1dp"
+                    app:cardCornerRadius="18dp"
+                    style="@style/Widget.Amigo.Card"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/surface"
+                    android:layout_marginStart="6dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:minHeight="144dp">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_person"
+                            android:importantForAccessibility="no"
+                            app:tint="@color/md_theme_primary" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/estatisticas_label_total_participantes"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="12dp" />
+                        <TextView
+                            android:id="@+id/tv_estat_total_participantes"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/purple_primary"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.Amigo.Display"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp"
+                android:baselineAligned="false">
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="0dp"
+                    app:cardElevation="1dp"
+                    app:cardCornerRadius="18dp"
+                    style="@style/Widget.Amigo.Card"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/surface"
+                    android:layout_marginEnd="6dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:minHeight="144dp">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_dice"
+                            android:importantForAccessibility="no"
+                            app:tint="@color/md_theme_primary" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/estatisticas_label_total_sorteios"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="12dp" />
+                        <TextView
+                            android:id="@+id/tv_estat_total_sorteios"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/purple_primary"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.Amigo.Display"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="0dp"
+                    app:cardElevation="1dp"
+                    app:cardCornerRadius="18dp"
+                    style="@style/Widget.Amigo.Card"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/surface"
+                    android:layout_marginStart="6dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:minHeight="144dp">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_gift"
+                            android:importantForAccessibility="no"
+                            app:tint="@color/md_theme_primary" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/estatisticas_label_total_desejos"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="12dp" />
+                        <TextView
+                            android:id="@+id/tv_estat_total_desejos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/purple_primary"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.Amigo.Display"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
-
+                android:layout_marginBottom="0dp"
+                app:cardElevation="1dp"
+                app:cardCornerRadius="18dp"
+                style="@style/Widget.Amigo.Card"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp"
+                android:layout_weight="0"
+                app:cardBackgroundColor="@color/surface">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/estatisticas_label_total_grupos"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/tv_estat_total_grupos"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/purple_primary"
-                        android:text="0" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/estatisticas_label_total_participantes"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/tv_estat_total_participantes"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/purple_primary"
-                        android:text="0" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/estatisticas_label_total_sorteios"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/tv_estat_total_sorteios"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/purple_primary"
-                        android:text="0" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/estatisticas_label_total_desejos"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/tv_estat_total_desejos"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/purple_primary"
-                        android:text="0" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:padding="16dp"
+                    android:minHeight="100dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_chart"
+                        android:importantForAccessibility="no"
+                        app:tint="@color/md_theme_primary" />
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/estatisticas_label_media_valor"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="12dp" />
                     <TextView
                         android:id="@+id/tv_estat_media_valor"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textSize="22sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="@color/purple_primary"
-                        android:text="@string/dashboard_nao_definido" />
-
+                        android:text="@string/dashboard_nao_definido"
+                        android:layout_marginTop="6dp" />
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
-
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

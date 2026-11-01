@@ -1,38 +1,37 @@
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="activity.amigosecreto.ListarDesejos">
-
     <com.google.android.material.appbar.AppBarLayout
         android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_primary"
-        app:elevation="8dp">
-
+        android:background="@color/background"
+        app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="🎁 Minha Lista de Desejos"
-            app:titleCentered="true"
-            app:titleTextColor="@color/white"
-            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
-
+            app:title="Minha Lista de Desejos"
+            app:titleCentered="false"
+            app:titleTextColor="@color/text_primary"
+            app:titleTextAppearance="@style/TextAppearance.Amigo.Title"
+            android:background="@color/background"
+            app:navigationIconTint="@color/text_primary" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <ListView
         android:id="@+id/lv_desejos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
+        android:padding="@dimen/space_screen"
         android:clipToPadding="false"
         android:divider="@android:color/transparent"
         android:dividerHeight="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-
     <ViewStub
         android:id="@+id/stub_loading"
         android:layout_width="match_parent"
@@ -40,7 +39,6 @@
         android:layout="@layout/loading_state"
         android:layout_gravity="center"
         android:visibility="gone" />
-
     <ViewStub
         android:id="@+id/stub_empty"
         android:layout_width="match_parent"
@@ -48,7 +46,6 @@
         android:layout="@layout/empty_state"
         android:layout_gravity="center"
         android:visibility="gone" />
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_novo"
         android:layout_width="wrap_content"
@@ -56,8 +53,8 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         app:srcCompat="@drawable/ic_gift"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/purple_primary"
-        app:elevation="8dp" />
-
+        app:tint="@color/md_theme_onPrimaryContainer"
+        app:backgroundTint="@color/md_theme_primaryContainer"
+        app:elevation="0dp"
+        android:contentDescription="@string/button_add" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

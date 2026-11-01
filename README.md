@@ -323,6 +323,9 @@ Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView(
 
 | Documento | Descrição |
 |-----------|-----------|
+| [`docs/REDESIGN_PLAN.md`](docs/REDESIGN_PLAN.md) | Plano obrigatório do redesign, status por etapa e registro de cada sessão |
+| [`docs/REDESIGN_DESIGN_SYSTEM.md`](docs/REDESIGN_DESIGN_SYSTEM.md) | Identidade visual, componentes e regras de acessibilidade do redesign |
+| [`docs/redesign/evidence/verification.json`](docs/redesign/evidence/verification.json) | Resultados consolidados das verificações e estado da revisão visual |
 | [`documents/TECHNICAL_ANALYSIS.md`](documents/TECHNICAL_ANALYSIS.md) | Análise técnica completa e roadmap de melhorias |
 | [`documents/TEST_PLAN.md`](documents/TEST_PLAN.md) | Plano de testes (Fases 1–3) |
 | [`documents/RELEASE_INSTRUCTIONS.md`](documents/RELEASE_INSTRUCTIONS.md) | Processo de release detalhado |

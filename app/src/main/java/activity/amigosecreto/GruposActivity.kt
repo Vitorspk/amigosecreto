@@ -10,10 +10,12 @@ import timber.log.Timber
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -56,13 +58,8 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
     private var pendingEditNomeOriginal: String? = null
     private var pendingEditButton: View? = null
 
-    // Arrays de emojis e gradientes para variar os cards
+    // Emoji identifica cada encontro; os cards compartilham a mesma superfície.
     private val emojis = arrayOf("🎅", "🏝️", "🎄", "🎉", "🎊", "🎁", "🎈", "🌟", "💝", "🎂")
-    private val gradientes = intArrayOf(
-        R.drawable.card_gradient_orange,
-        R.drawable.card_gradient_blue,
-        R.drawable.card_gradient_green
-    )
 
     private val solicitarPermissaoNotificacao = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -99,7 +96,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar_grupos)
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
+        supportActionBar?.title = getString(R.string.app_name)
 
         rvGrupos = findViewById(R.id.rv_grupos)
         btnCriarGrupo = findViewById(R.id.btn_criar_grupo)
@@ -110,7 +107,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
             contentView = rvGrupos
         )
 
-        adapter = GruposRecyclerAdapter(this, emojis, gradientes, this)
+        adapter = GruposRecyclerAdapter(this, emojis, this)
         rvGrupos.layoutManager = LinearLayoutManager(this)
         rvGrupos.adapter = adapter
 
@@ -140,7 +137,19 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
 
         viewModel.grupos.observe(this) { lista ->
             adapter.setItens(lista)
-            if (lista.isEmpty()) stateHelper.showEmpty() else stateHelper.showContent()
+            findViewById<TextView>(R.id.tv_home_summary).apply {
+                visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
+                val total = lista.sumOf { it.totalParticipantes }
+                text = getString(R.string.v2_home_summary,
+                    resources.getQuantityString(R.plurals.v2_group_count, lista.size, lista.size),
+                    resources.getQuantityString(R.plurals.label_participants_in_group, total, total))
+            }
+            findViewById<View>(R.id.v2_hero_description).visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+            if (lista.isEmpty()) {
+                stateHelper.showEmpty()
+                findViewById<TextView>(R.id.tv_empty_title).setText(R.string.v2_empty_groups)
+                findViewById<TextView>(R.id.tv_empty_message).setText(R.string.v2_empty_groups_hint)
+            } else stateHelper.showContent()
         }
 
         viewModel.errorMessage.observe(this) { msg ->
@@ -243,7 +252,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
     }
 
     private fun exibirSobre() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialog_about_title)
             .setMessage(R.string.dialog_about_message)
             .setPositiveButton(android.R.string.ok, null)
@@ -272,7 +281,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
     }
 
     private fun confirmarLimparTodosDados() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialog_clear_all_title)
             .setMessage(R.string.dialog_clear_all_message)
             .setPositiveButton(R.string.button_clear_all_yes) { _, _ ->
@@ -294,7 +303,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
     }
 
     private fun confirmarEImportarBackup(uri: Uri) {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.backup_confirmar_titulo)
             .setMessage(R.string.backup_confirmar_mensagem)
             .setPositiveButton(R.string.backup_confirmar_sim) { _, _ -> lerEImportarBackup(uri) }
@@ -323,7 +332,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
             getString(R.string.ordenar_nome),
             getString(R.string.ordenar_evento)
         )
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialog_ordenar_titulo)
             .setSingleChoiceItems(opcoes, sortOrder) { dialog, which ->
                 sortOrder = which
@@ -347,7 +356,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
         val chipTrabalho = dialogView.findViewById<Chip>(R.id.chip_trabalho)
         val chipAmigos = dialogView.findViewById<Chip>(R.id.chip_amigos)
 
-        val dialog = AlertDialog.Builder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -400,7 +409,7 @@ class GruposActivity : AppCompatActivity(), GruposRecyclerAdapter.OnGrupoActionL
     }
 
     override fun onRemover(grupo: Grupo) {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.grupo_dialog_excluir_titulo)
             .setMessage(getString(R.string.grupo_dialog_excluir_mensagem, grupo.nome))
             .setPositiveButton(R.string.button_remove_yes) { _, _ -> viewModel.removerGrupo(grupo) }

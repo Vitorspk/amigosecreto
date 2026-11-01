@@ -1,202 +1,172 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_participantes"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    android:layout_height="match_parent"
+    android:background="@color/background">
     <com.google.android.material.appbar.AppBarLayout
-        android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_primary"
-        app:elevation="8dp">
-
+        android:fitsSystemWindows="true"
+        android:background="@color/background"
+        app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_grupos"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="🎁 Amigo Secreto"
-            app:titleCentered="true"
-            app:titleTextColor="@color/white"
-            app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
-
+            app:titleTextAppearance="@style/TextAppearance.Amigo.Title"
+            app:titleTextColor="@color/text_primary"
+            app:navigationIconTint="@color/text_primary" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="@dimen/activity_horizontal_margin"
-            android:paddingTop="8dp"
-            android:paddingBottom="24dp">
-
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:background="@drawable/bg_hero"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="14dp">
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/label_manage_group"
-                android:textColor="@color/white"
-                android:textSize="28sp"
+                android:text="@string/v2_event_eyebrow"
+                android:textSize="10sp"
+                android:textColor="@color/brand_gold"
+                android:letterSpacing="0.14"
                 android:textStyle="bold"
-                android:letterSpacing="-0.02" />
-
+                android:layout_marginBottom="6dp" />
             <TextView
                 android:id="@+id/tv_count"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:text="@string/label_no_participants"
-                android:textColor="@color/text_on_color_surface"
-                android:textSize="14sp" />
-
+                android:textColor="@color/hero_text"
+                android:textSize="20sp"
+                android:textStyle="bold" />
             <TextView
                 android:id="@+id/tv_data_evento"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:textColor="@color/text_on_color_surface"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/hero_muted"
                 android:textSize="13sp"
                 android:visibility="gone"
-                tools:text="📅 Evento: 25/12/2026"
-                tools:visibility="visible" />
-
+                tools:text="Evento: 25/12/2026" />
             <TextView
                 android:id="@+id/tv_faixa_valor"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/text_on_color_surface"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/hero_muted"
                 android:textSize="13sp"
                 android:visibility="gone"
-                tools:text="💰 Valor: R$ 50,00 – R$ 100,00"
-                tools:visibility="visible" />
+                tools:text="Valor: R$ 50,00 – R$ 100,00" />
         </LinearLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layout_busca"
+            style="@style/Widget.Amigo.TextInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/activity_horizontal_margin"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/hint_buscar_participante"
+            app:startIconDrawable="@drawable/ic_search"
+            app:startIconTint="@color/text_secondary"
+            app:endIconMode="clear_text">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_busca"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="textPersonName"
+                android:maxLines="1"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
     </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.core.widget.NestedScrollView
+    <FrameLayout
         android:id="@+id/scroll_participantes"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:clipToPadding="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/layout_scroll_content"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="@dimen/activity_horizontal_margin"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layout_busca"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:hint="@string/hint_buscar_participante"
-                app:startIconDrawable="@drawable/ic_search"
-                app:startIconTint="@color/text_secondary"
-                app:boxStrokeColor="@color/md_theme_primary"
-                app:hintTextColor="@color/text_secondary">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_busca"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:imeOptions="actionSearch"
-                    android:inputType="textPersonName"
-                    android:maxLines="1" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
+            android:layout_height="match_parent"
+            android:paddingStart="@dimen/activity_horizontal_margin"
+            android:paddingEnd="@dimen/activity_horizontal_margin">
             <ViewStub
                 android:id="@+id/stub_loading"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout="@layout/loading_state"
                 android:visibility="gone" />
-
             <ViewStub
                 android:id="@+id/stub_empty"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout="@layout/empty_state"
                 android:visibility="gone" />
-
             <ListView
                 android:id="@+id/lv_participantes"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:divider="@android:color/transparent"
                 android:dividerHeight="12dp"
-                android:clipToPadding="false"
                 android:paddingTop="8dp"
-                android:nestedScrollingEnabled="true"
+                android:paddingBottom="8dp"
                 tools:listitem="@layout/item_participante" />
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Botões fixos na parte inferior -->
+        </FrameLayout>
+    </FrameLayout>
     <LinearLayout
         android:id="@+id/layout_bottom_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:background="@drawable/bg_bottom_buttons"
-        android:paddingHorizontal="@dimen/activity_horizontal_margin"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:elevation="8dp">
-
-        <!-- Botão Adicionar Participante -->
+        android:paddingStart="@dimen/activity_horizontal_margin"
+        android:paddingEnd="@dimen/activity_horizontal_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:gravity="center_vertical">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/fab_add_participante"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/button_add_participant"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/colorPrimary"
-            app:cornerRadius="12dp"
-            app:elevation="2dp"
-            app:icon="@drawable/ic_add"
+            style="@style/Widget.Amigo.Button.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/button_add"
+            app:icon="@drawable/ic_person_add"
             app:iconGravity="textStart"
-            app:iconTint="@color/white" />
-
-        <!-- Botão Realizar Sorteio -->
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:minHeight="52dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            app:iconSize="20dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="@string/button_add_participant" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_sortear"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginBottom="4dp"
-            android:text="@string/button_draw"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:background="@drawable/gradient_green"
-            android:textColor="@color/white"
-            app:cornerRadius="12dp"
-            app:elevation="0dp"
+            style="@style/Widget.Amigo.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/v2_draw_short"
             app:icon="@drawable/ic_dice"
             app:iconGravity="textStart"
-            app:iconTint="@color/white" />
-
-        <!-- Botão Limpar -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_limpar"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/button_clear_participants"
-            android:textAllCaps="false"
-            android:textColor="@color/colorError" />
-
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:minHeight="52dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            app:iconSize="20dp"
+            android:contentDescription="@string/button_draw" />
     </LinearLayout>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

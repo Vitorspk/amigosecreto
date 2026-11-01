@@ -6,6 +6,7 @@
         android:id="@+id/action_historico"
         android:title="@string/menu_historico"
         android:icon="@drawable/ic_history"
+        app:iconTint="@color/text_primary"
         app:showAsAction="ifRoom" />
 
     <item
@@ -21,6 +22,11 @@
     <item
         android:id="@+id/action_desfazer_sorteio"
         android:title="@string/menu_desfazer_sorteio"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_limpar_participantes"
+        android:title="@string/button_clear_participants"
         app:showAsAction="never" />
 
 </menu>

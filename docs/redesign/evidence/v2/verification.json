@@ -1,0 +1,107 @@
+{
+  "revision": 2,
+  "status": "passed",
+  "checked_at": "2026-10-31T22:02:36.332710+00:00",
+  "branch": "feat/redesign-experience",
+  "coverage": {
+    "activities_declared": 15,
+    "layouts": 30
+  },
+  "build": "passed",
+  "unit_tests": {
+    "suites": 49,
+    "tests": 625,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "error": 0,
+    "fatal": 0,
+    "warning": 161,
+    "hint": 1
+  },
+  "instrumented_tests": {
+    "unique_tests_covered": 41,
+    "status": "passed",
+    "runs": [
+      {
+        "scope": "Full suite before final text/icon contrast adjustment",
+        "report": "instrumented-full.xml",
+        "apk_sha256": "b4c11aa19df6af3020188b2d8ddfd5be27ab30fffdd6b752d50c487097cc78e4",
+        "tests": 41,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "scope": "Wishlist flows retested after final contrast adjustment",
+        "report": "instrumented-wishes-final.xml",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "contrast": {
+    "report": "contrast.json",
+    "combinations": 30,
+    "minimum_ratio": 5.02,
+    "all_aa_normal_text": true
+  },
+  "visual_review": {
+    "status": "passed",
+    "device": "Small_Phone / Android 16 API 36",
+    "viewport_dp": [
+      360,
+      640
+    ],
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "font_scales": [
+      1.0,
+      1.5
+    ],
+    "checked_flows": [
+      "home and real group summary",
+      "group create/open",
+      "participants and draw states",
+      "search/actions/keyboard",
+      "wishlist create and long lists",
+      "legacy wishlist detail after contrast correction",
+      "reveal/hide",
+      "event settings with date/budget",
+      "dashboard/grid statistics",
+      "QR and share preview",
+      "history and restrictions"
+    ],
+    "corrected_findings": [
+      "Home subtitle cut vertically at 150% font; toolbar grows.",
+      "Old dark text on new dark wishlist detail hero; semantic foreground colors applied.",
+      "Zero participant copy and inconsistent metric size corrected."
+    ]
+  },
+  "apk": {
+    "path": "app/build/outputs/apk/debug/app-debug.apk",
+    "application_id": "com.amigosecreto.sorteio.debug",
+    "sha256": "502570685c0f4f3a92db23f7c0347e86c74c56c4334804268ecd018d80b9dc04"
+  },
+  "screenshots": [
+    "17-home-final.png",
+    "18-home-large-font-final.png",
+    "20-event-final.png",
+    "12-participants-dark.png",
+    "05-wishes.png",
+    "08-reveal-visible.png",
+    "23-statistics-final.png",
+    "test-wish-detail.png"
+  ],
+  "limits": [
+    "Runtime validation performed on emulator/API 36 only, as requested.",
+    "External messages and production publication were not performed.",
+    "Lint warnings remain; zero lint errors/fatal issues."
+  ]
+}

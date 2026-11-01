@@ -12,6 +12,6 @@
         android:orderInCategory="100"
         app:showAsAction="always"
         android:title="@string/menu_novo"
-        android:icon="@android:drawable/ic_menu_add"/>
+        android:icon="@drawable/ic_add"/>
 
 </menu>

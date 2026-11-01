@@ -1,6 +1,6 @@
-Versión 3.2 - Correcciones de fiabilidad
+Versión 3.3 - Nuevo diseño
 
-• La copia de seguridad ahora conserva la configuración del grupo (fecha, lugar, rango de precio, reglas y privacidad de la lista de deseos)
-• Corregida la pérdida de confirmaciones de compra y notas de los participantes
-• Corregida la carga de datos en dispositivos que vienen de versiones antiguas
-• Ya no se solicita el permiso de contactos
+• Nueva identidad visual en todas las pantallas: azul, violeta y dorado, con ilustraciones y un modo oscuro mejorado
+• Tras el sorteo, toca a un participante para abrir la revelación: el resultado queda oculto hasta que lo toques
+• "Borrar participantes" ahora está en el menú de la pantalla del grupo
+• Formularios y diálogos más fáciles de usar con el teclado abierto y con fuente ampliada

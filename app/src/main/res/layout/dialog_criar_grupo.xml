@@ -1,159 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@drawable/bg_dialog_rounded">
-
-    <!-- Header com ícone -->
+    android:fillViewport="true">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:text="@string/emoji_gift"
-            android:importantForAccessibility="no"
-            android:textSize="32sp"
-            android:gravity="center"
-            android:background="@drawable/bg_gradient_red"
-            android:layout_marginEnd="16dp" />
-
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/bg_dialog_rounded">
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/dialog_new_group_title"
-                android:textColor="@color/text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/dialog_desc_create_group"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- Campo de entrada -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        app:boxBackgroundMode="outline"
-        app:boxStrokeColor="@color/purple_primary"
-        app:boxCornerRadiusTopStart="12dp"
-        app:boxCornerRadiusTopEnd="12dp"
-        app:boxCornerRadiusBottomStart="12dp"
-        app:boxCornerRadiusBottomEnd="12dp"
-        app:hintTextColor="@color/purple_primary"
-        app:startIconDrawable="@android:drawable/ic_input_add"
-        app:startIconTint="@color/purple_primary">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_nome_grupo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_group_name"
-            android:inputType="textCapWords"
-            android:maxLines="1"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Sugestões rápidas -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/label_suggestions"
-        android:textColor="@color/text_secondary"
-        android:textSize="12sp"
-        android:layout_marginBottom="8dp" />
-
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chip_group_sugestoes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        app:singleSelection="false">
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_familia"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:importantForAccessibility="no"
+                android:background="@drawable/bg_hero"
+                android:layout_marginEnd="16dp"
+                android:src="@drawable/ic_gift"
+                android:padding="12dp"
+                app:tint="@color/brand_gold" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dialog_new_group_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:id="@+id/tv_group_dialog_title" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/dialog_desc_create_group"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:id="@+id/tv_group_dialog_description" />
+            </LinearLayout>
+        </LinearLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:boxBackgroundMode="outline"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="@color/text_secondary"
+            style="@style/Widget.Amigo.TextInput">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_nome_grupo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_group_name"
+                android:inputType="textCapWords"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/chip_sugestao_familia"
-            android:textColor="@color/purple_primary"
-            app:chipBackgroundColor="@color/purple_background"
-            app:chipStrokeColor="@color/purple_primary"
-            app:chipStrokeWidth="1dp" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_trabalho"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/chip_sugestao_trabalho"
-            android:textColor="@color/purple_primary"
-            app:chipBackgroundColor="@color/purple_background"
-            app:chipStrokeColor="@color/purple_primary"
-            app:chipStrokeWidth="1dp" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_amigos"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/chip_sugestao_amigos"
-            android:textColor="@color/purple_primary"
-            app:chipBackgroundColor="@color/purple_background"
-            app:chipStrokeColor="@color/purple_primary"
-            app:chipStrokeWidth="1dp" />
-
-    </com.google.android.material.chip.ChipGroup>
-
-    <!-- Botões -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_cancelar"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/button_cancel"
+            android:text="@string/label_suggestions"
             android:textColor="@color/text_secondary"
-            android:textAllCaps="false"
-            android:layout_marginEnd="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_criar"
-            android:layout_width="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp"
+            android:id="@+id/tv_group_suggestions_label" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_sugestoes"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/button_create_group"
-            android:textColor="@color/white"
-            android:textAllCaps="false"
-            android:textStyle="bold"
-            app:backgroundTint="@color/purple_primary"
-            app:cornerRadius="8dp" />
-
+            android:layout_marginBottom="20dp"
+            app:singleSelection="false">
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_familia"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chip_sugestao_familia"
+                android:textColor="@color/purple_primary"
+                app:chipBackgroundColor="@color/purple_background"
+                app:chipStrokeColor="@color/purple_primary"
+                app:chipStrokeWidth="1dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_trabalho"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chip_sugestao_trabalho"
+                android:textColor="@color/purple_primary"
+                app:chipBackgroundColor="@color/purple_background"
+                app:chipStrokeColor="@color/purple_primary"
+                app:chipStrokeWidth="1dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_amigos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chip_sugestao_amigos"
+                android:textColor="@color/purple_primary"
+                app:chipBackgroundColor="@color/purple_background"
+                app:chipStrokeColor="@color/purple_primary"
+                app:chipStrokeWidth="1dp" />
+        </com.google.android.material.chip.ChipGroup>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancelar"
+                style="@style/Widget.Amigo.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_cancel"
+                android:textColor="@color/text_secondary"
+                android:textAllCaps="false"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="@dimen/radius_button"
+                android:stateListAnimator="@null"
+                android:minHeight="48dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_criar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_create_group"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                app:cornerRadius="@dimen/radius_button"
+                style="@style/Widget.Amigo.Button"
+                android:stateListAnimator="@null"
+                android:minHeight="56dp" />
+        </LinearLayout>
     </LinearLayout>
-
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>

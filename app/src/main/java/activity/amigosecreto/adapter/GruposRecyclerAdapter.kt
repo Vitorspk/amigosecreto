@@ -4,10 +4,10 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -29,7 +29,6 @@ import activity.amigosecreto.util.HapticFeedbackUtils
 class GruposRecyclerAdapter(
     private val ctx: Context,
     private val emojis: Array<String>,
-    private val gradientes: IntArray,
     private val listener: OnGrupoActionListener,
 ) : RecyclerView.Adapter<GruposRecyclerAdapter.ViewHolder>() {
 
@@ -50,6 +49,8 @@ class GruposRecyclerAdapter(
             override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean {
                 val o = itens[oldPos]; val n = novaLista[newPos]
                 return o.grupo.nome == n.grupo.nome &&
+                    o.grupo.dataEvento == n.grupo.dataEvento &&
+                    o.grupo.data == n.grupo.data &&
                     o.totalParticipantes == n.totalParticipantes &&
                     o.totalEnviados == n.totalEnviados
             }
@@ -63,9 +64,14 @@ class GruposRecyclerAdapter(
         val tvNome: TextView = view.findViewById(R.id.tv_grupo_nome)
         val tvParticipantes: TextView = view.findViewById(R.id.tv_grupo_participantes)
         val tvEmoji: TextView = view.findViewById(R.id.tv_grupo_emoji)
-        val layoutContent: LinearLayout = view.findViewById(R.id.layout_grupo_content)
+        val btnOptions: View = view.findViewById(R.id.btn_grupo_options)
+        val tvContext: TextView = view.findViewById(R.id.tv_grupo_context)
 
         init {
+            btnOptions.setOnClickListener { anchor ->
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) exibirMenuContextoGrupo(anchor, itens[pos].grupo)
+            }
             itemView.setOnClickListener {
                 val pos = bindingAdapterPosition
                 if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
@@ -95,10 +101,15 @@ class GruposRecyclerAdapter(
 
         holder.tvNome.text = g.nome
         holder.tvEmoji.text = emojis[g.id % emojis.size]
-        holder.layoutContent.setBackgroundResource(gradientes[g.id % gradientes.size])
+        holder.tvContext.text = g.dataEvento?.takeIf { it.isNotBlank() }
+            ?.let { ctx.getString(R.string.label_data_evento, it) }
+            ?: g.data?.takeIf { it.isNotBlank() }?.let { ctx.getString(R.string.v2_created_on, it) }
+            ?: ctx.getString(R.string.v2_group_context)
 
         holder.tvParticipantes.text = if (item.totalEnviados > 0) {
             ctx.getString(R.string.label_progresso_sorteio, item.totalEnviados, item.totalParticipantes)
+        } else if (item.totalParticipantes == 0) {
+            ctx.getString(R.string.v2_no_people)
         } else {
             ctx.resources.getQuantityString(R.plurals.label_participants, item.totalParticipantes, item.totalParticipantes)
         }
@@ -126,12 +137,15 @@ class GruposRecyclerAdapter(
         val btnCancelar = dialogView.findViewById<MaterialButton>(R.id.btn_cancelar)
 
         dialogView.findViewById<View>(R.id.chip_group_sugestoes)?.visibility = View.GONE
+        dialogView.findViewById<View>(R.id.tv_group_suggestions_label).visibility = View.GONE
+        dialogView.findViewById<TextView>(R.id.tv_group_dialog_title).setText(R.string.design_edit_group)
+        dialogView.findViewById<TextView>(R.id.tv_group_dialog_description).setText(R.string.design_edit_group_description)
 
         etNome.setText(g.nome)
         etNome.setSelection(etNome.text?.length ?: 0)
         btnCriar.setText(R.string.button_save)
 
-        val dialog = AlertDialog.Builder(ctx)
+        val dialog = MaterialAlertDialogBuilder(ctx)
             .setView(dialogView)
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)

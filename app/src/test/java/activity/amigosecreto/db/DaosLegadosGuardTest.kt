@@ -15,7 +15,7 @@ import java.io.File
  * `observacoes`.
  *
  * Não dá para testar isso ponta a ponta sem infraestrutura de teste do Hilt (o projeto não tem),
- * então o invariante é verificado sobre o código-fonte. Os quatro arquivos tolerados abaixo são
+ * então o invariante é verificado sobre o código-fonte. Os dois arquivos tolerados abaixo são
  * telas inalcançáveis — nenhum `Intent` as inicia — e somem quando forem removidas; quando isso
  * acontecer, esvazie a lista.
  */
@@ -27,8 +27,6 @@ class DaosLegadosGuardTest {
     private val toleradosPorSeremCodigoMorto = setOf(
         "ListarDesejos.kt",
         "DetalheDesejoActivity.kt",
-        "RevelarAmigoActivity.kt",
-        "VisualizarDesejosActivity.kt",
     )
 
     private fun raizDasActivities(): File =

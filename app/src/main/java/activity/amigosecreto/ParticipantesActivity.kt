@@ -21,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
@@ -85,7 +86,6 @@ class ParticipantesActivity : AppCompatActivity() {
     private lateinit var tvFaixaValor: TextView
     private lateinit var fabAdd: MaterialButton
     private lateinit var btnSortear: View
-    private lateinit var btnLimpar: View
     private val listaParticipantes = mutableListOf<Participante>()  // fonte completa do ViewModel
     private val listaFiltrada = mutableListOf<Participante>()       // exibida pelo adapter
     private var termoBusca = ""
@@ -118,33 +118,38 @@ class ParticipantesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_listar_participantes)
+        setSupportActionBar(findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar_grupos))
 
-        // Ajusta padding do container de botoes inferiores para nao ficar atras
-        // da navigation bar em modo edge-to-edge (Android 15+).
-        // Tambem propaga a altura total do painel como paddingBottom do conteudo do scroll,
-        // garantindo que o ultimo item da lista seja sempre rolavel para alem dos botoes.
+        // Reserva o espaço real do painel no viewport da lista. Ao buscar com o teclado
+        // aberto, esconde as ações e reserva apenas o IME para manter os resultados visíveis.
         val bottomButtons = findViewById<View>(R.id.layout_bottom_buttons)
         val scrollContent = findViewById<View>(R.id.layout_scroll_content)
         if (bottomButtons != null) {
             val padBottom = bottomButtons.paddingBottom
-            ViewCompat.setOnApplyWindowInsetsListener(bottomButtons) { v, insets ->
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_participantes)) { _, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, padBottom + systemBars.bottom)
+                val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+                bottomButtons.setPadding(
+                    bottomButtons.paddingLeft, bottomButtons.paddingTop,
+                    bottomButtons.paddingRight, padBottom + systemBars.bottom
+                )
+                bottomButtons.visibility = if (imeVisible) View.GONE else View.VISIBLE
+                scrollContent?.setPadding(
+                    scrollContent.paddingLeft, scrollContent.paddingTop, scrollContent.paddingRight,
+                    if (imeVisible) insets.getInsets(WindowInsetsCompat.Type.ime()).bottom else bottomButtons.height
+                )
                 insets
             }
-            // Atualiza paddingBottom do conteudo sempre que o painel de botoes mudar de altura.
-            // O padding e aplicado no LinearLayout filho do NestedScrollView (nao no proprio scroll)
-            // pois e o conteudo que precisa ter espaco extra — o NestedScrollView ja tem clipToPadding=false.
+            // Fonte ampliada e barras do sistema podem alterar a altura das ações.
             bottomButtons.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                if (bottomButtons.visibility != View.VISIBLE) return@addOnLayoutChangeListener
                 val panelHeight = bottom - top
-                Timber.d("SCROLL_FIX: bottomButtons top=$top bottom=$bottom panelHeight=$panelHeight scrollContent.paddingBottom=${scrollContent?.paddingBottom}")
                 scrollContent?.setPadding(
                     scrollContent.paddingLeft,
                     scrollContent.paddingTop,
                     scrollContent.paddingRight,
                     panelHeight
                 )
-                Timber.d("SCROLL_FIX: after setPadding scrollContent.paddingBottom=${scrollContent?.paddingBottom}")
             }
         }
 
@@ -182,7 +187,6 @@ class ParticipantesActivity : AppCompatActivity() {
         tvFaixaValor = findViewById(R.id.tv_faixa_valor)
         fabAdd = findViewById(R.id.fab_add_participante)
         btnSortear = findViewById(R.id.btn_sortear)
-        btnLimpar = findViewById(R.id.btn_limpar)
 
         atualizarInfoGrupo(grupoAtual)
 
@@ -208,7 +212,6 @@ class ParticipantesActivity : AppCompatActivity() {
 
         fabAdd.setOnClickListener { exibirDialogAdd() }
         btnSortear.setOnClickListener { realizarSorteio() }
-        btnLimpar.setOnClickListener { confirmarLimparTudo() }
 
         // Inicializar ViewModel e observar LiveData.
         // init() dispara o primeiro carregamento; rotação reutiliza o ViewModel existente.
@@ -231,14 +234,15 @@ class ParticipantesActivity : AppCompatActivity() {
             invalidateOptionsMenu()
             if (listaParticipantes.isEmpty()) {
                 stateHelper.showEmpty()
+                findViewById<TextView>(R.id.tv_empty_title).setText(R.string.v2_empty_participants)
+                findViewById<TextView>(R.id.tv_empty_message).setText(R.string.v2_empty_participants_hint)
                 tvCount.setText(R.string.label_no_participants)
             } else {
                 stateHelper.showContent()
                 tvCount.text = resources.getQuantityString(
                     R.plurals.label_participants_in_group,
                     listaParticipantes.size,
-                    listaParticipantes.size,
-                    grupoAtual.nome
+                    listaParticipantes.size
                 )
             }
         }
@@ -257,7 +261,7 @@ class ParticipantesActivity : AppCompatActivity() {
                 ParticipantesViewModel.SorteioResultado.Status.FAILURE_IMPOSSIBLE ->
                     Toast.makeText(this, getString(R.string.participante_sorteio_impossivel), Toast.LENGTH_LONG).show()
                 ParticipantesViewModel.SorteioResultado.Status.SUCCESS -> {
-                    AlertDialog.Builder(this)
+                    MaterialAlertDialogBuilder(this)
                         .setTitle(getString(R.string.participante_sorteio_titulo))
                         .setMessage(getString(R.string.participante_sorteio_msg_canal))
                         .setPositiveButton(getString(R.string.participante_sorteio_btn_whatsapp)) { _, _ -> enviarWhatsAppViaIntent() }
@@ -422,7 +426,7 @@ class ParticipantesActivity : AppCompatActivity() {
             abrirSeletorContatos()
         }
 
-        val builder = AlertDialog.Builder(this)
+        val builder = MaterialAlertDialogBuilder(this)
         builder.setTitle(R.string.dialog_new_participant_title)
         builder.setView(view)
         // Botoes declarados sem listener aqui; listener registrado apos show() para controlar
@@ -449,7 +453,7 @@ class ParticipantesActivity : AppCompatActivity() {
     }
 
     private fun exibirDialogEditar(participante: Participante) {
-        val builder = AlertDialog.Builder(this)
+        val builder = MaterialAlertDialogBuilder(this)
         builder.setTitle(R.string.dialog_edit_participant_title)
         if (participante.isEnviado) {
             builder.setMessage(R.string.dialog_edit_sent_warning)
@@ -461,6 +465,7 @@ class ParticipantesActivity : AppCompatActivity() {
         val etEmail = view.findViewById<EditText>(R.id.et_email)
         val btnPickContact = view.findViewById<View>(R.id.btn_pick_contact)
         btnPickContact.visibility = View.GONE
+        view.findViewById<View>(R.id.layout_manual_separator).visibility = View.GONE
 
         etNome.setText(participante.nome)
         etTelefone.setText(participante.telefone)
@@ -650,7 +655,7 @@ class ParticipantesActivity : AppCompatActivity() {
 
 
     private fun confirmarLimparTudo() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.participante_limpar_titulo))
             .setMessage(getString(R.string.participante_limpar_msg))
             .setPositiveButton(getString(R.string.participante_limpar_btn_sim)) { _, _ ->
@@ -661,7 +666,7 @@ class ParticipantesActivity : AppCompatActivity() {
     }
 
     private fun confirmarDesfazerSorteio() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialog_desfazer_sorteio_titulo)
             .setMessage(R.string.dialog_desfazer_sorteio_mensagem)
             .setPositiveButton(R.string.dialog_desfazer_sorteio_sim) { _, _ ->
@@ -705,7 +710,7 @@ class ParticipantesActivity : AppCompatActivity() {
             return
         }
 
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.dialog_send_sms_title_format, p.nome, index + 1, lista.size))
             .setMessage(getString(R.string.dialog_send_sms_message_format, p.telefone))
             .setPositiveButton(R.string.button_open_sms) { _, _ ->
@@ -784,7 +789,7 @@ class ParticipantesActivity : AppCompatActivity() {
         } else ""
         val msgDialog = getString(R.string.dialog_send_whatsapp_message_format, telefoneDisplay) + aviso
 
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.dialog_send_whatsapp_title_format, p.nome, index + 1, lista.size))
             .setMessage(msgDialog)
             .setPositiveButton(R.string.button_open_whatsapp) { _, _ ->
@@ -849,7 +854,7 @@ class ParticipantesActivity : AppCompatActivity() {
             layoutLista.addView(itemView)
         }
 
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .setPositiveButton(R.string.button_save) { _, _ ->
                 val adicionar = mutableListOf<Int>()
@@ -872,11 +877,16 @@ class ParticipantesActivity : AppCompatActivity() {
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val temSorteio = listaParticipantes.any { (it.amigoSorteadoId ?: 0) > 0 }
         menu.findItem(R.id.action_desfazer_sorteio)?.isVisible = temSorteio
+        menu.findItem(R.id.action_limpar_participantes)?.isVisible = listaParticipantes.isNotEmpty()
         return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_limpar_participantes -> {
+                confirmarLimparTudo()
+                true
+            }
             R.id.action_historico -> {
                 startActivity(
                     Intent(this, HistoricoSorteiosActivity::class.java)
@@ -954,7 +964,7 @@ class ParticipantesActivity : AppCompatActivity() {
     }
 
     private fun exibirDialogConfirmarCompra(p: Participante) {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.confirmacao_compra_titulo)
             .setMessage(getString(R.string.confirmacao_compra_mensagem, p.nome))
             .setPositiveButton(R.string.confirmacao_compra_sim) { _, _ ->
@@ -1025,7 +1035,7 @@ class ParticipantesActivity : AppCompatActivity() {
 
             val amigoId = p.amigoSorteadoId
             if (amigoId != null && amigoId > 0) {
-                tvEmail.text = if (p.isEnviado) getString(R.string.status_result_sent) else getString(R.string.status_ready_share)
+                tvEmail.text = if (p.isEnviado) getString(R.string.status_result_sent) else getString(R.string.label_tap_to_reveal)
                 tvEmail.setTextColor(ContextCompat.getColor(ctx, if (p.isEnviado) R.color.text_secondary else R.color.colorAccent))
                 btnShare.visibility = View.VISIBLE
                 btnQrCode.visibility = View.VISIBLE
@@ -1067,6 +1077,14 @@ class ParticipantesActivity : AppCompatActivity() {
             btnEditar.setOnClickListener { exibirDialogEditar(p) }
 
             btnRemover.setOnClickListener { viewModel.removerParticipante(p.id) }
+
+            val temResultado = amigoId != null && amigoId > 0
+            view.setOnClickListener(if (temResultado) View.OnClickListener {
+                ctx.startActivity(Intent(ctx, RevelarAmigoActivity::class.java)
+                    .putExtra("participante", p)
+                    .putExtra(RevelarAmigoActivity.EXTRA_PERMITIR_VER_DESEJOS, grupoAtual.permitirVerDesejos))
+            } else null)
+            view.isClickable = temResultado
 
             return view
         }

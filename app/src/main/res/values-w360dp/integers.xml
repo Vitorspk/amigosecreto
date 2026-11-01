@@ -1,0 +1,3 @@
+<resources>
+    <integer name="participant_actions_columns">6</integer>
+</resources>

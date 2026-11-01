@@ -12,15 +12,21 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import activity.amigosecreto.db.Desejo
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.repository.DesejoRepository
+import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
 import activity.amigosecreto.db.Participante
 import activity.amigosecreto.util.WindowInsetsUtils
+import activity.amigosecreto.util.AsyncDatabaseHelper
 import com.google.android.material.appbar.MaterialToolbar
 
+@AndroidEntryPoint
 class VisualizarDesejosActivity : AppCompatActivity() {
 
     private lateinit var participante: Participante
-    private lateinit var desejoDAO: DesejoDAO
+    @Inject lateinit var desejoRepository: DesejoRepository
     private val listaDesejos = mutableListOf<Desejo>()
     private lateinit var adapter: DesejosAdapter
     private lateinit var lvDesejos: ListView
@@ -40,15 +46,14 @@ class VisualizarDesejosActivity : AppCompatActivity() {
         }
         participante = p
 
-        desejoDAO = DesejoDAO(this)
-        desejoDAO.open()
-
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.title = getString(R.string.title_wish_list_of, participante.nome)
+        toolbar.title = getString(R.string.v2_wishlist_title)
         toolbar.setNavigationOnClickListener { finish() }
+        findViewById<TextView>(R.id.tv_nome_participante).text = participante.nome
 
         lvDesejos = findViewById(R.id.lv_desejos)
         layoutEmpty = findViewById(R.id.layout_empty)
+        WindowInsetsUtils.applyImeBottomPadding(lvDesejos)
 
         adapter = DesejosAdapter(this, listaDesejos)
         lvDesejos.adapter = adapter
@@ -56,18 +61,19 @@ class VisualizarDesejosActivity : AppCompatActivity() {
         carregarDesejos()
     }
 
-    private fun carregarDesejos() {
-        listaDesejos.clear()
-        listaDesejos.addAll(desejoDAO.listarPorParticipante(participante.id))
-        adapter.notifyDataSetChanged()
-        val isEmpty = listaDesejos.isEmpty()
-        layoutEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        lvDesejos.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        desejoDAO.close()
+    private fun carregarDesejos() = lifecycleScope.launch {
+        AsyncDatabaseHelper.idlingResource.increment()
+        try {
+            val desejos = desejoRepository.listarPorParticipante(participante.id)
+            listaDesejos.clear()
+            listaDesejos.addAll(desejos)
+            adapter.notifyDataSetChanged()
+            val isEmpty = listaDesejos.isEmpty()
+            layoutEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            lvDesejos.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        } finally {
+            AsyncDatabaseHelper.idlingResource.decrement()
+        }
     }
 
     private class DesejosAdapter(

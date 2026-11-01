@@ -1,0 +1,212 @@
+[
+  {
+    "mode": "light",
+    "foreground": "text_primary",
+    "background": "background",
+    "ratio": 13.89,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "text_primary",
+    "background": "surface",
+    "ratio": 15.15,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "text_secondary",
+    "background": "background",
+    "ratio": 5.02,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "text_secondary",
+    "background": "surface",
+    "ratio": 5.48,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "md_theme_onPrimary",
+    "background": "md_theme_primary",
+    "ratio": 6.68,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "md_theme_onPrimaryContainer",
+    "background": "md_theme_primaryContainer",
+    "ratio": 10.67,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "md_theme_onSecondaryContainer",
+    "background": "md_theme_secondaryContainer",
+    "ratio": 8.2,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "success",
+    "background": "surface",
+    "ratio": 6.82,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "colorError",
+    "background": "surface",
+    "ratio": 6.47,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "white",
+    "background": "reveal_start",
+    "ratio": 14.71,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "white",
+    "background": "reveal_end",
+    "ratio": 11.31,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "hero_muted",
+    "background": "reveal_start",
+    "ratio": 10.8,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "hero_muted",
+    "background": "reveal_end",
+    "ratio": 8.3,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "brand_gold",
+    "background": "reveal_start",
+    "ratio": 9.11,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "light",
+    "foreground": "brand_gold",
+    "background": "reveal_end",
+    "ratio": 7.0,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "text_primary",
+    "background": "background",
+    "ratio": 16.13,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "text_primary",
+    "background": "surface",
+    "ratio": 13.83,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "text_secondary",
+    "background": "background",
+    "ratio": 10.18,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "text_secondary",
+    "background": "surface",
+    "ratio": 8.72,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "md_theme_onPrimary",
+    "background": "md_theme_primary",
+    "ratio": 7.83,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "md_theme_onPrimaryContainer",
+    "background": "md_theme_primaryContainer",
+    "ratio": 9.98,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "md_theme_onSecondaryContainer",
+    "background": "md_theme_secondaryContainer",
+    "ratio": 8.39,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "success",
+    "background": "surface",
+    "ratio": 9.45,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "colorError",
+    "background": "surface",
+    "ratio": 9.03,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "white",
+    "background": "reveal_start",
+    "ratio": 14.71,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "white",
+    "background": "reveal_end",
+    "ratio": 11.31,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "hero_muted",
+    "background": "reveal_start",
+    "ratio": 10.8,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "hero_muted",
+    "background": "reveal_end",
+    "ratio": 8.3,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "brand_gold",
+    "background": "reveal_start",
+    "ratio": 9.11,
+    "aa_normal_text": true
+  },
+  {
+    "mode": "dark",
+    "foreground": "brand_gold",
+    "background": "reveal_end",
+    "ratio": 7.0,
+    "aa_normal_text": true
+  }
+]

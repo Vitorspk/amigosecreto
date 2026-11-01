@@ -1,5 +1,9 @@
 # AmigoSecreto — Documentação para Claude
 
+## Retomada do redesign — 01/11/2026
+
+Antes de continuar, leia `docs/CLAUDE_HANDOFF.md`, `AGENTS.md`, `docs/REDESIGN_PLAN.md` e `docs/REDESIGN_DESIGN_SYSTEM.md`. A direção vigente é a **revisão 2**, com fotos e verificações em `docs/redesign/evidence/v2/`. O trabalho está na branch `feat/redesign-experience`, commitado localmente em `e23f983` (sem push nem PR); preserve a branch e não toque nos arquivos `.idea/`, que não entraram no commit. O handoff e o plano atual prevalecem para o estado do redesign; algumas descrições históricas abaixo podem estar desatualizadas.
+
 ## Visão Geral
 
 **AmigoSecreto** é um aplicativo Android para organizar sorteios de amigo secreto. Permite criar grupos, adicionar participantes, realizar sorteios com restrições, revelar resultados de forma interativa, compartilhar via WhatsApp/SMS e gerenciar listas de desejos por participante.
@@ -268,9 +272,9 @@ Regras do formato:
 - Transação atômica via `salvarSorteio()`
 
 ### 5. Revelação Interativa
-- Resultado acessível apenas via botão de compartilhamento individual por participante
+- Após o sorteio, tocar no card do participante abre a revelação inicialmente oculta
 - Organizador não consegue ver quem tirou quem diretamente na lista
-- `RevelarAmigoActivity` disponível para uso futuro (o próprio participante revela no celular)
+- `RevelarAmigoActivity` acessível pela lista; tocar na revelação alterna mostrar/ocultar
 - Proteção contra spoilers (layout escondido)
 - Animações e feedback háptico
 
@@ -382,14 +386,14 @@ Nenhum caminho alcançável dispara mais isso:
 |------|-----------|-------------|
 | `ParticipanteDesejosActivity` | — migrada para Room | ✅ sim |
 | `AlterarDesejoActivity` | — migrada para Room | ✅ sim |
+| `RevelarAmigoActivity` | — migrada para Room | ✅ sim — card após sorteio |
+| `VisualizarDesejosActivity` | — migrada para Room | ✅ sim — lista de desejos na revelação |
 | `ListarDesejos` | `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
 | `DetalheDesejoActivity` | `DesejoDAO` | ❌ não — só a partir de `ListarDesejos` |
-| `RevelarAmigoActivity` | `ParticipanteDAO`, `DesejoDAO` | ❌ não — nenhum `Intent` a inicia |
-| `VisualizarDesejosActivity` | `DesejoDAO` | ❌ não — só a partir de `RevelarAmigoActivity` |
 
-As quatro telas restantes são código morto: continuam usando DAO legado, mas nenhum `Intent` as
+As duas telas restantes são código morto: continuam usando DAO legado, mas nenhum `Intent` as
 alcança. `DaosLegadosGuardTest` trava o invariante — falha se qualquer tela **alcançável** voltar
-a instanciar um DAO legado, e também se um dos quatro tolerados deixar de existir (para que a
+a instanciar um DAO legado, e também se um dos dois tolerados deixar de existir (para que a
 lista de exceções não mascare um uso novo). Ao remover essas telas, esvazie a lista no teste.
 
 **Cuidado ao migrar telas que fazem `finish()` logo após gravar:** o `lifecycleScope` é cancelado
@@ -532,13 +536,13 @@ SELECT * FROM participante WHERE grupo_id = 1;
 
 ## Edge-to-Edge (Android 15)
 
-Todas as 9 Activities chamam `EdgeToEdge.enable(this)` antes de `setContentView()`.
+As Activities usam `enableEdgeToEdge()` antes de `setContentView()`.
 
 | Tela | Estratégia |
 |------|------------|
 | CoordinatorLayout + AppBarLayout | `fitsSystemWindows="true"` — trata insets automaticamente |
-| `RevelarAmigoActivity` | listener manual no `root_revelar` (LinearLayout sem toolbar) |
-| `ParticipantesActivity` | listener no `layout_bottom_buttons` com `padBottom` capturado fora da lambda |
+| `RevelarAmigoActivity` | listener manual no `root_revelar` (NestedScrollView sem toolbar) |
+| `ParticipantesActivity` | listener no root; reserva painel/IME no viewport e esconde ações com teclado aberto |
 | `ListarDesejos` (FAB) | ajuste de `bottomMargin` via `requestLayout()` |
 | `InserirDesejoActivity`, `AlterarDesejoActivity` | `WindowInsetsUtils.applyImeBottomPadding()` |
 

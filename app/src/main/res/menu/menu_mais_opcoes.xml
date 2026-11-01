@@ -3,42 +3,42 @@
 
     <item
         android:id="@+id/action_sobre"
-        android:icon="@android:drawable/ic_menu_info_details"
+        android:icon="@drawable/ic_info"
         android:title="@string/menu_about" />
 
     <item
         android:id="@+id/action_compartilhar"
-        android:icon="@android:drawable/ic_menu_share"
+        android:icon="@drawable/ic_share"
         android:title="@string/menu_share_app" />
 
     <item
         android:id="@+id/action_avaliar"
-        android:icon="@android:drawable/btn_star_big_on"
+        android:icon="@drawable/ic_star"
         android:title="@string/menu_rate_app" />
 
     <item
         android:id="@+id/action_limpar_dados"
-        android:icon="@android:drawable/ic_menu_delete"
+        android:icon="@drawable/ic_delete"
         android:title="@string/menu_clear_all_data" />
 
     <item
         android:id="@+id/action_exportar_backup"
-        android:icon="@android:drawable/ic_menu_save"
+        android:icon="@drawable/ic_share"
         android:title="@string/menu_exportar_backup" />
 
     <item
         android:id="@+id/action_importar_backup"
-        android:icon="@android:drawable/ic_menu_revert"
+        android:icon="@drawable/ic_history"
         android:title="@string/menu_importar_backup" />
 
     <item
         android:id="@+id/action_estatisticas"
-        android:icon="@android:drawable/ic_menu_info_details"
+        android:icon="@drawable/ic_chart"
         android:title="@string/menu_estatisticas" />
 
     <item
         android:id="@+id/action_ordenar_grupos"
-        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:icon="@drawable/ic_sort"
         android:title="@string/menu_ordenar_grupos" />
 
 </menu>

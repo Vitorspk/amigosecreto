@@ -10,16 +10,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import activity.amigosecreto.db.Participante
-import activity.amigosecreto.db.ParticipanteDAO
-import activity.amigosecreto.db.DesejoDAO
+import activity.amigosecreto.repository.ParticipanteRepository
+import activity.amigosecreto.repository.DesejoRepository
+import activity.amigosecreto.util.AsyncDatabaseHelper
+import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
 import com.google.android.material.button.MaterialButton
 
+@AndroidEntryPoint
 class RevelarAmigoActivity : AppCompatActivity() {
 
     private var amigoSorteado: Participante? = null
     private var revelado = false
-    private lateinit var dao: ParticipanteDAO
-    private lateinit var desejoDAO: DesejoDAO
+    @Inject lateinit var participanteRepository: ParticipanteRepository
+    @Inject lateinit var desejoRepository: DesejoRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,11 +50,10 @@ class RevelarAmigoActivity : AppCompatActivity() {
             }
         }
 
-        dao = ParticipanteDAO(this)
-        desejoDAO = DesejoDAO(this)
-
         @Suppress("DEPRECATION")
         val participante = intent.getSerializableExtra("participante") as? Participante
+        // Padrão false: quem abrir a revelação sem informar a configuração do grupo não expõe desejos.
+        val permitirVerDesejos = intent.getBooleanExtra(EXTRA_PERMITIR_VER_DESEJOS, false)
 
         val tvNomeUsuario = findViewById<TextView>(R.id.tv_nome_usuario)
         val tvAmigoSorteado = findViewById<TextView>(R.id.tv_amigo_sorteado)
@@ -62,11 +67,17 @@ class RevelarAmigoActivity : AppCompatActivity() {
             tvNomeUsuario.text = participante.nome
             val amigoId = participante.amigoSorteadoId?.takeIf { it > 0 }
             if (amigoId != null) {
-                dao.open()
-                val nomeAmigo = dao.getNomeAmigoSorteado(amigoId)
-                amigoSorteado = dao.buscarPorId(amigoId)
-                dao.close()
-                tvAmigoSorteado.text = nomeAmigo
+                cardRevelacao.isEnabled = false
+                lifecycleScope.launch {
+                    AsyncDatabaseHelper.idlingResource.increment()
+                    try {
+                        amigoSorteado = participanteRepository.buscarPorId(amigoId)
+                        tvAmigoSorteado.text = amigoSorteado?.nome ?: getString(R.string.label_no_draw)
+                        cardRevelacao.isEnabled = amigoSorteado != null
+                    } finally {
+                        AsyncDatabaseHelper.idlingResource.decrement()
+                    }
+                }
             } else {
                 tvAmigoSorteado.setText(R.string.label_no_draw)
             }
@@ -75,16 +86,21 @@ class RevelarAmigoActivity : AppCompatActivity() {
         btnVerDesejos.setOnClickListener {
             val amigo = amigoSorteado
             if (amigo != null) {
-                desejoDAO.open()
-                val count = desejoDAO.contarDesejosPorParticipante(amigo.id)
-                desejoDAO.close()
-                if (count > 0) {
-                    val intent = Intent(this, VisualizarDesejosActivity::class.java)
-                    intent.putExtra("participante", amigo)
-                    intent.putExtra("somente_visualizar", true)
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this, getString(R.string.toast_no_wishes_format, amigo.nome), Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    AsyncDatabaseHelper.idlingResource.increment()
+                    try {
+                        val count = desejoRepository.contarDesejosPorParticipante(amigo.id)
+                        if (count > 0) {
+                            val intent = Intent(this@RevelarAmigoActivity, VisualizarDesejosActivity::class.java)
+                            intent.putExtra("participante", amigo)
+                            intent.putExtra("somente_visualizar", true)
+                            startActivity(intent)
+                        } else {
+                            Toast.makeText(this@RevelarAmigoActivity, getString(R.string.toast_no_wishes_format, amigo.nome), Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        AsyncDatabaseHelper.idlingResource.decrement()
+                    }
                 }
             } else {
                 Toast.makeText(this, R.string.label_no_draw, Toast.LENGTH_SHORT).show()
@@ -97,7 +113,7 @@ class RevelarAmigoActivity : AppCompatActivity() {
                 if (amigoId != null) {
                     layoutEscondido.visibility = View.GONE
                     layoutRevelado.visibility = View.VISIBLE
-                    btnVerDesejos.visibility = View.VISIBLE
+                    btnVerDesejos.visibility = if (permitirVerDesejos) View.VISIBLE else View.GONE
                     revelado = true
                 } else {
                     Toast.makeText(this, R.string.error_no_draw, Toast.LENGTH_SHORT).show()
@@ -111,5 +127,9 @@ class RevelarAmigoActivity : AppCompatActivity() {
         }
 
         btnVoltar.setOnClickListener { finish() }
+    }
+
+    companion object {
+        const val EXTRA_PERMITIR_VER_DESEJOS = "permitir_ver_desejos"
     }
 }
