@@ -20,7 +20,7 @@ Em 31/10, pediu parar e continuar no dia seguinte. Em 01/11, pediu transferir a 
 ## Estado do Git — atenção à continuidade local
 
 - Branch conferida em 01/11: `feat/redesign-experience`.
-- O redesign está **sem commit, push ou PR**, com arquivos modificados e arquivos novos não rastreados. Não presumir que um clone, checkout limpo ou worktree novo contém esse trabalho.
+- **Atualizado em 01/11 (S06):** o redesign está **commitado localmente** na `feat/redesign-experience` (`e23f983`), **sem push nem PR**. Não presumir que um clone ou checkout remoto o contém. Os arquivos `.idea/` (3 modificados e `appInsightsSettings.xml`) são do usuário e ficaram fora do commit.
 - Para continuar no Claude Desktop, escolher ambiente local, a mesma pasta e **Worktree desativado**. Conferir os arquivos antes de editar.
 - Preservar todas as alterações atuais. Não executar limpeza/reset/checkout que descarte o trabalho.
 - Alterações preexistentes do usuário na IDE: `.idea/deploymentTargetSelector.xml`, `.idea/gradle.xml` e `.idea/appInsightsSettings.xml`; Android Studio também modificou `.idea/misc.xml`. Não incluir/reverter esses arquivos automaticamente.

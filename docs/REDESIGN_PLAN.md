@@ -89,7 +89,7 @@ Defeitos (corrigir dentro da direção da revisão 2, sem nova direção visual)
 | V8 | Revelação (`09`) | EN “Your Secret Santa is” (`label_your_secret_friend`) está invertido: a pessoa mostrada é quem a participante presenteia (histórico: Ana → Caio) | R4 |
 | V15 | Entrada vs. histórico (`03`, `15`) | Datas em formatos diferentes: “01/11/2026” (dia/mês) no card do grupo e “11/01/2026 at 04:54 PM” (mês/dia, 12 h) no histórico | R4 |
 
-**Correções aplicadas (V1, V4, V5, V8, V13, V14, V15) — feitas e verificadas no aparelho, ainda sem commit:**
+**Correções aplicadas (V1, V4, V5, V8, V13, V14, V15) — feitas e verificadas no aparelho; incluídas no commit `e23f983`:**
 
 | ID | Causa encontrada | Correção | Evidência |
 | --- | --- | --- | --- |
@@ -122,6 +122,8 @@ Suíte instrumentada **no A205G / Android 11** antes da correção do teste: 40 
 **Verificação das correções R1/R2:** `assembleDebug`, 625 unitários / 49 suítes sem falhas, `lintRelease` com 0 erros, 161 avisos e 1 indicação (igual ao baseline). Suíte instrumentada no A205G / Android 11: **42 de 42** (41 − 1 removido + 2 novos), sem falhas/erros/ignorados, 146,8 s; relatório em `device-a205g/instrumented-a205g-r1r2.xml`. Os 42 substituem a contagem de 41 cenários citada em S04 e acima. R3 (aprovação das mudanças de navegação) segue pendente do usuário; R4, R6 e R7 seguem abertos.
 
 Conferido sem problemas pelo revisor: chaves e placeholders idênticos em PT/EN/ES (também verificado por mim: 0 faltando, 0 divergentes); o formato antigo de data só era exibição (`SorteiosAdapter`) e nenhum teste dependia dele; nenhum DAO legado em tela alcançável nem mudança de schema/ID; nenhum texto novo hardcoded. Dos arquivos `.idea/` (4), nenhum deve entrar no commit. Sem segredos nos arquivos alterados.
+
+**Commit:** o usuário aprovou as mudanças de navegação (R3) e o trabalho foi commitado localmente na `feat/redesign-experience` como `e23f983` (237 arquivos), sem push nem PR e sem os arquivos `.idea/`. Sem push/PR não há CI remoto; antes de abrir PR seguem valendo `:app:testDebugUnitTest`, `:app:lintRelease` e a suíte instrumentada. Os trechos “sem commit” das sessões S01–S05 descrevem o estado da época.
 
 Escolhas de design (precisam da sua decisão antes de eu mexer):
 

@@ -2,7 +2,7 @@
 
 ## Retomada do redesign — 01/11/2026
 
-Antes de continuar, leia `docs/CLAUDE_HANDOFF.md`, `AGENTS.md`, `docs/REDESIGN_PLAN.md` e `docs/REDESIGN_DESIGN_SYSTEM.md`. A direção vigente é a **revisão 2**, com fotos e verificações em `docs/redesign/evidence/v2/`. O trabalho está na branch `feat/redesign-experience`, ainda sem commit; preserve as alterações locais e os arquivos novos. O handoff e o plano atual prevalecem para o estado do redesign; algumas descrições históricas abaixo podem estar desatualizadas.
+Antes de continuar, leia `docs/CLAUDE_HANDOFF.md`, `AGENTS.md`, `docs/REDESIGN_PLAN.md` e `docs/REDESIGN_DESIGN_SYSTEM.md`. A direção vigente é a **revisão 2**, com fotos e verificações em `docs/redesign/evidence/v2/`. O trabalho está na branch `feat/redesign-experience`, commitado localmente em `e23f983` (sem push nem PR); preserve a branch e não toque nos arquivos `.idea/`, que não entraram no commit. O handoff e o plano atual prevalecem para o estado do redesign; algumas descrições históricas abaixo podem estar desatualizadas.
 
 ## Visão Geral
 
