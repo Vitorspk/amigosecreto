@@ -39,11 +39,6 @@ class GruposRecyclerAdapterTest {
     }
 
     private val emojis = arrayOf("🎁", "🎄", "🎉")
-    private val gradientes = intArrayOf(
-        R.drawable.card_gradient_orange,
-        R.drawable.card_gradient_blue,
-        R.drawable.card_gradient_green
-    )
 
     private fun criarItem(
         id: Int,
@@ -61,7 +56,6 @@ class GruposRecyclerAdapterTest {
         adapter = GruposRecyclerAdapter(
             ApplicationProvider.getApplicationContext(),
             emojis,
-            gradientes,
             actionListener
         )
     }

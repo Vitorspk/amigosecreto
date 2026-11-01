@@ -1,137 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_revelar"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="32dp">
-
-    <TextView
-        android:id="@+id/tv_instrucao"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/greeting_hello"
-        android:textSize="18sp"
-        android:textColor="@color/text_secondary"
-        android:layout_marginBottom="4dp"/>
-
-    <TextView
-        android:id="@+id/tv_nome_usuario"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:text="Nome do Usuário"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/purple_primary"
-        android:layout_marginBottom="48dp"/>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_revelacao"
+    android:fillViewport="true"
+    android:background="@color/background">
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="280dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
-        app:strokeColor="@color/purple_primary"
-        app:strokeWidth="3dp"
-        app:cardBackgroundColor="@color/white">
-
-        <FrameLayout
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+        <TextView
+            android:id="@+id/tv_instrucao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/greeting_hello"
+            android:textSize="18sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp" />
+        <TextView
+            android:id="@+id/tv_nome_usuario"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="Nome do Usuário"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="24dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_revelacao"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <LinearLayout
-                android:id="@+id/layout_revelado"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="1dp"
+            app:strokeColor="@color/hero_outline"
+            app:strokeWidth="1dp"
+            app:cardBackgroundColor="@color/reveal_start"
+            style="@style/Widget.Amigo.Card"
+            android:minHeight="280dp">
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:padding="24dp"
-                android:background="@drawable/card_gradient_orange"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="280dp">
+                <LinearLayout
+                    android:id="@+id/layout_revelado"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_your_secret_friend"
-                    android:textColor="@color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_amigo_sorteado"
-                    android:layout_width="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:background="@drawable/bg_reveal"
+                    android:visibility="gone"
+                    android:minHeight="286dp">
+                    <ImageView
+                        android:layout_width="96dp"
+                        android:layout_height="86dp"
+                        android:src="@drawable/bg_gift_scene"
+                        android:importantForAccessibility="no"
+                        android:layout_marginBottom="14dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_your_secret_friend"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tv_amigo_sorteado"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        tools:text="NOME DO AMIGO"
+                        android:textColor="@color/brand_gold"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/layout_escondido"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    tools:text="NOME DO AMIGO"
-                    android:textColor="@color/white"
-                    android:textSize="36sp"
-                    android:textStyle="bold"
-                    android:gravity="center" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_escondido"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:padding="24dp">
-
-                <ImageView
-                    android:layout_width="96dp"
-                    android:layout_height="96dp"
-                    android:src="@drawable/ic_eye"
-                    app:tint="@color/purple_primary"
-                    android:contentDescription="@string/cd_tap_to_reveal" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/label_tap_to_reveal"
-                    android:textSize="20sp"
-                    android:textColor="@color/purple_primary"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </FrameLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_ver_desejos"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginHorizontal="32dp"
-        android:text="@string/button_view_wishlist"
-        android:textAllCaps="false"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:visibility="gone"
-        app:backgroundTint="@color/accent_green"
-        app:cornerRadius="12dp"
-        app:icon="@drawable/ic_gift"
-        app:iconTint="@color/white"
-        android:textColor="@color/white" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/label_keep_secret"
-        android:textColor="@color/colorError"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_voltar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/button_back_to_list"
-        android:textAllCaps="false"
-        style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
-</LinearLayout>
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:minHeight="286dp"
+                    android:background="@drawable/bg_reveal">
+                    <ImageView
+                        android:layout_width="160dp"
+                        android:layout_height="144dp"
+                        android:src="@drawable/bg_gift_scene"
+                        android:contentDescription="@string/cd_tap_to_reveal"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/label_tap_to_reveal"
+                        android:textSize="18sp"
+                        android:textColor="@color/hero_text"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/v2_reveal_hint"
+                        android:textSize="12sp"
+                        android:textColor="@color/hero_muted"
+                        android:gravity="center"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_ver_desejos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginHorizontal="0dp"
+            android:text="@string/button_view_wishlist"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:cornerRadius="@dimen/radius_button"
+            app:icon="@drawable/ic_gift"
+            style="@style/Widget.Amigo.Button"
+            android:stateListAnimator="@null"
+            android:minHeight="56dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/label_keep_secret"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_voltar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/button_back_to_list"
+            android:textAllCaps="false"
+            style="@style/Widget.Amigo.Button.Text"
+            app:cornerRadius="@dimen/radius_button"
+            android:stateListAnimator="@null"
+            android:minHeight="48dp" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

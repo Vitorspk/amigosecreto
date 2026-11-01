@@ -1,33 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="0dp"
+    app:cardCornerRadius="@dimen/radius_card"
+    app:cardElevation="1dp"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/divider">
-
+    app:strokeColor="@color/divider"
+    style="@style/Widget.Amigo.Card">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="12dp"
         android:gravity="center_vertical">
-
         <TextView
             android:id="@+id/tv_avatar_regra"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:gravity="center"
             tools:text="A"
-            android:textColor="@color/white"
+            android:textColor="@color/md_theme_onPrimaryContainer"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:background="@drawable/card_gradient_orange" />
-
+            android:background="@drawable/bg_icon_soft" />
         <TextView
             android:id="@+id/tv_nome_regra"
             android:layout_width="0dp"
@@ -38,13 +37,10 @@
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
-
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/checkbox_regra"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:buttonTint="@color/purple_primary" />
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="42" failures="0" errors="0" skipped="0" time="146.846" timestamp="2026-11-01T21:29:48" hostname="localhost">
+  <testsuite name="activity.amigosecreto.ConfiguracoesGrupoActivityTest" tests="3" failures="0" errors="0" skipped="0" time="6.388" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="campos_de_configuracao_sao_exibidos" classname="activity.amigosecreto.ConfiguracoesGrupoActivityTest" time="3.226" />
+    <testcase name="botao_salvar_habilitado_com_nome" classname="activity.amigosecreto.ConfiguracoesGrupoActivityTest" time="1.676" />
+    <testcase name="formulario_populado_com_nome_do_grupo" classname="activity.amigosecreto.ConfiguracoesGrupoActivityTest" time="1.486" />
+  </testsuite>
+  <testsuite name="activity.amigosecreto.DashboardActivityTest" tests="3" failures="0" errors="0" skipped="0" time="3.089" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="dashboard_sem_sorteio_exibe_nao_realizado" classname="activity.amigosecreto.DashboardActivityTest" time="0.932" />
+    <testcase name="dashboard_exibe_nome_do_grupo" classname="activity.amigosecreto.DashboardActivityTest" time="0.826" />
+    <testcase name="dashboard_exibe_total_participantes" classname="activity.amigosecreto.DashboardActivityTest" time="1.331" />
+  </testsuite>
+  <testsuite name="activity.amigosecreto.DesejosNavigationTest" tests="2" failures="0" errors="0" skipped="0" time="2.411" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="desejos_editaveis_permitem_rolar_ate_o_ultimo_item" classname="activity.amigosecreto.DesejosNavigationTest" time="1.301" />
+    <testcase name="desejos_revelados_permitem_rolar_sem_rebaixar_o_banco" classname="activity.amigosecreto.DesejosNavigationTest" time="1.11" />
+  </testsuite>
+  <testsuite name="activity.amigosecreto.GruposActivityTest" tests="14" failures="0" errors="0" skipped="0" time="46.58" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="criar_grupo_com_nome_aparece_na_lista" classname="activity.amigosecreto.GruposActivityTest" time="5.049" />
+    <testcase name="chip_familia_preenche_nome" classname="activity.amigosecreto.GruposActivityTest" time="1.932" />
+    <testcase name="chip_amigos_preenche_nome" classname="activity.amigosecreto.GruposActivityTest" time="2.112" />
+    <testcase name="criar_grupo_exibe_dialog" classname="activity.amigosecreto.GruposActivityTest" time="1.528" />
+    <testcase name="chip_trabalho_preenche_nome" classname="activity.amigosecreto.GruposActivityTest" time="2.029" />
+    <testcase name="cancelar_dialog_fecha_sem_criar_grupo" classname="activity.amigosecreto.GruposActivityTest" time="1.916" />
+    <testcase name="excluir_grupo_confirmado_remove_da_lista" classname="activity.amigosecreto.GruposActivityTest" time="6.011" />
+    <testcase name="tela_inicial_exibe_botao_criar_grupo" classname="activity.amigosecreto.GruposActivityTest" time="1.034" />
+    <testcase name="clicar_grupo_abre_tela_de_participantes" classname="activity.amigosecreto.GruposActivityTest" time="4.745" />
+    <testcase name="tela_inicial_sem_grupos_nao_exibe_itens_na_lista" classname="activity.amigosecreto.GruposActivityTest" time="1.033" />
+    <testcase name="criar_grupo_nome_vazio_nao_fecha_dialog" classname="activity.amigosecreto.GruposActivityTest" time="2.095" />
+    <testcase name="criar_dois_grupos_ambos_aparecem_na_lista" classname="activity.amigosecreto.GruposActivityTest" time="5.764" />
+    <testcase name="excluir_grupo_cancelado_mantem_na_lista" classname="activity.amigosecreto.GruposActivityTest" time="5.647" />
+    <testcase name="editar_nome_grupo_atualiza_lista" classname="activity.amigosecreto.GruposActivityTest" time="5.685" />
+  </testsuite>
+  <testsuite name="activity.amigosecreto.OnboardingActivityTest" tests="3" failures="0" errors="0" skipped="0" time="4.237" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="onboarding_renderiza_primeira_pagina" classname="activity.amigosecreto.OnboardingActivityTest" time="0.725" />
+    <testcase name="botao_avancar_muda_pagina" classname="activity.amigosecreto.OnboardingActivityTest" time="0.997" />
+    <testcase name="concluir_onboarding_abre_grupos_activity" classname="activity.amigosecreto.OnboardingActivityTest" time="2.515" />
+  </testsuite>
+  <testsuite name="activity.amigosecreto.ParticipantesActivityTest" tests="17" failures="0" errors="0" skipped="0" time="78.04" timestamp="2026-11-01T21:29:48" hostname="localhost">
+    <properties>
+      <property name="device" value="SM-A205G - 11" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="cancelar_dialog_add_nao_adiciona_participante" classname="activity.amigosecreto.ParticipantesActivityTest" time="3.47" />
+    <testcase name="fab_add_abre_dialog" classname="activity.amigosecreto.ParticipantesActivityTest" time="1.563" />
+    <testcase name="tela_exibe_fab_adicionar" classname="activity.amigosecreto.ParticipantesActivityTest" time="0.787" />
+    <testcase name="adicionar_participante_aparece_na_lista" classname="activity.amigosecreto.ParticipantesActivityTest" time="3.525" />
+    <testcase name="adicionar_multiplos_participantes_todos_aparecem" classname="activity.amigosecreto.ParticipantesActivityTest" time="8.781" />
+    <testcase name="menu_configuracoes_abre_o_grupo_atual" classname="activity.amigosecreto.ParticipantesActivityTest" time="2.411" />
+    <testcase name="revelacao_oferece_desejos_quando_o_grupo_permite" classname="activity.amigosecreto.ParticipantesActivityTest" time="10.122" />
+    <testcase name="tela_exibe_botao_sortear" classname="activity.amigosecreto.ParticipantesActivityTest" time="0.663" />
+    <testcase name="revelacao_nao_oferece_desejos_quando_o_grupo_nao_permite" classname="activity.amigosecreto.ParticipantesActivityTest" time="10.796" />
+    <testcase name="sortear_com_menos_de_3_participantes_nao_abre_dialog_sucesso" classname="activity.amigosecreto.ParticipantesActivityTest" time="6.1" />
+    <testcase name="tocar_participante_abre_revelacao_que_pode_ser_ocultada" classname="activity.amigosecreto.ParticipantesActivityTest" time="10.881" />
+    <testcase name="tela_vazia_exibe_estado_empty" classname="activity.amigosecreto.ParticipantesActivityTest" time="0.888" />
+    <testcase name="tela_exibe_contagem_de_participantes" classname="activity.amigosecreto.ParticipantesActivityTest" time="0.741" />
+    <testcase name="sortear_sem_participantes_nao_abre_dialog_sucesso" classname="activity.amigosecreto.ParticipantesActivityTest" time="1.065" />
+    <testcase name="adicionar_participante_nome_vazio_nao_fecha_dialog" classname="activity.amigosecreto.ParticipantesActivityTest" time="2.22" />
+    <testcase name="sortear_com_tres_participantes_exibe_dialog_sucesso" classname="activity.amigosecreto.ParticipantesActivityTest" time="9.448" />
+    <testcase name="limpar_pelo_menu_remove_participantes_apos_confirmar" classname="activity.amigosecreto.ParticipantesActivityTest" time="4.579" />
+  </testsuite>
+</testsuites>

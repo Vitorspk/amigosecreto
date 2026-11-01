@@ -1,64 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- Primary (Dark Mode) — Roxo claro sobre fundo escuro (WCAG AA: 4.5:1 sobre #1C1B1F) -->
-    <color name="md_theme_primary">#C5B4FF</color>
-    <color name="md_theme_onPrimary">#2A1770</color>
-    <color name="md_theme_primaryContainer">#4230A6</color>
-    <color name="md_theme_onPrimaryContainer">#E5DAFF</color>
-
-    <!-- Secondary (Dark Mode) — Roxo médio -->
-    <color name="md_theme_secondary">#CCC0FF</color>
-    <color name="md_theme_onSecondary">#2E1C84</color>
-    <color name="md_theme_secondaryContainer">#4638A0</color>
-    <color name="md_theme_onSecondaryContainer">#E5DEFF</color>
-
-    <!-- Background (Dark Mode) -->
-    <color name="md_theme_background">#1C1B1F</color>
-    <color name="md_theme_onBackground">#E6E1E5</color>
-
-    <!-- Surface (Dark Mode) -->
-    <color name="md_theme_surface">#2B2930</color>
-    <color name="md_theme_onSurface">#E6E1E5</color>
-
-    <!-- Aliases de cores nomeadas — usados diretamente em layouts -->
+    <color name="md_theme_primary">#C9B9FF</color>
+    <color name="md_theme_onPrimary">#35205D</color>
+    <color name="md_theme_primaryContainer">#382C68</color>
+    <color name="md_theme_onPrimaryContainer">#EDE5FF</color>
+    <color name="md_theme_secondary">#F4C477</color>
+    <color name="md_theme_onSecondary">#562B1C</color>
+    <color name="md_theme_secondaryContainer">#503D23</color>
+    <color name="md_theme_onSecondaryContainer">#FFE4B9</color>
+    <color name="md_theme_background">#0E1728</color>
+    <color name="md_theme_onBackground">#F0F3FA</color>
+    <color name="md_theme_surface">#19253A</color>
+    <color name="md_theme_onSurface">#F0F3FA</color>
+    <color name="text_secondary">#B8C4D8</color>
+    <color name="divider">#314059</color>
+    <color name="surface_soft">#202E45</color>
+    <color name="success_container">#1A4235</color>
+    <color name="success">#9BD8BA</color>
+    <color name="colorError">#FFB2BB</color>
+    <color name="hero_background">#172940</color>
+    <color name="reveal_start">#172940</color>
+    <color name="reveal_end">#3E2E76</color>
     <color name="purple_primary">@color/md_theme_primary</color>
-    <color name="purple_dark">@color/md_theme_primaryContainer</color>
-    <color name="purple_background">@color/md_theme_secondaryContainer</color>
-
-    <!-- Legacy colors for backward compatibility -->
+    <color name="purple_dark">@color/md_theme_onPrimaryContainer</color>
+    <color name="purple_background">@color/md_theme_primaryContainer</color>
+    <color name="accent_green">@color/success</color>
     <color name="colorPrimary">@color/md_theme_primary</color>
     <color name="colorPrimaryDark">@color/md_theme_primaryContainer</color>
     <color name="colorPrimaryContainer">@color/md_theme_primaryContainer</color>
     <color name="colorSecondary">@color/md_theme_secondary</color>
     <color name="colorSecondaryContainer">@color/md_theme_secondaryContainer</color>
-    <color name="colorAccent">#69D49C</color>
-    <color name="colorError">#FFB4AB</color>
+    <color name="colorAccent">@color/success</color>
     <color name="background">@color/md_theme_background</color>
     <color name="surface">@color/md_theme_surface</color>
     <color name="text_primary">@color/md_theme_onSurface</color>
-    <color name="text_secondary">#9E9E9E</color>
+    <color name="text_on_color_surface">@color/md_theme_onPrimary</color>
+    <color name="text_on_red_surface">@color/md_theme_onPrimary</color>
+    <color name="card_gradient_amber_start">@color/reveal_start</color>
+    <color name="card_gradient_amber_end">@color/reveal_end</color>
+    <color name="card_gradient_indigo_start">@color/reveal_start</color>
+    <color name="card_gradient_indigo_end">@color/reveal_end</color>
+    <color name="card_gradient_forest_start">@color/reveal_start</color>
+    <color name="card_gradient_forest_end">@color/reveal_end</color>
+    <color name="gradient_sort_start">@color/reveal_start</color>
+    <color name="gradient_sort_center">@color/reveal_start</color>
+    <color name="gradient_sort_end">@color/reveal_end</color>
     <color name="white">#FFFFFF</color>
-    <color name="divider">#424242</color>
-
-    <!-- Texto sobre gradientes coloridos — em dark mode os gradientes são mais escuros,
-         branco puro oferece melhor contraste (WCAG AA: ~7:1 sobre os gradientes dark) -->
-    <color name="text_on_color_surface">#FFFFFF</color>
-    <color name="text_on_red_surface">#FFFFFF</color>
-
-    <!-- Cores dos card gradients em dark mode (extraídas dos drawables para centralizar manutenção) -->
-    <!-- Âmbar/dourado escuro para card de sorteio/orange -->
-    <color name="card_gradient_amber_start">#5C3D00</color>
-    <color name="card_gradient_amber_end">#3D2800</color>
-    <!-- Índigo escuro para card de grupo/blue -->
-    <color name="card_gradient_indigo_start">#1A237E</color>
-    <color name="card_gradient_indigo_end">#0D1363</color>
-    <!-- Verde escuro para card de participantes/green -->
-    <color name="card_gradient_forest_start">#1B5E20</color>
-    <color name="card_gradient_forest_end">#0A3D0E</color>
-    <!-- Verde escuro para botão de sorteio -->
-    <color name="gradient_sort_start">#2E7D32</color>
-    <color name="gradient_sort_center">#1B5E20</color>
-    <color name="gradient_sort_end">#124016</color>
-
+    <color name="hero_text">#FFFFFF</color>
+    <color name="hero_muted">#D4DDF1</color>
+    <color name="brand_gold">#F4C477</color>
+    <color name="brand_lilac">#B7A2FF</color>
+    <color name="hero_outline">#62518D</color>
 </resources>

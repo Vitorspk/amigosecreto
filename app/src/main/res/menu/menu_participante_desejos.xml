@@ -4,10 +4,10 @@
 
     <item
         android:id="@+id/action_compartilhar_desejos"
-        android:icon="@android:drawable/ic_menu_share"
+        android:icon="@drawable/ic_share"
         android:title="@string/action_compartilhar_desejos"
         app:showAsAction="always"
-        app:iconTint="@color/white" />
+        app:iconTint="@color/text_primary" />
 
     <item
         android:id="@+id/action_sugerir_presentes"

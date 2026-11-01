@@ -1,59 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    app:strokeWidth="0dp">
-
+    app:cardCornerRadius="@dimen/radius_card"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    style="@style/Widget.Amigo.Card"
+    app:strokeColor="@color/divider">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
         android:gravity="center_vertical">
-
         <ImageView
             android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:src="@drawable/ic_gift"
             app:tint="@color/purple_primary"
             android:layout_marginEnd="16dp"
-            android:contentDescription="@string/cd_wish_icon" />
-
+            android:contentDescription="@string/cd_wish_icon"
+            android:background="@drawable/bg_icon_soft"
+            android:padding="12dp"
+            android:importantForAccessibility="no" />
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
-
             <TextView
                 android:id="@+id/tv_item_produto"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary" />
-
             <TextView
                 android:id="@+id/tv_item_categoria"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textColor="@color/text_secondary" />
-
             <TextView
                 android:id="@+id/tv_item_preco"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
+                android:textSize="13sp"
                 android:layout_marginTop="6dp"
                 android:textStyle="bold"
-                android:textColor="@color/accent_green" />
-
+                android:textColor="@color/accent_green"
+                android:background="@drawable/bg_price_pill"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
         </LinearLayout>
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

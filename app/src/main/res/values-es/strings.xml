@@ -34,10 +34,10 @@
     <string name="dialog_clear_all_message">Esto eliminará TODOS los grupos, participantes y sorteos.\n\n¡Esta acción NO se puede deshacer!\n\n¿Deseas continuar?</string>
     <string name="button_clear_all_yes">Sí, borrar todo</string>
     <string name="toast_all_data_cleared">Todos los datos han sido eliminados</string>
-    <string name="greeting_welcome">¡Hola, Bienvenido!</string>
-    <string name="description_organize_groups">Organiza tus grupos de amigo secreto</string>
-    <string name="button_create_new_group">Crear Nuevo Grupo</string>
-    <string name="label_my_groups">Mis Grupos</string>
+    <string name="greeting_welcome">Sorpresas que\nconectan.</string>
+    <string name="description_organize_groups">Reúne a las personas.\nComparte buenos momentos.</string>
+    <string name="button_create_new_group">Crear un grupo</string>
+    <string name="label_my_groups">Tus grupos</string>
     <string name="participante_sorteio_titulo">¡Sorteo Completado!</string>
     <string name="participante_sorteio_msg_sms">¿Deseas enviar los resultados ahora por SMS?</string>
     <string name="participante_sorteio_btn_sms">Sí, enviar SMS</string>
@@ -54,10 +54,10 @@
     <string name="label_no_participants">Ningún participante aún</string>
     <string name="label_progresso_sorteio">✅ %1$d de %2$d enviados</string>
     <string name="hint_buscar_participante">Buscar participante</string>
-    <string name="label_data_evento">📅 Evento: %1$s</string>
-    <string name="label_faixa_valor_completa">💰 Valor: $ %1$s – $ %2$s</string>
-    <string name="label_faixa_valor_minimo">💰 Valor mínimo: $ %1$s</string>
-    <string name="label_faixa_valor_maximo">💰 Valor máximo: $ %1$s</string>
+    <string name="label_data_evento">Evento: %1$s</string>
+    <string name="label_faixa_valor_completa">Valor: %1$s – %2$s</string>
+    <string name="label_faixa_valor_minimo">Valor mínimo: %1$s</string>
+    <string name="label_faixa_valor_maximo">Valor máximo: %1$s</string>
     <string name="dialog_new_participant_title">Nuevo Participante</string>
     <string name="dialog_edit_sent_warning">⚠️ El resultado de este participante ya fue compartido. Editar los datos no actualizará el mensaje ya enviado.</string>
     <string name="error_save_failed">Error al guardar. Por favor inténtalo de nuevo.</string>
@@ -112,10 +112,10 @@
     <string name="error_generic_format">Error: %1$s</string>
     <string name="dialog_remove_wish_title">⚠️ Eliminar Deseo</string>
     <string name="dialog_remove_wish_message_format">¿Estás seguro de que deseas eliminar \"%1$s\"?\n\nEsta acción no se puede deshacer.</string>
-    <string name="label_price_range_detail">💰 Rango de Precio</string>
+    <string name="label_price_range_detail">Rango de precio</string>
     <string name="label_minimum_price">Mínimo</string>
     <string name="label_maximum_price">Máximo</string>
-    <string name="label_where_to_find">📍 Dónde Encontrar</string>
+    <string name="label_where_to_find">Dónde encontrar</string>
     <string name="button_search_buscape">Buscar en Buscape</string>
     <string name="empty_state_no_wishes">🎄 Ningún deseo aún\n\n¡Toca \'+\' para agregar uno!</string>
     <string name="share_wish_prefix_desejo">Deseo: </string>
@@ -128,25 +128,25 @@
     <string name="label_wishes_count_format">Regalos (%1$d)</string>
     <string name="dialog_add_wish_title">Agregar Deseo</string>
     <string name="label_my_wishes_list">Mi lista de deseos</string>
-    <string name="description_add_wishes_hint">Agrega regalos para que tu Amigo Secreto sepa exactamente qué regalarte 😘</string>
+    <string name="description_add_wishes_hint">Da buenas pistas a quien te hará un regalo.</string>
     <string name="label_gifts_initial_count">Regalos (0)</string>
     <string name="empty_state_no_wishes_added">Ningún deseo agregado</string>
     <string name="empty_state_click_add">Toca \'Agregar\' para empezar</string>
     <string name="label_wishlist_of">Lista de deseos de</string>
     <string name="empty_state_no_wishes_yet">Ningún deseo aún</string>
     <string name="greeting_hello">Hola,</string>
-    <string name="label_your_secret_friend">🎉 Tu Amigo Secreto es</string>
-    <string name="label_tap_to_reveal">👆 Toca para revelar</string>
+    <string name="label_your_secret_friend">Tu amigo secreto es</string>
+    <string name="label_tap_to_reveal">Toca para revelar</string>
     <string name="cd_tap_to_reveal">Toca para revelar</string>
-    <string name="button_view_wishlist">🎁 LISTA DE DESEOS</string>
-    <string name="label_keep_secret">¡Guarda el secreto! 🤫</string>
+    <string name="button_view_wishlist">Ver lista de deseos</string>
+    <string name="label_keep_secret">Guarda este momento. El secreto es tuyo.</string>
     <string name="button_back_to_list">Volver a la lista</string>
     <string name="dialog_desc_add_friend">Agrega un amigo al sorteo</string>
     <string name="label_quick_mode">⚡ Modo Rápido</string>
-    <string name="button_import_contacts">Importar de Contactos</string>
-    <string name="label_or_fill">O COMPLETA</string>
-    <string name="hint_participant_name">Nombre del Participante *</string>
-    <string name="hint_phone">Código de área + Teléfono (WhatsApp)</string>
+    <string name="button_import_contacts">Importar contactos</string>
+    <string name="label_or_fill">O completa los datos</string>
+    <string name="hint_participant_name">Nombre *</string>
+    <string name="hint_phone">Teléfono</string>
     <string name="hint_email">E-mail (opcional)</string>
     <string name="label_required_field">* Campo obligatorio</string>
     <string name="dialog_new_group_title">Nuevo Grupo</string>
@@ -159,8 +159,8 @@
     <string name="label_remove">Eliminar</string>
     <string name="description_delete_wish">Eliminar este deseo</string>
     <string name="dialog_title_restrictions">Restricciones de Sorteo</string>
-    <string name="label_manage_group">Administrar Grupo</string>
-    <string name="button_clear_participants">Limpiar Lista de Participantes</string>
+    <string name="label_manage_group">Participantes</string>
+    <string name="button_clear_participants">Borrar participantes</string>
     <string name="chip_sugestao_familia">Familia</string>
     <string name="chip_sugestao_trabalho">Trabajo</string>
     <string name="chip_sugestao_amigos">Amigos</string>
@@ -168,8 +168,8 @@
     <string name="share_app_body">🎁 ¡Organiza tu Amigo Secreto fácilmente!\n\n¡Descarga la app Amigo Secreto y haz tus reuniones más divertidas!</string>
     <string name="share_with_person">Compartir con %1$s</string>
     <plurals name="label_participants_in_group">
-        <item quantity="one">%1$d participante en el grupo %2$s</item>
-        <item quantity="other">%1$d participantes en el grupo %2$s</item>
+        <item quantity="one">%1$d participante</item>
+        <item quantity="other">%1$d participantes</item>
     </plurals>
     <plurals name="label_participants">
         <item quantity="one">%d Participante</item>
@@ -189,10 +189,18 @@
     <string name="cd_restrictions">Restricciones</string>
     <string name="cd_share">Compartir</string>
     <string name="cd_edit">Editar</string>
-    <string name="empty_state_title" tools:ignore="UnusedResources">Nada aquí aún</string>
-    <string name="empty_state_subtitle" tools:ignore="UnusedResources">Agrega elementos para empezar</string>
-    <string name="empty_state_button" tools:ignore="UnusedResources">Agregar</string>
-    <string name="loading_state_text" tools:ignore="UnusedResources">Cargando…</string>
+    <string
+        name="empty_state_title"
+        tools:ignore="UnusedResources">Nada aquí aún</string>
+    <string
+        name="empty_state_subtitle"
+        tools:ignore="UnusedResources">Agrega elementos para empezar</string>
+    <string
+        name="empty_state_button"
+        tools:ignore="UnusedResources">Agregar</string>
+    <string
+        name="loading_state_text"
+        tools:ignore="UnusedResources">Cargando…</string>
     <string name="label_product_name">Nombre del Producto</string>
     <string name="button_add_participant">Agregar Participante</string>
     <string name="button_draw">Realizar Sorteo</string>
@@ -250,8 +258,8 @@
     <string name="configuracoes_hint_data_evento">Fecha del Evento</string>
     <string name="configuracoes_hint_data_limite">Fecha Límite del Sorteo</string>
     <string name="configuracoes_hint_regras">Reglas del Grupo</string>
-    <string name="configuracoes_hint_valor_minimo">$ Mínimo</string>
-    <string name="configuracoes_hint_valor_maximo">$ Máximo</string>
+    <string name="configuracoes_hint_valor_minimo">R$ Mínimo</string>
+    <string name="configuracoes_hint_valor_maximo">R$ Máximo</string>
     <string name="configuracoes_label_permitir_ver_desejos">Permitir ver deseos</string>
     <string name="configuracoes_label_exigir_confirmacao">Exigir confirmación de compra</string>
     <string name="confirmacao_compra_titulo">Confirmar compra</string>
@@ -278,20 +286,20 @@
     <string name="estatisticas_label_total_sorteios">Total de Sorteos Realizados</string>
     <string name="estatisticas_label_total_desejos">Total de Deseos Registrados</string>
     <string name="estatisticas_label_media_valor">Valor Promedio de los Deseos</string>
-    <string name="estatisticas_valor_format">$ %1$s</string>
+    <string name="estatisticas_valor_format">R$ %1$s</string>
     <string name="estatisticas_sem_dados">Sin datos</string>
     <string name="menu_estatisticas">Estadísticas</string>
     <string name="onboarding_btn_proximo">Siguiente</string>
     <string name="onboarding_btn_comecar">Comenzar</string>
-    <string name="onboarding_titulo_1">¡Bienvenido!</string>
-    <string name="onboarding_desc_1">Organiza tus sorteos de amigo secreto de forma fácil y divertida.</string>
-    <string name="onboarding_titulo_2">Crea Grupos</string>
+    <string name="onboarding_titulo_1">El mejor regalo\nes estar juntos.</string>
+    <string name="onboarding_desc_1">Organiza tu amigo secreto desde la primera invitación hasta la última sorpresa. Todo en un solo lugar.</string>
+    <string name="onboarding_titulo_2">Un grupo nuevo\npara cada encuentro.</string>
     <string name="onboarding_desc_2">Crea grupos para separar diferentes reuniones — familia, trabajo o amigos.</string>
-    <string name="onboarding_titulo_3">Agrega Participantes</string>
+    <string name="onboarding_titulo_3">Tus personas favoritas,\ntodas juntas.</string>
     <string name="onboarding_desc_3">Agrega participantes manualmente o importa directamente desde tus contactos.</string>
-    <string name="onboarding_titulo_4">Realiza el Sorteo</string>
+    <string name="onboarding_titulo_4">Un toque.\nMuchas sorpresas.</string>
     <string name="onboarding_desc_4">El sorteo se realiza automáticamente, respetando las restricciones que definas.</string>
-    <string name="onboarding_titulo_5">Comparte</string>
+    <string name="onboarding_titulo_5">Un secreto para\ncada persona.</string>
     <string name="onboarding_desc_5">Comparte los resultados por WhatsApp, SMS u otras aplicaciones.</string>
     <string name="menu_dashboard">Panel</string>
     <string name="menu_configuracoes_grupo">Configuración del Grupo</string>
@@ -305,9 +313,9 @@
     <string name="share_desejos_empty">%1$s aún no ha agregado deseos a la lista.</string>
     <string name="share_desejos_item">🎁 %1$s</string>
     <string name="share_desejos_categoria">   Categoría: %1$s</string>
-    <string name="share_desejos_preco_completo">   Precio: $ %1$s – $ %2$s</string>
-    <string name="share_desejos_preco_minimo">   Precio mínimo: $ %1$s</string>
-    <string name="share_desejos_preco_maximo">   Precio máximo: $ %1$s</string>
+    <string name="share_desejos_preco_completo">   Precio: %1$s – %2$s</string>
+    <string name="share_desejos_preco_minimo">   Precio mínimo: %1$s</string>
+    <string name="share_desejos_preco_maximo">   Precio máximo: %1$s</string>
     <string name="share_desejos_lojas">   Dónde encontrar: %1$s</string>
     <string name="menu_desfazer_sorteio">Deshacer Sorteo</string>
     <string name="dialog_desfazer_sorteio_titulo">Deshacer Sorteo</string>
@@ -337,8 +345,35 @@
     <string name="share_msg_amigo_label">Tu Amigo Secreto es:\n</string>
     <string name="share_msg_wishlist_header">🛍️ *Lista de deseos de %1$s:*\n</string>
     <string name="share_msg_farewell">Recuerda: ¡el secreto es tuyo! No se lo cuentes a nadie. 🤫</string>
-    <string name="share_msg_price_range">\ - $ %1$s a $ %2$s</string>
-    <string name="share_msg_price_up_to">\ - hasta $ %1$s</string>
-    <string name="share_msg_price_from">\ - desde $ %1$s</string>
+    <string name="share_msg_price_range">\ - R$ %1$s a R$ %2$s</string>
+    <string name="share_msg_price_up_to">\ - hasta R$ %1$s</string>
+    <string name="share_msg_price_from">\ - desde R$ %1$s</string>
     <string name="date_format_display">dd/MM/yyyy \'a las\' HH:mm</string>
+    <string name="group_options">Opciones del grupo</string>
+    <string name="design_event_details">Sobre el encuentro</string>
+    <string name="design_gift_budget">Valor del regalo</string>
+    <string name="design_preferences">Preferencias del grupo</string>
+    <string name="design_edit_group">Editar grupo</string>
+    <string name="design_edit_group_description">Dale un nuevo nombre al encuentro.</string>
+    <string name="design_phone_helper">Opcional. Incluye el código de área, ej.: 11987654321.</string>
+    <string name="v2_hero_eyebrow">CELEBRA LAS CONEXIONES</string>
+    <string name="v2_brand_subtitle">Tu próximo buen encuentro</string>
+    <string name="v2_event_eyebrow">TU ENCUENTRO</string>
+    <string name="v2_draw_short">Sortear</string>
+    <string name="v2_group_context">Un encuentro para compartir</string>
+    <string name="v2_home_summary">%1$s · %2$s</string>
+    <string name="v2_reveal_hint">Una sorpresa preparada solo para ti.</string>
+    <string name="v2_statistics_eyebrow">TUS ENCUENTROS EN NÚMEROS</string>
+    <string name="v2_dashboard_eyebrow">RESUMEN DEL ENCUENTRO</string>
+    <string name="v2_empty_groups">Tu primer encuentro empieza aquí</string>
+    <string name="v2_empty_groups_hint">Crea un grupo e invita a tus personas favoritas.</string>
+    <string name="v2_wishlist_title">Lista de deseos</string>
+    <plurals name="v2_group_count">
+        <item quantity="one">%d grupo</item>
+        <item quantity="other">%d grupos</item>
+    </plurals>
+    <string name="v2_empty_participants">¿Quién va a participar?</string>
+    <string name="v2_empty_participants_hint">Añade a las personas y prepara el sorteo.</string>
+    <string name="v2_no_people">Sin participantes</string>
+    <string name="v2_created_on">Creado el %1$s</string>
 </resources>

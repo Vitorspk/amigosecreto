@@ -1,70 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Paleta Harmoniosa - Roxo Suave -->
-    <color name="md_theme_primary">#6B4CE6</color>
+<resources>
+    <color name="md_theme_primary">#5D42CF</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
-    <color name="md_theme_primaryContainer">#F5F3FF</color>
-    <color name="md_theme_onPrimaryContainer">#1A0A3E</color>
-
-    <!-- Secondary - Roxo Médio -->
-    <color name="md_theme_secondary">#9575FF</color>
+    <color name="md_theme_primaryContainer">#ECE8FF</color>
+    <color name="md_theme_onPrimaryContainer">#35256F</color>
+    <color name="md_theme_secondary">#8A4C1E</color>
     <color name="md_theme_onSecondary">#FFFFFF</color>
-    <color name="md_theme_secondaryContainer">#E8DEFF</color>
-    <color name="md_theme_onSecondaryContainer">#3D2A7D</color>
-
-    <!-- Background -->
-    <color name="md_theme_background">#FAFAFA</color>
-    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
-    <color name="md_theme_onBackground" tools:ignore="UnusedResources">#1C1B1F</color>
-
-    <!-- Surface -->
+    <color name="md_theme_secondaryContainer">#FCE8CA</color>
+    <color name="md_theme_onSecondaryContainer">#66380F</color>
+    <color name="md_theme_background">#F3F5FA</color>
+    <color name="md_theme_onBackground">#19263D</color>
     <color name="md_theme_surface">#FFFFFF</color>
-    <color name="md_theme_onSurface">#1C1B1F</color>
-
-    <!-- Cores Principais -->
-    <color name="purple_primary">#6B4CE6</color>
-    <color name="purple_dark">#5339C9</color>
-    <color name="purple_background">#F5F3FF</color>
-
-    <!-- Accent Color - Verde Suave para Sucesso -->
-    <color name="accent_green">#4CAF50</color>
-
-    <!-- Legacy colors -->
-    <color name="colorPrimary">@color/purple_primary</color>
-    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
-    <color name="colorPrimaryDark" tools:ignore="UnusedResources">#5339C9</color>
-    <color name="colorPrimaryContainer">@color/purple_background</color>
-    <color name="colorSecondary">@color/accent_green</color>
-    <color name="colorSecondaryContainer">#E8F5E9</color>
-    <color name="colorAccent">@color/accent_green</color>
-    <color name="colorError">#EF5350</color>
+    <color name="md_theme_onSurface">#19263D</color>
+    <color name="text_secondary">#5E6A7D</color>
+    <color name="divider">#DEE3ED</color>
+    <color name="surface_soft">#F0F2F8</color>
+    <color name="success_container">#E2F3EA</color>
+    <color name="success">#216650</color>
+    <color name="colorError">#B32636</color>
+    <color name="hero_background">#172940</color>
+    <color name="reveal_start">#172940</color>
+    <color name="reveal_end">#3E2E76</color>
+    <color name="purple_primary">@color/md_theme_primary</color>
+    <color name="purple_dark">@color/md_theme_onPrimaryContainer</color>
+    <color name="purple_background">@color/md_theme_primaryContainer</color>
+    <color name="accent_green">@color/success</color>
+    <color name="colorPrimary">@color/md_theme_primary</color>
+    <color name="colorPrimaryDark">@color/md_theme_primaryContainer</color>
+    <color name="colorPrimaryContainer">@color/md_theme_primaryContainer</color>
+    <color name="colorSecondary">@color/md_theme_secondary</color>
+    <color name="colorSecondaryContainer">@color/md_theme_secondaryContainer</color>
+    <color name="colorAccent">@color/success</color>
     <color name="background">@color/md_theme_background</color>
-    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
-    <color name="surface" tools:ignore="UnusedResources">@color/md_theme_surface</color>
-    <color name="text_primary">#1C1B1F</color>
-    <color name="text_secondary">#6B6B6B</color>
+    <color name="surface">@color/md_theme_surface</color>
+    <color name="text_primary">@color/md_theme_onSurface</color>
+    <color name="text_on_color_surface">@color/md_theme_onPrimary</color>
+    <color name="text_on_red_surface">@color/md_theme_onPrimary</color>
+    <color name="card_gradient_amber_start">@color/reveal_start</color>
+    <color name="card_gradient_amber_end">@color/reveal_end</color>
+    <color name="card_gradient_indigo_start">@color/reveal_start</color>
+    <color name="card_gradient_indigo_end">@color/reveal_end</color>
+    <color name="card_gradient_forest_start">@color/reveal_start</color>
+    <color name="card_gradient_forest_end">@color/reveal_end</color>
+    <color name="gradient_sort_start">@color/reveal_start</color>
+    <color name="gradient_sort_center">@color/reveal_start</color>
+    <color name="gradient_sort_end">@color/reveal_end</color>
     <color name="white">#FFFFFF</color>
-    <color name="divider">#E0E0E0</color>
-
-    <!-- Texto sobre gradientes coloridos (header bars, cards com fundo colorido).
-         Branco puro: contraste ~6:1 sobre indigo #6B4CE6 (WCAG AA exige mín. 4.5:1). -->
-    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
-    <color name="text_on_color_surface" tools:ignore="UnusedResources">#FFFFFF</color>
-    <!-- Base fallback for values-night/colors.xml override — lint false positive -->
-    <color name="text_on_red_surface" tools:ignore="UnusedResources">#FFFFFF</color>
-
-    <!-- Base fallbacks for drawable-night card gradient colors (only used in night drawables).
-         Light mode uses the drawable files from res/drawable/ directly — these are required
-         by lint [MissingDefaultResource] to prevent runtime crashes. -->
-    <color name="card_gradient_amber_start" tools:ignore="UnusedResources">#FF6F00</color>
-    <color name="card_gradient_amber_end" tools:ignore="UnusedResources">#E65100</color>
-    <color name="card_gradient_indigo_start" tools:ignore="UnusedResources">#3949AB</color>
-    <color name="card_gradient_indigo_end" tools:ignore="UnusedResources">#283593</color>
-    <color name="card_gradient_forest_start" tools:ignore="UnusedResources">#388E3C</color>
-    <color name="card_gradient_forest_end" tools:ignore="UnusedResources">#1B5E20</color>
-    <color name="gradient_sort_start" tools:ignore="UnusedResources">#43A047</color>
-    <color name="gradient_sort_center" tools:ignore="UnusedResources">#2E7D32</color>
-    <color name="gradient_sort_end" tools:ignore="UnusedResources">#1B5E20</color>
-
+    <color name="hero_text">#FFFFFF</color>
+    <color name="hero_muted">#D4DDF1</color>
+    <color name="brand_gold">#F4C477</color>
+    <color name="brand_lilac">#B7A2FF</color>
+    <color name="hero_outline">#62518D</color>
 </resources>

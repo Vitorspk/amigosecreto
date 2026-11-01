@@ -1,6 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base fallbacks for values-w820dp/dimens.xml overrides — lint false positive -->
-    <dimen name="activity_horizontal_margin" tools:ignore="UnusedResources">16dp</dimen>
-    <dimen name="bottom_buttons_horizontal_padding" tools:ignore="UnusedResources">16dp</dimen>
-    <dimen name="dialog_max_width" tools:ignore="UnusedResources">360dp</dimen>
+    <dimen
+        name="activity_horizontal_margin"
+        tools:ignore="UnusedResources">20dp</dimen>
+    <dimen
+        name="bottom_buttons_horizontal_padding"
+        tools:ignore="UnusedResources">24dp</dimen>
+    <dimen
+        name="dialog_max_width"
+        tools:ignore="UnusedResources">360dp</dimen>
 </resources>

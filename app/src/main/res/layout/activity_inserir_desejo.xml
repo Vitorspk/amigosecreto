@@ -1,67 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="activity.amigosecreto.InserirDesejoActivity">
-
-    <!-- AppBar Roxa -->
     <com.google.android.material.appbar.AppBarLayout
         android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_primary"
-        app:elevation="4dp">
-
+        android:background="@color/background"
+        app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_clear"
-            app:navigationIconTint="@color/white"
+            app:navigationIconTint="@color/text_primary"
             app:title="@string/title_activity_inserir_desejo"
-            app:titleTextColor="@color/white" />
-
+            app:titleTextColor="@color/text_primary"
+            android:background="@color/background"
+            app:titleTextAppearance="@style/TextAppearance.Amigo.Title"
+            app:titleCentered="false" />
     </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- Conteúdo -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_inserir_desejo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp">
-
-            <!-- Header com ícone -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginBottom="24dp">
-
-                <TextView
+                <ImageView
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    android:text="@string/emoji_gift"
                     android:importantForAccessibility="no"
-                    android:textSize="36sp"
-                    android:gravity="center"
-                    android:background="@drawable/card_gradient_orange"
-                    android:layout_marginEnd="16dp" />
-
+                    android:background="@drawable/bg_icon_soft"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_gift"
+                    android:padding="12dp"
+                    app:tint="@color/md_theme_primary" />
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -69,7 +61,6 @@
                         android:textColor="@color/text_primary"
                         android:textSize="24sp"
                         android:textStyle="bold" />
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -77,27 +68,17 @@
                         android:text="@string/description_add_wish"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
-
                 </LinearLayout>
-
             </LinearLayout>
-
-            <!-- Campo Produto -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:hint="@string/hint_produto"
                 app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/purple_primary"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:hintTextColor="@color/purple_primary"
                 app:startIconDrawable="@drawable/ic_gift"
-                app:startIconTint="@color/purple_primary">
-
+                app:startIconTint="@color/text_secondary"
+                style="@style/Widget.Amigo.TextInput">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_produto_ins"
                     android:layout_width="match_parent"
@@ -106,23 +87,15 @@
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Campo Categoria -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:hint="@string/hint_categoria"
                 app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/purple_primary"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:hintTextColor="@color/purple_primary"
-                app:startIconDrawable="@android:drawable/ic_menu_view"
-                app:startIconTint="@color/purple_primary">
-
+                app:startIconDrawable="@drawable/ic_category"
+                app:startIconTint="@color/text_secondary"
+                style="@style/Widget.Amigo.TextInput">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_categoria_ins"
                     android:layout_width="match_parent"
@@ -131,8 +104,6 @@
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Campos de Preço -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -141,14 +112,12 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:baselineAligned="false"
                 android:layout_marginBottom="16dp">
-
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -156,15 +125,8 @@
                     android:layout_marginEnd="8dp"
                     android:hint="@string/hint_preco_minimo"
                     app:boxBackgroundMode="outline"
-                    app:boxStrokeColor="@color/purple_primary"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="@color/purple_primary"
                     app:prefixText="R$ "
-                    app:prefixTextColor="@color/purple_primary">
-
+                    style="@style/Widget.Amigo.TextInput">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_preco_minimo_ins"
                         android:layout_width="match_parent"
@@ -173,7 +135,6 @@
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
                 </com.google.android.material.textfield.TextInputLayout>
-
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -181,15 +142,8 @@
                     android:layout_marginStart="8dp"
                     android:hint="@string/hint_preco_maximo"
                     app:boxBackgroundMode="outline"
-                    app:boxStrokeColor="@color/purple_primary"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="@color/purple_primary"
                     app:prefixText="R$ "
-                    app:prefixTextColor="@color/purple_primary">
-
+                    style="@style/Widget.Amigo.TextInput">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_preco_maximo_ins"
                         android:layout_width="match_parent"
@@ -199,23 +153,15 @@
                         android:textSize="16sp" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
-
-            <!-- Campo Lojas -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
                 android:hint="@string/hint_lojas"
                 app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/purple_primary"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:hintTextColor="@color/purple_primary"
-                app:startIconDrawable="@android:drawable/ic_dialog_map"
-                app:startIconTint="@color/purple_primary">
-
+                app:startIconDrawable="@drawable/ic_store"
+                app:startIconTint="@color/text_secondary"
+                style="@style/Widget.Amigo.TextInput">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_lojas_ins"
                     android:layout_width="match_parent"
@@ -226,25 +172,20 @@
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Botão Salvar -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_salvar_ins"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="wrap_content"
                 android:text="@string/button_save_wish"
-                android:textColor="@color/white"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textAllCaps="false"
-                app:backgroundTint="@color/purple_primary"
-                app:cornerRadius="12dp"
-                app:icon="@android:drawable/ic_menu_save"
-                app:iconTint="@color/white"
-                app:iconGravity="start" />
-
+                app:cornerRadius="@dimen/radius_button"
+                app:icon="@drawable/ic_check"
+                app:iconGravity="start"
+                style="@style/Widget.Amigo.Button"
+                android:stateListAnimator="@null"
+                android:minHeight="56dp" />
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -5,6 +5,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
@@ -12,9 +14,12 @@ import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.Visibility
+import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import org.hamcrest.Matchers.anything
+import org.hamcrest.Matchers.not
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import activity.amigosecreto.db.Grupo
@@ -92,6 +97,78 @@ class ParticipantesActivityTest {
     @Test
     fun tela_exibe_botao_sortear() {
         onView(withId(R.id.btn_sortear)).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun menu_configuracoes_abre_o_grupo_atual() {
+        // Confere a navegação pelo menu real, não só a Activity lançada isoladamente.
+        openActionBarOverflowOrOptionsMenu(ApplicationProvider.getApplicationContext())
+        onView(withText(R.string.menu_configuracoes_grupo)).perform(click())
+        onView(withId(R.id.et_config_nome)).check(matches(withText(grupo.nome)))
+        pressBack()
+        onView(withId(R.id.fab_add_participante)).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun limpar_pelo_menu_remove_participantes_apos_confirmar() {
+        adicionarParticipante("Ana")
+        openActionBarOverflowOrOptionsMenu(ApplicationProvider.getApplicationContext())
+        onView(withText(R.string.button_clear_participants)).perform(click())
+        onView(withText(R.string.participante_limpar_btn_sim)).perform(click())
+        // ListView pode reter filhos reciclados mesmo estando GONE. Validar o
+        // estado exibido, o adapter e a persistência evita confundir cache com dados.
+        onView(withId(R.id.tv_empty_title)).check(matches(isDisplayed()))
+        onView(withId(R.id.lv_participantes)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        scenario.onActivity {
+            org.junit.Assert.assertEquals(0, it.findViewById<android.widget.ListView>(R.id.lv_participantes).adapter.count)
+        }
+        org.junit.Assert.assertEquals(0, runBlocking { db.participanteDao().contarPorGrupo(grupo.id) })
+        onView(withId(R.id.tv_count)).check(matches(withText(R.string.label_no_participants)))
+    }
+
+    @Test
+    fun tocar_participante_abre_revelacao_que_pode_ser_ocultada() {
+        adicionarParticipante("Ana")
+        adicionarParticipante("Bruno")
+        adicionarParticipante("Carlos")
+        onView(withId(R.id.btn_sortear)).perform(click())
+        onView(withText(R.string.participante_sorteio_btn_agora_nao)).perform(click())
+        org.junit.Assert.assertEquals(AppDatabase.SCHEMA_VERSION, db.openHelper.writableDatabase.version)
+        onView(withText("Ana")).perform(click())
+        onView(withId(R.id.layout_escondido)).check(matches(isDisplayed()))
+        onView(withId(R.id.layout_revelado)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        onView(withId(R.id.card_revelacao)).perform(click())
+        onView(withId(R.id.tv_amigo_sorteado)).check(matches(isDisplayed()))
+        onView(withId(R.id.tv_amigo_sorteado)).check(matches(not(withText("Ana"))))
+        onView(withId(R.id.card_revelacao)).perform(click())
+        onView(withId(R.id.layout_escondido)).check(matches(isDisplayed()))
+        onView(withId(R.id.layout_revelado)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        onView(withId(R.id.btn_ver_desejos)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        pressBack()
+        org.junit.Assert.assertEquals(AppDatabase.SCHEMA_VERSION, db.openHelper.writableDatabase.version)
+    }
+
+    @Test
+    fun revelacao_oferece_desejos_quando_o_grupo_permite() {
+        sortearTresParticipantes()
+        onView(withText("Ana")).perform(click())
+        onView(withId(R.id.card_revelacao)).perform(click())
+        onView(withId(R.id.btn_ver_desejos)).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun revelacao_nao_oferece_desejos_quando_o_grupo_nao_permite() {
+        scenario.close()
+        grupo.permitirVerDesejos = false
+        scenario = ActivityScenario.launch(
+            Intent(ApplicationProvider.getApplicationContext(), ParticipantesActivity::class.java)
+                .putExtra(Grupo.EXTRA_GRUPO, grupo)
+        )
+        sortearTresParticipantes()
+        onView(withText("Ana")).perform(click())
+        onView(withId(R.id.card_revelacao)).perform(click())
+        onView(withId(R.id.tv_amigo_sorteado)).check(matches(isDisplayed()))
+        onView(withId(R.id.btn_ver_desejos)).check(matches(withEffectiveVisibility(Visibility.GONE)))
     }
 
     // --- Adicionar participante ---
@@ -173,6 +250,14 @@ class ParticipantesActivityTest {
     }
 
     // --- Helpers ---
+
+    private fun sortearTresParticipantes() {
+        adicionarParticipante("Ana")
+        adicionarParticipante("Bruno")
+        adicionarParticipante("Carlos")
+        onView(withId(R.id.btn_sortear)).perform(click())
+        onView(withText(R.string.participante_sorteio_btn_agora_nao)).perform(click())
+    }
 
     private fun adicionarParticipante(nome: String) {
         onView(withId(R.id.fab_add_participante)).perform(click())

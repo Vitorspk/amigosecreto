@@ -1,0 +1,96 @@
+{
+  "checked_at": "2026-10-31T20:45:18.909615+00:00",
+  "branch": "feat/redesign-experience",
+  "coverage": {
+    "activities_declared": 15,
+    "layout_files": 30
+  },
+  "tasks": [
+    ":app:assembleDebug",
+    ":app:testDebugUnitTest",
+    ":app:lintRelease",
+    ":app:connectedDebugAndroidTest"
+  ],
+  "build": "passed",
+  "unit_tests": {
+    "suites": 49,
+    "tests": 625,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "error": 0,
+    "fatal": 0,
+    "warning": 153,
+    "hint": 1
+  },
+  "instrumented_tests": {
+    "tests": 41,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "status": "passed",
+    "report": "instrumented-final.xml"
+  },
+  "visual_review": {
+    "status": "passed",
+    "device": "Small_Phone / Android 16 API 36",
+    "viewport_dp": [
+      360,
+      640
+    ],
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "font_scales": [
+      1.0,
+      1.5
+    ],
+    "checked_flows": [
+      "onboarding (5 pages)",
+      "group create/edit/delete",
+      "participant list/search/keyboard/forms",
+      "exclusions",
+      "draw",
+      "reveal/hide",
+      "QR rendering",
+      "share preview",
+      "wish create/read/update/delete",
+      "long editable/readonly wishlists",
+      "legacy wish detail",
+      "history",
+      "event settings",
+      "dashboard",
+      "global statistics"
+    ]
+  },
+  "contrast": {
+    "report": "contrast.json",
+    "combinations": 22,
+    "all_aa_normal_text": true,
+    "minimum_ratio": 5.6
+  },
+  "apk": {
+    "path": "app/build/outputs/apk/debug/app-debug.apk",
+    "application_id": "com.amigosecreto.sorteio.debug",
+    "sha256": "59314a215c4b78f03267212ad693a238abd83c10abf48aa72c4b6c832d41886d"
+  },
+  "limits": [
+    "Runtime validation performed only on the emulator/API 36, as requested.",
+    "External messages and production publication were not performed.",
+    "Lint warnings remain; zero lint errors/fatal issues."
+  ],
+  "screenshots": [
+    "07-after-home.png",
+    "28-reveal-visible.png",
+    "30-qr-code.png",
+    "32-participants-dark.png",
+    "35-reveal-large-font.png",
+    "40-dialog-actions-large-font.png",
+    "41-editable-wishes-multiple.png",
+    "41-revealed-wishes-multiple.png",
+    "43-final-home.png"
+  ]
+}
